@@ -1,3 +1,25 @@
+## Step 4 — graph/state.py
+**Date**: 2026-05-20
+**Files created**: `backend/graph/state.py`
+**What was built**:
+LangGraph state schema for the full decision pipeline. Supporting
+dataclasses for each agent's output type (TradeProposal, RiskReport,
+FraudAlert, RegulatorDecision, JudgeScore). Main JanusState TypedDict
+that flows through all 5 agents. Factory function create_initial_state().
+
+**Key decisions**:
+- TypedDict (not Pydantic) because LangGraph requires it for state nodes
+- Agent outputs stored as dict (serialized) not typed objects — keeps
+  state JSON-serializable for Firestore and SSE streaming
+- cycle_span stored in state so the root Phoenix span can be ended
+  after the full pipeline completes
+- pipeline_halted flag lets the graph short-circuit if regulator halts
+
+**Notes for team**:
+- Dev B: JudgeScore fields are exactly what gets logged to Phoenix
+  as evaluations — don't rename them
+- Any agent can read the full state; only write to your own section
+
 ## Step 3 — observability/tracing.py
 **Date**: 2026-05-20
 **Files created**: `backend/observability/tracing.py`
