@@ -1,3 +1,27 @@
+## Step 3 — observability/tracing.py
+**Date**: 2026-05-20
+**Files created**: `backend/observability/tracing.py`
+**What was built**:
+Phoenix/OpenTelemetry tracing setup. Configures OTLP exporter to Phoenix,
+instruments LangChain/LangGraph automatically, provides trace_agent_call()
+context manager and record_cycle_start() for the decision pipeline.
+
+**Key decisions**:
+- setup_tracing() is resilient — swallowed exceptions mean agents still 
+  run if Phoenix is down; judges won't see a crashed demo
+- trace_agent_call() is a context manager so agent code stays clean
+- LangChainInstrumentor auto-instruments all LLM calls, tool calls, 
+  and chain executions without manual span creation per call
+- Parent span per cycle (decision_cycle.{id}) so all 5 agent spans 
+  nest cleanly under one trace in Phoenix UI
+
+**Notes for team**:
+- Call setup_tracing() once in main.py at app startup
+- Dev B: you don't need to touch this file; tracing is automatic 
+  once initialized
+- If Phoenix traces aren't showing up: check PHOENIX_COLLECTOR_ENDPOINT 
+  in .env points to the right host/port
+
 ## Step 2 — db/firestore_client.py
 **Date**: 2026-05-20
 **Files created**: `backend/db/firestore_client.py`
