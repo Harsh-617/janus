@@ -1,3 +1,30 @@
+## Step 8 — agents/fraud_agent.py
+**Date**: 2026-05-20
+**Files created**: `backend/agents/fraud_agent.py`
+**What was built**:
+Fraud Intelligence Agent LangGraph node. Detects 5 fraud pattern types
+including REASONING_INCONSISTENCY — which is hallucination detection in
+financial context. This is the key Arize demo moment: the agent catches
+when the Trading Agent's stated rationale contradicts its proposed action.
+
+**Key decisions**:
+- Temperature 0.2 — most deterministic of all agents; fraud calls must
+  be precise and repeatable
+- REASONING_INCONSISTENCY is the most important check — baked into prompt
+  as primary focus, directly maps to Phoenix hallucination detection value prop
+- Pulls last 20 trades from Firestore for pattern analysis across history
+- On error: returns CLEAR (not an alert) — better to miss a fraud signal
+  than generate false positives that crash the pipeline
+- HIGH severity alerts set investigation_open=true which Regulator reads
+  to decide whether to activate Circuit Breaker
+
+**Notes for team**:
+- The REASONING_INCONSISTENCY check is what you demonstrate in the demo
+  at timestamp 1:30 — Trading Agent claims defensive positioning but
+  increases volatile exposure
+- fraud_investigation_open in state is read by Regulator Agent as a
+  circuit breaker trigger condition
+
 ## Step 7 — agents/risk_agent.py
 **Date**: 2026-05-20
 **Files created**: `backend/agents/risk_agent.py`
