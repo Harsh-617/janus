@@ -1,3 +1,32 @@
+## Step 10 — agents/judge_agent.py
+**Date**: 2026-05-20
+**Files created**: `backend/agents/judge_agent.py`
+**What was built**:
+LLM Judge Agent — the core Arize integration. Scores every decision cycle
+across 5 dimensions (correctness, safety, hallucination_risk, compliance,
+explainability). Scores are set as Phoenix span attributes so they appear
+as evaluations in the Phoenix UI. Flags learning events when score < 6.0.
+Generates recommended constraints that feed the Janus Loop.
+
+**Key decisions**:
+- Uses GEMINI_MODEL_JUDGE (separate config slot) so we can upgrade just 
+  the judge to a more capable model independently
+- overall_score calculated by the judge itself; we also recalculate as 
+  fallback average if the judge omits it
+- learning_event threshold is 6.0 overall OR any single dimension < 4 — 
+  catches cases where one dimension is catastrophically bad
+- Span attributes use judge.* prefix — these are what Phoenix reads as 
+  evaluation scores in the UI
+- Recommended_constraint output feeds directly into Janus Loop Step 17
+
+**Notes for team**:
+- This agent sees the COMPLETE pipeline output — all 4 agents' inputs 
+  and outputs. It needs the full picture to score fairly.
+- The hallucination_risk score is the key Arize demo moment — a low score 
+  here is what triggers the learning event and Janus Loop response
+- Step 12 (evaluations.py) will read judge_scores from state and post 
+  them to Phoenix Evaluations API as a separate record
+
 ## Step 9 — agents/regulator_agent.py
 **Date**: 2026-05-20
 **Files created**: `backend/agents/regulator_agent.py`
