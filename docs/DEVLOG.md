@@ -1,3 +1,29 @@
+## Step 9 — agents/regulator_agent.py
+**Date**: 2026-05-20
+**Files created**: `backend/agents/regulator_agent.py`
+**What was built**:
+Regulator Agent LangGraph node. Final gatekeeper that synthesizes Risk
+and Fraud signals into a definitive EXECUTE / HOLD / HALT decision.
+Generates unique audit_trail_id per decision. Controls circuit breaker
+activation which halts the entire pipeline.
+
+**Key decisions**:
+- Temperature 0.2 — matches Risk Agent; final decisions must be
+  consistent and auditable
+- audit_trail_id generated here (not by Trading Agent) because the
+  Regulator owns the compliance record
+- pipeline_halted written to state so LangGraph can short-circuit
+  remaining nodes when HALT is issued
+- Errors default to HOLD (not HALT, not EXECUTE) — neutral safe state
+- trades_to_execute in regulator output is the canonical list of what
+  actually runs — downstream execution reads this, not the original proposal
+
+**Notes for team**:
+- circuit_breaker_activated in regulator_decision is what the frontend
+  Circuit Breaker panel reads to show the red alert state
+- The demo circuit breaker scenario: Fraud HIGH alert + VaR breach →
+  Regulator issues HALT with 15 min cooldown
+
 ## Step 8 — agents/fraud_agent.py
 **Date**: 2026-05-20
 **Files created**: `backend/agents/fraud_agent.py`
