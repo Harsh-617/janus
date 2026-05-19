@@ -1,3 +1,28 @@
+## Step 5 — main.py
+**Date**: 2026-05-20
+**Files created**: `backend/main.py`
+**What was built**:
+FastAPI application entry point. Lifespan handler initializes tracing 
+and Firestore on startup. CORS configured for local dev and Vercel. 
+All API routers imported with graceful fallback if not yet created. 
+Health check endpoint at GET /health.
+
+**Key decisions**:
+- Lifespan pattern (not deprecated on_event) for startup/shutdown
+- Router imports wrapped in try/except so server boots at every 
+  phase of development even when API files don't exist yet
+- CORS allows localhost:3000 (Next.js dev) and *.vercel.app (production)
+
+**How to run the server**:
+  cd backend
+  source venv/bin/activate   (Mac/Linux)
+  venv\Scripts\activate      (Windows)
+  python main.py
+
+**Verify it works**:
+  curl http://localhost:8000/health
+  Should return: {"status": "ok", "service": "janus-backend", "version": "1.0.0"}
+
 ## Step 4 — graph/state.py
 **Date**: 2026-05-20
 **Files created**: `backend/graph/state.py`
