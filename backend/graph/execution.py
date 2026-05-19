@@ -1,0 +1,98 @@
+from graph.state import JanusState
+from db.firestore_client import (
+    save_trade, save_cycle, save_portfolio,
+    get_portfolio, COL_TRADES,
+)
+import logging
+import uuid
+from datetime import datetime, timezone
+
+
+async def execute_cycle_results(state: JanusState) -> dict:
+    """
+    After the graph completes, persist results to Firestore.
+    Returns a summary dict for the SSE stream.
+    """
+    cycle_id = state["cycle_id"]
+    regulator_decision = state.get("regulator_decision", {})
+    judge_scores = state.get("judge_scores", {})
+    final_decision = regulator_decision.get("final_decision", "HOLD")
+
+    trades_executed = []
+
+    if final_decision == "EXECUTE":
+        trades_to_run = regulator_decision.get("trades_to_execute", [])
+
+        for trade in trades_to_run:
+            trade_id = (
+                f"trade_{datetime.now(timezone.utc).strftime('%Y%m%d')}"
+                f"_{str(uuid.uuid4())[:8]}"
+            )
+            trade_record = {
+                "trade_id": trade_id,
+                "cycle_id": cycle_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ticker": trade.get("ticker", "UNKNOWN"),
+                "direction": trade.get("direction", "UNKNOWN"),
+                "quantity": trade.get("quantity", 0),
+                "rationale": trade.get("rationale", ""),
+                "confidence": trade.get("confidence", 0.0),
+                "proposed_by": "trading_agent",
+                "judge_score": judge_scores.get("overall_score", 0.0),
+                "phoenix_trace_id": state.get("phoenix_trace_id", ""),
+                "executed": True,
+            }
+            await save_trade(trade_id, trade_record)
+            trades_executed.append(trade_record)
+            logging.info(
+                f"[Execution] Trade {trade_id}: {trade.get('direction')} "
+                f"{trade.get('quantity')} {trade.get('ticker')}"
+            )
+
+    cycle_record = {
+        "cycle_id": cycle_id,
+        "cycle_number": state["cycle_number"],
+        "timestamp": state["timestamp"],
+        "final_decision": final_decision,
+        "circuit_breaker_activated": regulator_decision.get("circuit_breaker_activated", False),
+        "trades_executed_count": len(trades_executed),
+        "judge_overall_score": judge_scores.get("overall_score", 0.0),
+        "judge_correctness": judge_scores.get("correctness", 0),
+        "judge_safety": judge_scores.get("safety", 0),
+        "judge_hallucination_risk": judge_scores.get("hallucination_risk", 0),
+        "judge_compliance": judge_scores.get("compliance", 0),
+        "judge_explainability": judge_scores.get("explainability", 0),
+        "learning_event": judge_scores.get("learning_event", False),
+        "critical_finding": judge_scores.get("critical_finding", ""),
+        "recommended_constraint": judge_scores.get("recommended_constraint", ""),
+        "fraud_alerts_count": len(state.get("fraud_alerts", [])),
+        "phoenix_trace_id": state.get("phoenix_trace_id", ""),
+        "market_shock_active": state.get("market_shock_active", False),
+    }
+    await save_cycle(cycle_id, cycle_record)
+
+    portfolio = await get_portfolio("janus_main")
+    if portfolio:
+        portfolio["cycle_count"] = portfolio.get("cycle_count", 0) + 1
+        portfolio["circuit_breaker_active"] = regulator_decision.get(
+            "circuit_breaker_activated", False
+        )
+        if final_decision == "EXECUTE" and trades_executed:
+            portfolio["trade_count"] = portfolio.get("trade_count", 0) + len(trades_executed)
+        await save_portfolio("janus_main", portfolio)
+
+    summary = {
+        "cycle_id": cycle_id,
+        "final_decision": final_decision,
+        "trades_executed": len(trades_executed),
+        "judge_score": judge_scores.get("overall_score", 0.0),
+        "learning_event": judge_scores.get("learning_event", False),
+        "circuit_breaker": regulator_decision.get("circuit_breaker_activated", False),
+        "critical_finding": judge_scores.get("critical_finding", ""),
+    }
+
+    logging.info(
+        f"[Execution] Cycle {cycle_id} persisted — "
+        f"{len(trades_executed)} trades executed"
+    )
+    return summary

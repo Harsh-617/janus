@@ -1,3 +1,30 @@
+## Step 11 — graph/janus_graph.py + graph/execution.py
+**Date**: 2026-05-20
+**Files created**: 
+- `backend/graph/janus_graph.py`
+- `backend/graph/execution.py`
+**What was built**:
+LangGraph StateGraph wiring all 5 agents in correct pipeline order with
+conditional routing after Regulator (skip Judge if pipeline halted).
+Execution module persists cycle results, trade records, and portfolio 
+state to Firestore after each cycle completes.
+
+**Key decisions**:
+- compiled_graph at module level — compiled once, reused for every cycle
+- Conditional edge after Regulator: HALT skips Judge entirely (no point 
+  scoring a halted cycle) and goes straight to END
+- root_span ended in finally block — Phoenix trace closes even if graph 
+  throws an exception mid-cycle
+- execution.py is separate from the graph — graph handles reasoning, 
+  execution handles persistence. Clean separation of concerns.
+- Portfolio cycle_count incremented on every cycle regardless of outcome; 
+  trade_count only incremented on EXECUTE
+
+**Notes for team**:
+- run_decision_cycle() is what the cycle scheduler calls every N seconds
+- execute_cycle_results() is called AFTER run_decision_cycle() returns
+- The SSE stream will emit the summary dict from execute_cycle_results()
+
 ## Step 10 — agents/judge_agent.py
 **Date**: 2026-05-20
 **Files created**: `backend/agents/judge_agent.py`
