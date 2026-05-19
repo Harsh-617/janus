@@ -1,3 +1,25 @@
+## Step 7 — agents/risk_agent.py
+**Date**: 2026-05-20
+**Files created**: `backend/agents/risk_agent.py`
+**What was built**:
+Risk Agent LangGraph node. Evaluates every trade proposal against hard
+veto rules and VaR thresholds. Returns APPROVE / MODIFY / VETO decision
+with full risk report into JanusState.
+
+**Key decisions**:
+- Temperature 0.3 (vs Trading Agent's 0.7) — risk decisions should be
+  deterministic and conservative, not creative
+- Fails safe: any error defaults to VETO, never to APPROVE
+- Skips evaluation entirely if no trades proposed (avoids wasted LLM call)
+- Simplified VaR calculation via asset class volatility estimates baked
+  into prompt — good enough for demo, clear to judges
+- Vetoed trades stored in state so Fraud Agent and Regulator can see
+  what was rejected and why
+
+**Notes for team**:
+- VaR threshold is 5% daily — this will trigger on crypto positions
+  during market shock scenarios, which is intentional for the demo
+
 ## Step 6 — agents/trading_agent.py
 **Date**: 2026-05-20
 **Files created**: `backend/agents/trading_agent.py`
