@@ -1,3 +1,27 @@
+## Step 6 — agents/trading_agent.py
+**Date**: 2026-05-20
+**Files created**: `backend/agents/trading_agent.py`
+**What was built**:
+Trading Agent LangGraph node. Receives portfolio state, market prices,
+news headlines, and active constraints. Calls Gemini via LangChain to
+propose trades. Returns structured trade proposals into JanusState.
+
+**Key decisions**:
+- Vertex AI ChatVertexAI client initialized at module level (not per call)
+  for connection reuse
+- JSON parsing strips markdown fences defensively since LLMs sometimes
+  wrap JSON in ```json blocks
+- Trace span captures action type, confidence, trade count for Phoenix
+  filtering
+- Constraint injection via user message (not system prompt) so constraints
+  show up clearly in Phoenix traces
+
+**Notes for team**:
+- This is a LangGraph node function — it receives full JanusState and
+  returns a partial dict of only the keys it updates
+- Gemini temperature 0.7 — high enough for varied reasoning, low enough
+  for consistent JSON output
+
 ## Step 5 — main.py
 **Date**: 2026-05-20
 **Files created**: `backend/main.py`
