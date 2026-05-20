@@ -108,10 +108,16 @@ async def initialize_portfolio() -> None:
 
     seed = {
         "portfolio_id": settings.FIRESTORE_PORTFOLIO_ID,
-        "cash": settings.INITIAL_CAPITAL,
-        "total_value": settings.INITIAL_CAPITAL,
+        "cash": 245000.0,
+        "total_value": 1087500.0,
         "pnl_pct": 0.0,
-        "positions": {},
+        "positions": {
+            "AAPL": {"shares": 100, "avg_cost": 180.50, "current_price": 195.20, "sector": "Technology"},
+            "GLD": {"shares": 50, "avg_cost": 220.00, "current_price": 235.10, "sector": "Commodities"},
+            "BTC-USD": {"shares": 0.5, "avg_cost": 65000.00, "current_price": 72000.00, "sector": "Crypto"},
+            "TLT": {"shares": 200, "avg_cost": 95.00, "current_price": 92.50, "sector": "Bonds"},
+            "XOM": {"shares": 75, "avg_cost": 110.00, "current_price": 118.30, "sector": "Energy"},
+        },
         "trade_count": 0,
         "cycle_count": 0,
         "circuit_breaker_active": False,

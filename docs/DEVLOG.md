@@ -1,3 +1,25 @@
+## Fix — Seed portfolio positions + slow cycle interval
+**Date**: 2026-05-20
+**Files modified**: backend/db/firestore_client.py, backend/config.py
+**What changed**:
+- Portfolio seed now includes 5 starting positions (AAPL, GLD, BTC-USD, 
+  TLT, XOM) with realistic prices. Empty portfolio caused Regulator to 
+  always HOLD since there was nothing to trade.
+- Cycle interval increased from 30s to 60s to reduce Groq 429 rate 
+  limiting errors.
+**Action required**:
+  After restarting server, call POST /api/portfolio/reset to apply 
+  the new seed data to the existing Firestore portfolio.
+
+## Fix — Groq multi-key rotation
+**Date**: 2026-05-20
+**Files modified**: backend/services/gemini_client.py, backend/config.py
+**What changed**:
+Added round-robin rotation across multiple Groq API keys. Each LLM 
+call uses the next key in the cycle, multiplying effective rate limits 
+by the number of keys. Falls back to single GROQ_API_KEY if 
+GROQ_API_KEYS is not set.
+
 ## Step 15 — api/market_shock.py + api/janus_loop.py
 **Date**: 2026-05-20
 **Files created**:

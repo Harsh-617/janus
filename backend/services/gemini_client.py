@@ -1,15 +1,21 @@
 import groq
 import logging
+import itertools
 from config import settings
 
-_client = None
+_clients = None
+_client_cycle = None
 
-def get_client():
-    global _client
-    if _client is None:
-        _client = groq.AsyncGroq(api_key=settings.GROQ_API_KEY)
-        logging.info("[LLMClient] Initialized with Groq")
-    return _client
+def get_clients():
+    global _clients, _client_cycle
+    if _clients is None:
+        keys = [k.strip() for k in settings.GROQ_API_KEYS.split(",") if k.strip()]
+        if not keys:
+            keys = [settings.GROQ_API_KEY]
+        _clients = [groq.AsyncGroq(api_key=k) for k in keys]
+        _client_cycle = itertools.cycle(_clients)
+        logging.info(f"[LLMClient] Initialized with {len(_clients)} Groq key(s)")
+    return _client_cycle
 
 async def generate(
     system_prompt: str,
@@ -17,7 +23,7 @@ async def generate(
     model: str = None,
     temperature: float = 0.7,
 ) -> str:
-    client = get_client()
+    client = next(get_clients())
     if model is None:
         model = settings.GEMINI_MODEL_FAST
     response = await client.chat.completions.create(
