@@ -1,3 +1,26 @@
+## Step 13 — api/portfolio.py + api/trades.py + api/cycles.py
+**Date**: 2026-05-20
+**Files created**:
+- `backend/api/portfolio.py`
+- `backend/api/trades.py`  
+- `backend/api/cycles.py`
+**What was built**:
+Three FastAPI routers exposing portfolio state, trade history, and cycle
+history to the frontend. Portfolio reset endpoint for demo resets between
+runs. Pagination via limit query param on trades and cycles.
+
+**Key decisions**:
+- Portfolio reset endpoint is demo-critical: lets us wipe state and show 
+  a clean run for the video recording
+- All endpoints are read-only except portfolio reset — the agents own 
+  all writes, the API just reads
+- Query param validation (ge=1, le=200) prevents runaway Firestore reads
+
+**Verify after running server**:
+  GET http://localhost:8000/api/portfolio  → portfolio state
+  GET http://localhost:8000/api/trades     → empty list initially
+  GET http://localhost:8000/api/cycles     → empty list initially
+
 ## Step 12 — observability/evaluations.py
 **Date**: 2026-05-20
 **Files created**: `backend/observability/evaluations.py`
