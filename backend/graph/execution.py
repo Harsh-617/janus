@@ -95,4 +95,10 @@ async def execute_cycle_results(state: JanusState) -> dict:
         f"[Execution] Cycle {cycle_id} persisted — "
         f"{len(trades_executed)} trades executed"
     )
+
+    # Post evaluations to Phoenix (non-blocking — failures are logged not raised)
+    from observability.evaluations import post_cycle_evaluations, post_learning_event_to_dataset
+    await post_cycle_evaluations(state)
+    await post_learning_event_to_dataset(state)
+
     return summary

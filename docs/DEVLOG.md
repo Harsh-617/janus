@@ -1,3 +1,32 @@
+## Step 12 — observability/evaluations.py
+**Date**: 2026-05-20
+**Files created**: `backend/observability/evaluations.py`
+**What was built**:
+Phoenix Evaluations API integration. Posts all 5 judge dimension scores
+plus an overall score to Phoenix as formal evaluation records linked to
+each cycle's trace. Also adds learning events to the janus_learning_events
+Phoenix dataset for the Janus Loop to query.
+
+**Key decisions**:
+- Scores normalized to 0.0-1.0 for Phoenix (raw scores are 1-10)
+- pass/fail label threshold at 0.6 (score >= 6/10)
+- Both functions are fully resilient — ConnectError and all exceptions 
+  are caught and logged as warnings, never crash the pipeline
+- httpx AsyncClient used (not requests) for async compatibility with FastAPI
+- Dataset post only fires if learning_event=True — avoids flooding the 
+  dataset with every cycle
+- subject_type="trace" links evaluations to the Phoenix trace by ID
+
+**How this appears in Phoenix UI**:
+- Open any cycle trace in Phoenix
+- The Evaluations tab shows all 6 scores (5 dimensions + overall)
+- pass/fail labels make it easy to filter failing cycles
+- janus_learning_events dataset grows automatically with every bad cycle
+
+**Notes for team**:
+- Call both functions in execute_cycle_results() after saving to Firestore
+- If Phoenix is self-hosted on Cloud Run, update PHOENIX_BASE_URL in .env
+
 ## Step 11 — graph/janus_graph.py + graph/execution.py
 **Date**: 2026-05-20
 **Files created**: 
