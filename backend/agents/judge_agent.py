@@ -4,13 +4,10 @@ import re
 import uuid
 from datetime import datetime, timezone
 
-from langchain_google_vertexai import ChatVertexAI
-
 from config import settings
 from graph.state import JanusState
 from observability.tracing import trace_agent_call
-
-model = ChatVertexAI(model_name=settings.GEMINI_MODEL_JUDGE, temperature=0.3)
+from services.gemini_client import generate
 
 JUDGE_AGENT_PROMPT = """You are the LLM Judge for Janus — an impartial meta-evaluator. You \
 review the complete decision pipeline for each cycle and score the quality \
@@ -111,15 +108,12 @@ Market Shock Active: {state["market_shock_active"]}
 
 Score this complete decision cycle across all 5 dimensions.
 """
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            messages = [
-                SystemMessage(content=JUDGE_AGENT_PROMPT),
-                HumanMessage(content=user_message),
-            ]
-
-            response = await model.ainvoke(messages)
-            raw_output = response.content
+            raw_output = await generate(
+                system_prompt=JUDGE_AGENT_PROMPT,
+                user_message=user_message,
+                model=settings.GEMINI_MODEL_JUDGE,
+                temperature=0.3,
+            )
 
             clean = raw_output.strip()
             if clean.startswith("```"):

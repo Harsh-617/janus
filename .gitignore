@@ -1,16 +1,67 @@
-echo "# Python
-backend/venv/
-backend/__pycache__/
-backend/*.pyc
-backend/.env
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.pyc
 
-# Node
+# Virtual environments
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables
+backend/.env
+.env
+
+# Google Cloud credentials
+backend/service-account.json
+service-account.json
+*.json.key
+
+# LangGraph / LangChain cache
+.langchain.db
+langchain_cache/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Node / Next.js
 frontend/node_modules/
 frontend/.next/
+frontend/out/
 frontend/.env.local
+frontend/.env.production
+frontend/.vercel/
+.npm/
 
-# OS
-.DS_Store
-Thumbs.db" > .gitignore
-
-backend/service-account.json
+# Misc
+*.tmp
+*.bak
+*.orig

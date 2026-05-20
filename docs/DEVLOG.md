@@ -1,3 +1,94 @@
+## Fix — Switch to Groq API (free tier)
+**Date**: 2026-05-20
+**Files modified**: backend/services/gemini_client.py, backend/config.py
+**What changed**:
+Switched from google-genai Vertex AI SDK to Groq API (free tier).
+Vertex AI publisher models return 404, generativelanguage.googleapis.com
+has no quota. Groq is free, no credit card required, fast inference.
+Using llama-3.1-8b-instant for agents (speed) and llama-3.3-70b-versatile
+for the Judge (quality). Variable names kept as GEMINI_MODEL_* to avoid
+touching all 5 agent files.
+
+## Fix — Switch to google-genai SDK with Vertex AI mode
+**Date**: 2026-05-20
+**Files created**: backend/services/gemini_client.py
+**Files modified**: All 5 backend/agents/*.py, backend/config.py
+**What changed**:
+Replaced LangChain ChatVertexAI and ChatGoogleGenerativeAI wrappers with
+the google-genai SDK using vertexai=True mode. This uses the service 
+account credentials (GOOGLE_APPLICATION_CREDENTIALS) and routes through
+aiplatform.googleapis.com which bills to the GCP project credits.
+The generativelanguage.googleapis.com API key approach was permanently 
+stuck on free-tier quota (limit: 0) regardless of billing status.
+
+## Fix — Switch to ChatGoogleGenerativeAI with GCP-linked API key
+**Date**: 2026-05-20
+**Files modified**: All 5 backend/agents/*.py, backend/config.py
+**What changed**:
+ChatVertexAI returns 404 regardless of model name — the LangChain 
+Vertex AI wrapper is deprecated and broken for new models. Switched 
+to ChatGoogleGenerativeAI with a Google AI Studio API key linked to 
+the janus-496816 GCP project. This uses GCP billing credits instead 
+of the zero-quota free tier.
+
+## Fix — Revert to Vertex AI with gemini-2.0-flash-001
+**Date**: 2026-05-20
+**Files modified**: All 5 backend/agents/*.py, backend/config.py
+**What changed**:
+Reverted from ChatGoogleGenerativeAI back to ChatVertexAI.
+Google AI Studio free tier had limit:0 quota. Using Vertex AI with
+gemini-2.0-flash-001 which is confirmed available in the project's
+Model Garden. Cost from $25 GCP credits will be negligible for demo.
+
+## Fix — .gitignore and .env.example cleanup
+**Date**: 2026-05-20
+**Files modified**:
+- `.gitignore` — comprehensive ignore rules added for __pycache__, 
+  venv, .env, service-account.json, Next.js build artifacts, logs
+- `backend/.env.example` — updated to reflect all current Settings 
+  fields including GOOGLE_API_KEY
+
+## Fix — Migrate ChatVertexAI → ChatGoogleGenerativeAI
+**Date**: 2026-05-20
+**Files modified**:
+- All 5 backend/agents/*.py files
+- backend/config.py
+**What changed**:
+Switched all agents from langchain-google-vertexai (ChatVertexAI) to
+langchain-google-genai (ChatGoogleGenerativeAI). Vertex AI publisher 
+model endpoint returned 404 for gemini-2.0-flash-001. Direct Google 
+Generative AI API is simpler — uses GOOGLE_API_KEY instead of Vertex AI 
+service account credentials.
+**Action required**:
+Set GOOGLE_API_KEY in backend/.env with a real key from 
+https://aistudio.google.com/app/apikey
+
+## Step 14 — services/cycle_scheduler.py + api/stream.py
+**Date**: 2026-05-20
+**Files created**:
+- `backend/services/cycle_scheduler.py`
+- `backend/api/stream.py`
+**Files modified**: `backend/main.py`
+**What was built**:
+Cycle scheduler that runs decision cycles every N seconds and broadcasts
+events to an asyncio Queue. SSE endpoint at GET /api/stream that streams
+all events to the frontend in real time. Manual cycle trigger at 
+POST /api/stream/run-once for demo control.
+
+**Key decisions**:
+- Global asyncio.Queue (maxsize=500) as the event bus — simple, no Redis needed
+- Queue drops oldest event when full (LRU-style) — never blocks agents
+- Keepalive ping every 15s prevents SSE connection timeout through proxies
+- Scheduler auto-starts on app startup — system is live immediately
+- run-once endpoint lets us manually trigger cycles during the demo 
+  without waiting for the timer
+
+**Demo control flow**:
+  POST /api/stream/run-once     → trigger one cycle immediately
+  POST /api/stream/start        → start auto-cycling
+  POST /api/stream/stop         → pause cycling
+  GET  /api/stream/status       → check if running
+
 ## Step 13 — api/portfolio.py + api/trades.py + api/cycles.py
 **Date**: 2026-05-20
 **Files created**:

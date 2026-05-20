@@ -8,8 +8,10 @@ class Settings(BaseSettings):
     ALPHA_VANTAGE_API_KEY: str
     PHOENIX_COLLECTOR_ENDPOINT: str = "http://localhost:6006/v1/traces"
     PHOENIX_BASE_URL: str = "http://localhost:6006"
-    GEMINI_MODEL_FAST: str = "gemini-2.0-flash-001"
-    GEMINI_MODEL_JUDGE: str = "gemini-2.0-flash-001"
+    GOOGLE_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+    GEMINI_MODEL_FAST: str = "llama-3.1-8b-instant"
+    GEMINI_MODEL_JUDGE: str = "llama-3.3-70b-versatile"
     FIRESTORE_PORTFOLIO_ID: str = "janus_main"
     FIRESTORE_DATABASE: str = "(default)"
     AGENT_CYCLE_INTERVAL_SECONDS: int = 30

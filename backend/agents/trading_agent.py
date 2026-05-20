@@ -7,15 +7,7 @@ import logging
 import re
 from datetime import datetime, timezone
 
-from langchain_google_vertexai import ChatVertexAI
-
-model = ChatVertexAI(
-    model_name=settings.GEMINI_MODEL_FAST,
-    project=settings.GOOGLE_CLOUD_PROJECT,
-    location=settings.VERTEX_AI_LOCATION,
-    temperature=0.7,
-    max_tokens=2048,
-)
+from services.gemini_client import generate
 
 TRADING_AGENT_PROMPT = """You are the Trading Agent for Janus, an autonomous financial intelligence
 system. You act as a quant-driven hedge fund manager.
@@ -83,14 +75,11 @@ MARKET SHOCK ACTIVE: {state["market_shock_active"]}
 Analyze the above and propose your trades for this cycle.
 """
 
-            from langchain_core.messages import SystemMessage, HumanMessage
-            messages = [
-                SystemMessage(content=TRADING_AGENT_PROMPT),
-                HumanMessage(content=user_message),
-            ]
-
-            response = await model.ainvoke(messages)
-            raw_output = response.content
+            raw_output = await generate(
+                system_prompt=TRADING_AGENT_PROMPT,
+                user_message=user_message,
+                temperature=0.7,
+            )
 
             clean = raw_output.strip()
             if clean.startswith("```"):

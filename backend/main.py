@@ -17,6 +17,10 @@ async def lifespan(app: FastAPI):
     logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
     setup_tracing()
     await initialize_portfolio()
+    import asyncio
+    from services.cycle_scheduler import start_scheduler
+    asyncio.create_task(start_scheduler())
+    logging.info("Cycle scheduler started")
     logger.info("Janus system initialized and ready")
     yield
     logger.info("Janus system shutting down")

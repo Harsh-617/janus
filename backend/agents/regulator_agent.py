@@ -4,18 +4,10 @@ import re
 import uuid
 from datetime import datetime, timezone
 
-from langchain_google_vertexai import ChatVertexAI
-
 from config import settings
 from graph.state import JanusState
 from observability.tracing import trace_agent_call
-
-model = ChatVertexAI(
-    model_name=settings.VERTEX_MODEL,
-    temperature=0.2,
-    project=settings.GCP_PROJECT,
-    location=settings.GCP_LOCATION,
-)
+from services.gemini_client import generate
 
 REGULATOR_AGENT_PROMPT = """You are the Regulator Agent for Janus — the final gatekeeper combining
 SEC and central bank roles. You make the definitive decision on whether
@@ -98,15 +90,11 @@ AUDIT TRAIL ID: {audit_trail_id}
 
 Make your final regulatory decision.
 """
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            messages = [
-                SystemMessage(content=REGULATOR_AGENT_PROMPT),
-                HumanMessage(content=user_message),
-            ]
-
-            response = await model.ainvoke(messages)
-            raw_output = response.content
+            raw_output = await generate(
+                system_prompt=REGULATOR_AGENT_PROMPT,
+                user_message=user_message,
+                temperature=0.2,
+            )
 
             clean = raw_output.strip()
             if clean.startswith("```"):

@@ -2,19 +2,11 @@ import json
 import logging
 import re
 
-from langchain_google_vertexai import ChatVertexAI
-
 from config import settings
 from db.firestore_client import get_trades
 from graph.state import JanusState
 from observability.tracing import trace_agent_call
-
-model = ChatVertexAI(
-    model_name=settings.gemini_model_fast,
-    temperature=0.2,
-    project=settings.gcp_project_id,
-    location=settings.gcp_location,
-)
+from services.gemini_client import generate
 
 FRAUD_AGENT_PROMPT = """You are the Fraud Intelligence Agent for Janus — a financial crimes \
 investigator. Your job is to detect suspicious patterns and reasoning \
@@ -98,15 +90,11 @@ Investigate this cycle for fraud patterns and reasoning inconsistencies.
 Pay special attention to whether the Trading Agent's thesis logically
 supports the proposed trades.
 """
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            messages = [
-                SystemMessage(content=FRAUD_AGENT_PROMPT),
-                HumanMessage(content=user_message),
-            ]
-
-            response = await model.ainvoke(messages)
-            raw_output = response.content
+            raw_output = await generate(
+                system_prompt=FRAUD_AGENT_PROMPT,
+                user_message=user_message,
+                temperature=0.2,
+            )
 
             clean = raw_output.strip()
             if clean.startswith("```"):

@@ -5,15 +5,7 @@ import json
 import logging
 import re
 
-from langchain_google_vertexai import ChatVertexAI
-
-model = ChatVertexAI(
-    model_name=settings.GEMINI_MODEL_FAST,
-    project=settings.GOOGLE_CLOUD_PROJECT,
-    location=settings.VERTEX_AI_LOCATION,
-    temperature=0.3,
-    max_tokens=2048,
-)
+from services.gemini_client import generate
 
 RISK_AGENT_PROMPT = """You are the Risk Agent for Janus — a conservative risk officer whose
 job is to protect the portfolio from excessive risk.
@@ -96,14 +88,11 @@ MARKET SHOCK ACTIVE: {state["market_shock_active"]}
 
 Evaluate the risk of these proposed trades and issue your decision.
 """
-            from langchain_core.messages import SystemMessage, HumanMessage
-            messages = [
-                SystemMessage(content=RISK_AGENT_PROMPT),
-                HumanMessage(content=user_message),
-            ]
-
-            response = await model.ainvoke(messages)
-            raw_output = response.content
+            raw_output = await generate(
+                system_prompt=RISK_AGENT_PROMPT,
+                user_message=user_message,
+                temperature=0.3,
+            )
 
             clean = raw_output.strip()
             if clean.startswith("```"):
