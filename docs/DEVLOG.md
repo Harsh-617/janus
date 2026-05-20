@@ -1,3 +1,28 @@
+## Step 15 — api/market_shock.py + api/janus_loop.py
+**Date**: 2026-05-20
+**Files created**:
+- `backend/api/market_shock.py`
+- `backend/api/janus_loop.py`
+**What was built**:
+Market shock API with 4 preset scenarios (oil shock, crypto crash, 
+fed rate hike, bank run) plus custom shock injection. Circuit breaker
+manual activate/release endpoints. Janus Loop trigger endpoint and
+status/history endpoints.
+
+**Key decisions**:
+- Preset scenarios have hardcoded price effects matching the PRD spec
+- Circuit breaker release restarts the scheduler automatically
+- janus_loop trigger calls run_janus_loop() which doesn't exist yet 
+  (Step 17) — import is inside the function so server still boots
+
+**Demo endpoints**:
+  POST /api/market-shock/preset/oil_shock    → trigger oil shock
+  POST /api/market-shock/preset/crypto_crash → trigger crypto crash
+  POST /api/market-shock/clear               → return to normal
+  POST /api/circuit-breaker/activate         → halt trading
+  POST /api/circuit-breaker/release          → resume trading
+  POST /api/janus-loop/trigger               → run self-correction
+
 ## Step 14 complete — Pipeline verified working
 **Date**: 2026-05-20
 **Status**: All 5 agents running end-to-end with Groq LLM
