@@ -1,3 +1,28 @@
+## Step 16 — agents/meta_agent.py (Janus Loop)
+**Date**: 2026-05-20
+**Files created**: `backend/agents/meta_agent.py`
+**Files modified**: `backend/services/cycle_scheduler.py`
+**What was built**:
+Janus Loop Meta Agent — reads last 20 cycles from Firestore, identifies
+failure patterns across 5 judge dimensions, generates 1-3 behavioral
+constraints and saves them to Firestore. Fires automatically every
+JANUS_LOOP_INTERVAL_CYCLES cycles (default: 10). Also triggerable
+manually via POST /api/janus-loop/trigger.
+
+**Key decisions**:
+- Requires minimum 3 cycles and at least 1 learning event to run
+- Constraints saved to Firestore are automatically picked up by agents
+  on the next cycle (cycle_scheduler fetches them via get_active_constraints)
+- temperature=0.4 — balanced between creative constraint generation
+  and consistent JSON output
+- maybe_run_janus_loop() called after every cycle in the scheduler
+
+**Demo flow**:
+- Run 10+ cycles → Janus Loop fires automatically
+- Or: POST /api/janus-loop/trigger → fires immediately
+- Check GET /api/janus-loop/history → see generated constraints
+- Next cycle logs will show constraints being applied
+
 ## Fix — Seed portfolio positions + slow cycle interval
 **Date**: 2026-05-20
 **Files modified**: backend/db/firestore_client.py, backend/config.py

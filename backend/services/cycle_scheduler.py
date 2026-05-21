@@ -115,6 +115,10 @@ async def run_single_cycle() -> dict:
         # Persist results
         summary = await execute_cycle_results(final_state)
 
+        # Trigger Janus Loop on schedule
+        from agents.meta_agent import maybe_run_janus_loop
+        await maybe_run_janus_loop(_current_cycle_number)
+
         # Broadcast cycle complete
         await broadcast_event("cycle_complete", summary)
 
