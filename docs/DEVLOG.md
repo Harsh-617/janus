@@ -1,3 +1,17 @@
+## Step 17 — Phoenix local setup
+**Date**: 2026-05-21
+**Files created**:
+- `backend/scripts/start_phoenix.py`
+- `backend/scripts/README.md`
+**What was built**:
+Local Phoenix script. Run before the backend — Phoenix listens on 
+localhost:6006 and receives all OpenTelemetry traces automatically.
+
+**Startup order**:
+1. Terminal 1: python scripts/start_phoenix.py
+2. Terminal 2: python main.py
+3. Browser: http://localhost:6006
+
 ## Step 16 — agents/meta_agent.py (Janus Loop)
 **Date**: 2026-05-20
 **Files created**: `backend/agents/meta_agent.py`

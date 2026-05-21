@@ -26,49 +26,56 @@ async def post_cycle_evaluations(state: JanusState) -> bool:
         ("explainability", judge_scores.get("explainability", 5)),
     ]
 
-    evaluations = []
-    for name, score in dimensions:
-        normalized = score / 10.0
-        evaluations.append({
-            "name": name,
-            "subject_id": trace_id,
-            "subject_type": "trace",
-            "score": normalized,
-            "label": "pass" if normalized >= 0.6 else "fail",
-            "explanation": judge_scores.get("critical_finding", ""),
+    try:
+        evals_url = f"{settings.PHOENIX_BASE_URL}/v1/span_annotations"
+
+        # Build annotations format (Phoenix local uses span_annotations)
+        annotations = []
+        for name, score in dimensions:
+            normalized = score / 10.0
+            annotations.append({
+                "span_id": trace_id,
+                "name": name,
+                "annotator_kind": "LLM",
+                "result": {
+                    "label": "pass" if normalized >= 0.6 else "fail",
+                    "score": normalized,
+                    "explanation": judge_scores.get("critical_finding", "")
+                },
+                "metadata": {
+                    "cycle_id": cycle_id,
+                    "overall_score": judge_scores.get("overall_score", 5.0),
+                    "learning_event": judge_scores.get("learning_event", False),
+                }
+            })
+
+        # Add overall
+        overall_normalized = judge_scores.get("overall_score", 5.0) / 10.0
+        annotations.append({
+            "span_id": trace_id,
+            "name": "overall",
+            "annotator_kind": "LLM",
+            "result": {
+                "label": "pass" if overall_normalized >= 0.6 else "fail",
+                "score": overall_normalized,
+                "explanation": judge_scores.get("critical_finding", "")
+            },
             "metadata": {
                 "cycle_id": cycle_id,
-                "overall_score": judge_scores.get("overall_score", 5.0),
                 "learning_event": judge_scores.get("learning_event", False),
-            },
+                "recommended_constraint": judge_scores.get("recommended_constraint", ""),
+            }
         })
 
-    evaluations.append({
-        "name": "overall",
-        "subject_id": trace_id,
-        "subject_type": "trace",
-        "score": judge_scores.get("overall_score", 5.0) / 10.0,
-        "label": "pass" if judge_scores.get("overall_score", 5.0) >= 6.0 else "fail",
-        "explanation": judge_scores.get("critical_finding", ""),
-        "metadata": {
-            "cycle_id": cycle_id,
-            "learning_event": judge_scores.get("learning_event", False),
-            "learning_event_reason": judge_scores.get("learning_event_reason", ""),
-            "recommended_constraint": judge_scores.get("recommended_constraint", ""),
-        },
-    })
-
-    try:
-        evals_url = f"{settings.PHOENIX_BASE_URL}/v1/evaluations"
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 evals_url,
-                json={"evaluations": evaluations},
+                json={"data": annotations},
                 headers={"Content-Type": "application/json"},
             )
             if response.status_code in (200, 201, 204):
                 logging.info(
-                    f"[Evaluations] Posted {len(evaluations)} evals "
+                    f"[Evaluations] Posted {len(annotations)} annotations "
                     f"for cycle {cycle_id} to Phoenix"
                 )
                 return True
@@ -127,11 +134,18 @@ async def post_learning_event_to_dataset(state: JanusState) -> bool:
     }
 
     try:
-        dataset_url = f"{settings.PHOENIX_BASE_URL}/v1/datasets/janus_learning_events/examples"
+        dataset_url = f"{settings.PHOENIX_BASE_URL}/v1/datasets"
+        payload = {
+            "name": "janus_learning_events",
+            "description": "Janus learning events for self-correction",
+            "inputs": [example["input"]],
+            "outputs": [example["output"]],
+            "metadata": [example["metadata"]],
+        }
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 dataset_url,
-                json={"examples": [example]},
+                json=payload,
                 headers={"Content-Type": "application/json"},
             )
             if response.status_code in (200, 201, 204):
