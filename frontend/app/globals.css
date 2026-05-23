@@ -81,40 +81,69 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Janus Design System */
+  --janus-gold: #c9a84c;
+  --janus-blue: #4cadce;
+  --janus-bronze: #8b6914;
+  --janus-danger: #e05252;
+  --janus-success: #52e0a0;
+  --janus-warning: #e0a052;
+  --janus-surface: #13151a;
+  --janus-background: #0a0b0d;
+  --janus-border: #1e2028;
+  --janus-text-primary: #e8e6e0;
+  --janus-text-secondary: #8a8780;
+  --janus-text-muted: #4a4845;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Janus Dark Theme - Primary Colors */
+  --background: oklch(0.04 0 0); /* #0A0B0D */
+  --foreground: oklch(0.92 0.005 85); /* #E8E6E0 */
+  --card: oklch(0.08 0.005 260); /* #13151A */
+  --card-foreground: oklch(0.92 0.005 85);
+  --popover: oklch(0.08 0.005 260);
+  --popover-foreground: oklch(0.92 0.005 85);
+  --primary: oklch(0.7 0.1 85); /* #C9A84C gold */
+  --primary-foreground: oklch(0.04 0 0);
+  --secondary: oklch(0.12 0.01 260);
+  --secondary-foreground: oklch(0.92 0.005 85);
+  --muted: oklch(0.12 0.01 260);
+  --muted-foreground: oklch(0.55 0.005 85); /* #8A8780 */
+  --accent: oklch(0.12 0.01 260);
+  --accent-foreground: oklch(0.92 0.005 85);
+  --destructive: oklch(0.6 0.15 25); /* #E05252 */
+  --border: oklch(0.13 0.005 260); /* #1E2028 */
+  --input: oklch(0.13 0.005 260);
+  --ring: oklch(0.7 0.1 85);
+  --chart-1: oklch(0.7 0.1 85); /* gold */
+  --chart-2: oklch(0.7 0.1 200); /* blue */
+  --chart-3: oklch(0.6 0.15 25); /* danger */
+  --chart-4: oklch(0.75 0.12 160); /* success */
+  --chart-5: oklch(0.5 0.08 85); /* bronze */
+  --sidebar: oklch(0.08 0.005 260);
+  --sidebar-foreground: oklch(0.92 0.005 85);
+  --sidebar-primary: oklch(0.7 0.1 85);
+  --sidebar-primary-foreground: oklch(0.04 0 0);
+  --sidebar-accent: oklch(0.12 0.01 260);
+  --sidebar-accent-foreground: oklch(0.92 0.005 85);
+  --sidebar-border: oklch(0.13 0.005 260);
+  --sidebar-ring: oklch(0.7 0.1 85);
+
+  /* Janus Design System */
+  --janus-gold: #c9a84c;
+  --janus-blue: #4cadce;
+  --janus-bronze: #8b6914;
+  --janus-danger: #e05252;
+  --janus-success: #52e0a0;
+  --janus-warning: #e0a052;
+  --janus-surface: #13151a;
+  --janus-background: #0a0b0d;
+  --janus-border: #1e2028;
+  --janus-text-primary: #e8e6e0;
+  --janus-text-secondary: #8a8780;
+  --janus-text-muted: #4a4845;
 }
 
 @layer base {

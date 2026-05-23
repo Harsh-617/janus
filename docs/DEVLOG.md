@@ -1,3 +1,40 @@
+## Step 18 — Frontend foundation (types, API, hooks, layout)
+**Date**: 2026-05-23
+**Files created**:
+- `frontend/lib/types.ts` — All TypeScript interfaces for API contracts
+- `frontend/lib/constants.ts` — Agent colors, decision colors, thresholds
+- `frontend/lib/api.ts` — Typed fetch functions for all backend endpoints
+- `frontend/hooks/use-portfolio.ts` — Portfolio polling hook (10s interval)
+- `frontend/hooks/use-cycles.ts` — Cycles polling hook (30s interval)
+- `frontend/hooks/use-agent-stream.ts` — SSE stream hook with auto-reconnect
+- `frontend/components/layout/sidebar.tsx` — Navigation sidebar with health check
+- `frontend/components/layout/topbar.tsx` — Portfolio stats + system controls
+- `frontend/components/layout/layout-wrapper.tsx` — Main layout composition
+- `frontend/components/shared/live-indicator.tsx` — Pulsing status dot
+- `frontend/components/shared/score-badge.tsx` — Judge score badge with color coding
+- `frontend/components/shared/status-indicator.tsx` — Decision status badge
+**Files modified**:
+- `frontend/app/layout.tsx` — Added JetBrains Mono font, dark mode, Janus branding
+- `frontend/app/globals.css` — Extended with Janus design system CSS variables
+
+**What was built**:
+Complete frontend foundation implementing the Janus design system (Roman gold #C9A84C for historical data, ice blue #4CADCE for live data, near-black #0A0B0D background). All TypeScript types match backend API contracts. Custom hooks handle polling and SSE streaming with automatic reconnection. Layout system with sidebar navigation, topbar showing portfolio value/P&L/cycle count, and system controls (Run Cycle button, Circuit Breaker toggle). Shared components for live indicators, score badges, and status badges follow the design system color palette.
+
+**Key decisions**:
+- SSE hook maintains last 50 events, tracks active agents, auto-reconnects on disconnect
+- Portfolio and cycles hooks use polling (10s and 30s) instead of SSE for simpler state management
+- Dark mode forced via className="dark" on html tag — no light mode toggle needed
+- Sidebar shows backend health status via /health endpoint polling every 30s
+- All colors use CSS variables (--janus-*) for consistency and easy theming
+- Score badges use thresholds: >=6 green (pass), >=4 amber (warn), <4 red (fail)
+- Layout wrapper is client component that composes sidebar + topbar + scrollable content area
+
+**Notes for team**:
+- Pages (Arena, Agents, Janus Loop, Observability, Audit) will use LayoutWrapper to get consistent chrome
+- SSE events array is newest-first for easy display in activity feeds
+- Circuit breaker toggle calls POST /api/circuit-breaker/activate or /release based on current state
+- Run Cycle button is disabled when circuit breaker is active or while a cycle is running
+
 ## Step 17 — Phoenix local setup
 **Date**: 2026-05-21
 **Files created**:
