@@ -1,3 +1,35 @@
+## Step 19 — The Arena dashboard page
+**Date**: 2026-05-24
+**Files created**:
+- `frontend/components/arena/agent-status-bar.tsx` — Horizontal bar showing all 5 agents with live status
+- `frontend/components/arena/portfolio-panel.tsx` — Portfolio state with positions, allocation chart
+- `frontend/components/arena/decision-feed.tsx` — Live SSE event stream with formatted event cards
+- `frontend/components/arena/market-shock-panel.tsx` — Market shock scenarios and system controls
+**Files modified**:
+- `frontend/app/page.tsx` — Replaced placeholder with Arena dashboard
+- `frontend/package.json` — Added date-fns dependency
+
+**What was built**:
+The Arena — main dashboard page showing real-time system activity. Agent status bar displays all 5 agents with pulsing indicators when thinking, color-coded by agent type. Portfolio panel shows total value in gold, P&L with trend arrows, cash position, positions list with sector dots, and horizontal bar chart for allocation using Recharts. Decision feed displays last 20 SSE events with type-specific icons and formatting (cycle_start, agent_thinking, cycle_complete with judge scores, cycle_error, circuit_breaker_activated). Market shock panel provides 4 preset scenarios (oil shock, crypto crash, fed rate hike, bank run), active shock alert with clear button, circuit breaker controls, and cycle controls (run single cycle, start/stop auto-cycle).
+
+**Key decisions**:
+- Layout: agent status bar at top, portfolio (1/3 width) + decision feed (2/3 width) in middle, market controls at bottom
+- Agent status bar shows pulsing blue indicator when agent is actively thinking, idle state otherwise
+- Portfolio allocation chart uses horizontal Recharts BarChart with sector colors, percentage tooltips
+- Decision feed auto-formats timestamps using date-fns formatDistanceToNow ("2s ago")
+- Event cards show different content based on type: cycle_complete shows decision badge + score badge + trade count + learning event flag + critical finding (truncated to 100 chars)
+- Market shock panel polls /api/market-shock/status and /api/stream/status every 10s to stay in sync
+- All buttons show loading spinners during API calls, disabled state prevents double-clicks
+- Mobile responsive: panels stack vertically on small screens using flex-col
+
+**Notes for team**:
+- The Arena is now the default route at / — sidebar navigation works correctly
+- SSE stream auto-reconnects if connection drops, decision feed updates in real time
+- Portfolio allocation chart only renders if positions exist (avoids empty chart error)
+- Ping events filtered out of decision feed to reduce noise
+- Circuit breaker and market shock states sync between topbar and market shock panel
+- date-fns added to package.json for relative timestamp formatting
+
 ## Step 18 — Frontend foundation (types, API, hooks, layout)
 **Date**: 2026-05-23
 **Files created**:
