@@ -1,3 +1,30 @@
+## Step 20 — Agent Control Room page
+**Date**: 2026-05-24
+**Files created**:
+- `frontend/app/agents/page.tsx` — Agent Control Room page with performance metrics
+- `frontend/components/agents/agent-card.tsx` — Individual agent card with scores and constraints
+- `frontend/components/agents/radar-chart.tsx` — Radar chart for 5 judge dimensions
+**What was built**:
+Agent Control Room page displaying real-time performance metrics for all 5 agents. Each agent card shows overall score badge, radar chart of 5 judge dimensions (correctness, safety, hallucination risk, compliance, explainability), agent-specific stats (e.g., Trading Agent shows cycles/avg score/learning events; Fraud Agent shows total alerts/avg per cycle/critical count), active constraints count with hover details, and last action text. Page derives all metrics from cycles API response (no dedicated /api/agents endpoint). Bottom section displays active behavioral constraints table with columns for target agent, condition, rule, applied cycles, and status. Refresh button and last refreshed timestamp at top.
+
+**Key decisions**:
+- Derive agent stats from cycles data: avg scores calculated across all cycles, dimension scores averaged from judge_* fields
+- Agent-specific stats tailored per agent: Trading shows trades/confidence, Risk shows safety scores, Fraud shows alert counts, Regulator shows decision distribution (EXECUTE/HOLD/HALT), Judge shows its own scoring metrics
+- Radar chart inverts hallucination_risk (10 - score) so higher is better on all dimensions
+- Active constraints filtered per agent, shown in scrollable list with truncated rule text and title tooltips
+- "Thinking" badge appears when agent is active in SSE stream (pulsing animation)
+- Cards have left border in agent color (4px) for visual identity
+- Responsive grid: 1 col mobile, 2 cols tablet, 3 cols desktop
+- Loading skeleton shows grey boxes while fetching data
+- Empty state with explanatory text when no cycles exist yet
+
+**Notes for team**:
+- Page polls cycles (limit=50) and Janus Loop status on mount, manual refresh button available
+- All agent metrics derived from cycle history — no separate agent state tracking needed
+- Constraints table shows all active constraints with color-coded status badges
+- Radar chart uses Recharts PolarGrid/PolarAngleAxis with dark theme styling
+- Agent cards are self-contained components, easy to extend with additional metrics
+
 ## Step 19 — The Arena dashboard page
 **Date**: 2026-05-24
 **Files created**:
