@@ -1,3 +1,32 @@
+## Step 21 — Observability and Audit Log pages
+**Date**: 2026-05-24
+**Files created**:
+- `frontend/app/observability/page.tsx` — Observability page with Phoenix iframe and score trends
+- `frontend/app/audit/page.tsx` — Audit log page with filters and cycle history
+- `frontend/components/audit/audit-table.tsx` — Sortable audit table with expandable rows
+**What was built**:
+Observability page embeds Arize Phoenix UI in iframe (http://localhost:6006) with reachability check. Shows score trend chart with 6 lines (Overall, Correctness, Safety, Hallucination Risk, Compliance, Explainability) using Recharts LineChart for last 20 cycles. Polls cycles every 30s. Displays setup instructions if Phoenix is offline. Audit Log page provides complete cycle history with search (cycle ID or finding text), decision filter (ALL/EXECUTE/HOLD/HALT), learning events checkbox, and cycle limit dropdown (10/20/50/100). Audit table shows 9 columns: Cycle (ID + timestamp), Decision badge, Score badge, Dimensions (5 mini progress bars with hover tooltips), Trades count, Fraud alerts count, Learning event checkmark, Critical finding (truncated), Market shock flame icon. Table features sortable columns (Score, Cycle, Timestamp), zebra striping, sticky header, expandable rows showing full critical finding and recommended constraint, and Load More button.
+
+**Key decisions**:
+- Phoenix reachability checked via fetch with no-cors mode, polls every 30s
+- Score trend chart inverts hallucination_risk (10 - score) so higher is better on all dimensions
+- Chart uses thick gold line for Overall (strokeWidth=3), thinner lines for dimensions (strokeWidth=2)
+- Audit table dimension bars are 4px tall, 40px wide, colored by threshold: >=6 green, >=4 amber, <4 red
+- Sorting: click column header toggles asc/desc, default is cycle number descending (newest first)
+- Row expansion shows full critical finding, recommended constraint, circuit breaker status, Phoenix trace ID, cycle number
+- All filtering/sorting done client-side after fetching data
+- Search filters by cycle_id OR critical_finding text (case-insensitive)
+- Load More increases limit by 50 and re-fetches from API
+- Empty state shows explanatory text when no cycles exist
+
+**Notes for team**:
+- Phoenix must be running locally for iframe to work — page shows setup instructions if offline
+- Audit table uses zebra striping (alternating bg colors) for readability with dense data
+- Dimension bars use title attribute for hover tooltips (native browser tooltip)
+- Table is fully responsive with horizontal scroll on small screens
+- Expandable rows toggle on click anywhere in the row
+- Loading skeleton shows 5 grey rows while fetching data
+
 ## Step 20 — Agent Control Room page
 **Date**: 2026-05-24
 **Files created**:
