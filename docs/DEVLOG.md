@@ -1,3 +1,33 @@
+## Step 22 — Real trade execution and portfolio position updates
+**Date**: 2026-05-24
+**Files created**:
+- `backend/services/portfolio_service.py` — Portfolio position update logic
+- `backend/services/trade_service.py` — Trade history analysis utilities
+**Files modified**:
+- `backend/graph/execution.py` — Added portfolio position updates after trade execution
+**What was built**:
+Real trade execution that updates portfolio positions (shares, avg_cost, current_price) and cash balance when Regulator issues EXECUTE. Portfolio service applies each executed trade: BUY adds shares and updates weighted average cost, SELL removes shares and closes position if balance reaches zero. Handles cash constraints (adjusts BUY quantity if insufficient funds) and position constraints (caps SELL at owned shares). Updates all position prices from market_prices in state. Recalculates total_value and pnl_pct after each trade. Trade service provides summary statistics (ticker frequency, buy/sell ratio, avg confidence) for fraud detection. Price updates run at end of every cycle regardless of trades.
+
+**Key decisions**:
+- Portfolio updates are resilient: failures logged as warnings, never crash the cycle
+- BUY with insufficient cash: adjust quantity to max affordable, log adjustment
+- SELL without position or exceeding shares: cap at owned shares or skip with warning
+- Weighted average cost calculation: (existing_shares * existing_avg_cost + trade_value) / new_shares
+- Position closed when shares <= 0.001 (essentially zero after SELL)
+- All monetary values rounded to 2 decimals, share quantities to 4 decimals (for fractional BTC/ETH)
+- Prices updated for all positions at end of cycle using market_prices from state
+- New positions get sector from SECTOR_MAP (Technology, Energy, Commodities, Crypto, Bonds, etc.)
+- Portfolio service imported inside execute_cycle_results to avoid circular imports
+- Trade execution happens after save_trade but before cycle record persistence
+
+**Notes for team**:
+- Verify with: POST /api/portfolio/reset → POST /api/stream/run-once → GET /api/portfolio (cash should change)
+- Check logs for "[PortfolioService] BUY/SELL ..." messages showing trade application
+- Portfolio positions now reflect actual trading activity, not just static seed data
+- P&L percentage calculated as ((total_value - initial_capital) / initial_capital) * 100
+- Trade service get_trade_summary() available for fraud agent pattern analysis
+- No agent files modified — all changes in services and execution layers
+
 ## Step 21 — Observability and Audit Log pages
 **Date**: 2026-05-24
 **Files created**:

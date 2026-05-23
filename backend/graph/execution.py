@@ -49,6 +49,29 @@ async def execute_cycle_results(state: JanusState) -> dict:
                 f"{trade.get('quantity')} {trade.get('ticker')}"
             )
 
+    # After saving individual trades, apply them to portfolio positions
+    if final_decision == "EXECUTE" and trades_executed:
+        from services.portfolio_service import apply_trade_to_portfolio
+        from config import settings
+
+        # Get current prices from state
+        current_prices = state.get("market_prices", {})
+
+        for trade_record in trades_executed:
+            success = await apply_trade_to_portfolio(
+                portfolio_id=settings.FIRESTORE_PORTFOLIO_ID,
+                trade={
+                    "ticker": trade_record["ticker"],
+                    "direction": trade_record["direction"],
+                    "quantity": trade_record["quantity"],
+                },
+                current_prices=current_prices,
+            )
+            if not success:
+                logging.warning(
+                    f"[Execution] Failed to apply trade {trade_record['trade_id']} to portfolio"
+                )
+
     cycle_record = {
         "cycle_id": cycle_id,
         "cycle_number": state["cycle_number"],
@@ -100,5 +123,13 @@ async def execute_cycle_results(state: JanusState) -> dict:
     from observability.evaluations import post_cycle_evaluations, post_learning_event_to_dataset
     await post_cycle_evaluations(state)
     await post_learning_event_to_dataset(state)
+
+    # At the end of execute_cycle_results, always update prices
+    from services.portfolio_service import update_portfolio_prices
+    from config import settings
+
+    current_prices = state.get("market_prices", {})
+    if current_prices:
+        await update_portfolio_prices(settings.FIRESTORE_PORTFOLIO_ID, current_prices)
 
     return summary
