@@ -1,3 +1,8 @@
+## Fix: Agent scores field names and agent ID mismatch
+**Date**: 2026-05-24
+**File**: `backend/api/agents.py`
+**What was fixed**: Flat field names (judge_overall_score etc.) used instead of nested judge_scores dict. Agent ID corrected to match frontend.
+
 ## Fix: Firestore composite index error in get_active_constraints
 **Date**: 2026-05-24
 **File**: `backend/db/firestore_client.py`

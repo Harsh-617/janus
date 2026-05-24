@@ -7,7 +7,7 @@ from db.firestore_client import get_cycles, get_active_constraints, get_portfoli
 
 router = APIRouter()
 
-AGENT_IDS = ["trading_agent", "risk_agent", "fraud_agent", "regulator_agent", "llm_judge"]
+AGENT_IDS = ["trading_agent", "risk_agent", "fraud_agent", "regulator_agent", "judge_agent"]
 
 DIMENSION_KEYS = ["correctness", "safety", "hallucination_risk", "compliance", "explainability"]
 
@@ -32,16 +32,24 @@ def _last_decision_for(agent_id: str, cycles: list[dict]) -> tuple[str, str | No
     return "No data yet", None
 
 
+DIMENSION_FIELD_MAP = {
+    "correctness": "judge_correctness",
+    "safety": "judge_safety",
+    "hallucination_risk": "judge_hallucination_risk",
+    "compliance": "judge_compliance",
+    "explainability": "judge_explainability",
+}
+
+
 def _dimension_averages(cycles: list[dict]) -> dict:
     totals = {k: 0.0 for k in DIMENSION_KEYS}
     counts = {k: 0 for k in DIMENSION_KEYS}
 
     for cycle in cycles:
-        judge_scores = cycle.get("judge_scores", {})
-        if not judge_scores:
+        if not cycle.get("judge_overall_score"):
             continue
-        for key in DIMENSION_KEYS:
-            val = judge_scores.get(key)
+        for key, field in DIMENSION_FIELD_MAP.items():
+            val = cycle.get(field)
             if val is not None:
                 try:
                     totals[key] += float(val)
@@ -55,8 +63,8 @@ def _dimension_averages(cycles: list[dict]) -> dict:
 def _avg_judge_score(cycles: list[dict]) -> float:
     total, count = 0.0, 0
     for cycle in cycles:
-        val = cycle.get("judge_scores", {}).get("overall_score")
-        if val is not None:
+        val = cycle.get("judge_overall_score", 0.0)
+        if val:
             try:
                 total += float(val)
                 count += 1
