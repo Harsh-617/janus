@@ -1,3 +1,8 @@
+## Critical Fix — risk_decision scope and memory_service constraints
+**Date**: 2026-05-24
+**Files**: `backend/graph/execution.py`, `backend/services/memory_service.py`
+**What was fixed**: risk_decision variable scoping caused crash on HOLD cycles. memory_service crashed when active_constraints was a list of strings instead of dicts. Both fixed with defensive checks.
+
 ## Critical Fix — list vs dict state values in execution
 **Date**: 2026-05-24
 **File**: `backend/graph/execution.py`

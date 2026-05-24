@@ -24,14 +24,13 @@ async def execute_cycle_results(state: JanusState) -> dict:
     cycle_id = state["cycle_id"]
     regulator_decision = get_state_value(state, "regulator_decision", {})
     judge_scores = get_state_value(state, "judge_scores", {})
+    risk_decision = get_state_value(state, "risk_report", {})
     final_decision = regulator_decision.get("final_decision", "HOLD")
 
     trades_executed = []
 
     if final_decision == "EXECUTE":
         trades_to_run = regulator_decision.get("trades_to_execute", [])
-
-        risk_decision = get_state_value(state, "risk_report", {})
         market_prices = state.get("market_prices", {})
 
         for trade in trades_to_run:

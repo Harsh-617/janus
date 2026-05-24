@@ -36,7 +36,12 @@ async def update_agent_memories(
                     "behavioral_notes": [],
                 }
 
-            matching = [c for c in active_constraints if c.get("target_agent") == agent_id]
+            if not active_constraints:
+                matching = []
+            elif isinstance(active_constraints[0], dict):
+                matching = [c for c in active_constraints if c.get("target_agent") == agent_id]
+            else:
+                matching = []
             memory["active_constraints"] = [c["constraint_id"] for c in matching]
 
             avg_score = judge_scores.get("overall_score", 0.0)
