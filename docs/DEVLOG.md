@@ -1,3 +1,10 @@
+## Fix #3 — /api/constraints endpoint
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/api/routes/constraints.py` — GET /api/constraints and GET /api/constraints/{constraint_id} endpoints implemented
+- `backend/main.py` — constraints router registered
+**What was built**: Dedicated constraints endpoint returning all active constraints with count and timestamp. Single constraint lookup by ID with 404 handling.
+
 ## Fix #2 — Phoenix MCP Server integration
 **Date**: 2026-05-24
 **Files created/modified**:

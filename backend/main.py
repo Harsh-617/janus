@@ -83,6 +83,12 @@ try:
 except ImportError:
     logger.warning("api.agents router not found — skipping")
 
+try:
+    from api.routes.constraints import router as constraints_router
+    app.include_router(constraints_router, prefix="/api", tags=["constraints"])
+except ImportError:
+    logger.warning("api.routes.constraints router not found — skipping")
+
 
 @app.get("/health")
 async def health():
