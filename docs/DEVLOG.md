@@ -1,3 +1,17 @@
+## Fix: Blank target agent display in constraints table
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/app/agents/page.tsx` — safe fallback formatting for unknown target_agent values
+- `backend/db/firestore_client.py` — removed debug logging
+**What was fixed**: target_agent values not in AGENT_DISPLAY_NAMES were rendering as blank. Now formats any unknown value nicely.
+
+## Fix: Constraints cleanup endpoint and cycles_active counter
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/api/constraints.py` — cleanup endpoint to delete constraints with no target_agent
+- `backend/services/cycle_scheduler.py` — increment cycles_active per constraint per cycle, auto-expire when limit reached
+**What was fixed**: Blank target agent rows cleaned up. Applied cycles counter now increments. Constraints auto-expire.
+
 ## Fix: Missing target agent in constraints table
 **Date**: 2026-05-24
 **Files modified**:

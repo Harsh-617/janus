@@ -9,6 +9,25 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+@router.post("/constraints/cleanup")
+async def cleanup_constraints():
+    def _cleanup():
+        docs = list(db.collection(COL_CONSTRAINTS).stream())
+        deleted = 0
+        remaining = 0
+        for doc in docs:
+            data = doc.to_dict() or {}
+            ta = data.get("target_agent")
+            if ta is None or ta == "":
+                doc.reference.delete()
+                deleted += 1
+            else:
+                remaining += 1
+        return {"deleted": deleted, "remaining": remaining}
+
+    return await asyncio.to_thread(_cleanup)
+
+
 @router.get("/constraints")
 async def list_constraints():
     constraints = await get_active_constraints()

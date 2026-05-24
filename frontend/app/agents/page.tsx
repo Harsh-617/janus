@@ -363,17 +363,26 @@ export default function AgentsPage() {
                         <span
                           className="text-xs font-semibold px-2 py-1 rounded"
                           style={{
-                            backgroundColor: constraint.target_agent
-                              ? `${AGENT_COLORS[constraint.target_agent]}20`
-                              : "rgba(128,128,128,0.12)",
-                            color: constraint.target_agent
-                              ? AGENT_COLORS[constraint.target_agent]
-                              : "var(--janus-text-secondary)",
+                            backgroundColor: (() => {
+                              const ta = constraint.target_agent
+                              if (ta && AGENT_COLORS[ta]) return `${AGENT_COLORS[ta]}20`
+                              return "rgba(128,128,128,0.2)"
+                            })(),
+                            color: (() => {
+                              const ta = constraint.target_agent
+                              if (ta && AGENT_COLORS[ta]) return AGENT_COLORS[ta]
+                              return "var(--janus-text-secondary)"
+                            })(),
                           }}
                         >
-                          {constraint.target_agent
-                            ? AGENT_DISPLAY_NAMES[constraint.target_agent]
-                            : "Unknown"}
+                          {(() => {
+                            const ta = constraint.target_agent
+                            if (!ta) return "Unknown"
+                            if (AGENT_DISPLAY_NAMES[ta]) return AGENT_DISPLAY_NAMES[ta]
+                            return ta.split("_").map((w: string) =>
+                              w.charAt(0).toUpperCase() + w.slice(1)
+                            ).join(" ")
+                          })()}
                         </span>
                       </td>
                       <td className="py-3 text-xs text-[var(--janus-text-secondary)]">

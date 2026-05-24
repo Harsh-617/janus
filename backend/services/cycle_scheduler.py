@@ -4,10 +4,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator
 
+from google.cloud import firestore as _firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
+
 from config import settings
 from graph.janus_graph import run_decision_cycle
 from graph.execution import execute_cycle_results
-from db.firestore_client import get_portfolio, get_active_constraints
+from db.firestore_client import get_portfolio, get_active_constraints, db, COL_CONSTRAINTS
 from tools.market_data import get_live_market_data
 from tools.news import get_market_news
 
@@ -73,6 +76,27 @@ async def get_mock_market_data() -> tuple[dict, list]:
 
     return base_prices, base_headlines
 
+async def _increment_and_expire_constraints() -> None:
+    """Increment cycles_active on each active constraint; auto-expire when limit is reached."""
+    def _update():
+        docs = db.collection(COL_CONSTRAINTS).where(
+            filter=FieldFilter("status", "==", "ACTIVE")
+        ).stream()
+        for doc in docs:
+            data = doc.to_dict() or {}
+            if not data.get("target_agent"):
+                continue
+            cycles_active = (data.get("performance_delta") or {}).get("cycles_active", 0) or 0
+            expires_after = data.get("expires_after_cycles")
+            new_cycles_active = cycles_active + 1
+            updates = {"performance_delta.cycles_active": _firestore.Increment(1)}
+            if expires_after is not None and new_cycles_active >= expires_after:
+                updates["status"] = "EXPIRED"
+            doc.reference.update(updates)
+
+    await asyncio.to_thread(_update)
+
+
 async def run_single_cycle() -> dict:
     """Run one complete decision cycle and return the summary."""
     global _current_cycle_number
@@ -107,6 +131,7 @@ async def run_single_cycle() -> dict:
             news_headlines.insert(0, f"BREAKING: {_market_shock['description']}")
         active_constraints = await get_active_constraints()
         constraint_rules = [c.get("rule", "") for c in active_constraints if c.get("rule")]
+        await _increment_and_expire_constraints()
 
         # Broadcast agent start events
         for agent in ["trading_agent", "risk_agent", "fraud_agent",
