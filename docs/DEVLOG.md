@@ -1,3 +1,8 @@
+## Fix #7 — Trade record missing fields
+**Date**: 2026-05-24
+**File modified**: `backend/graph/execution.py`
+**What was built**: Trade records now include price (from market_data state), total_value (price × quantity), approved_by (list of approving agents), and vetoed_by (agent that vetoed or null). Matches PRD trade record schema exactly.
+
 ## Fix #6 — Janus two-face divider
 **Date**: 2026-05-24
 **Files created/modified**:

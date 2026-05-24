@@ -23,21 +23,45 @@ async def execute_cycle_results(state: JanusState) -> dict:
     if final_decision == "EXECUTE":
         trades_to_run = regulator_decision.get("trades_to_execute", [])
 
+        risk_decision = state.get("risk_report", {})
+        market_prices = state.get("market_prices", {})
+
         for trade in trades_to_run:
             trade_id = (
                 f"trade_{datetime.now(timezone.utc).strftime('%Y%m%d')}"
                 f"_{str(uuid.uuid4())[:8]}"
             )
+            ticker = trade.get("ticker", "UNKNOWN")
+            price = market_prices.get(ticker, 0.0)
+            quantity = trade.get("quantity", 0)
+
+            approved_by = []
+            if risk_decision.get("decision") in ("APPROVE", "MODIFY"):
+                approved_by.append("risk_agent")
+            if regulator_decision.get("final_decision") == "EXECUTE":
+                approved_by.append("regulator_agent")
+
+            if risk_decision.get("decision") == "VETO":
+                vetoed_by = "risk_agent"
+            elif regulator_decision.get("final_decision") == "HALT":
+                vetoed_by = "regulator_agent"
+            else:
+                vetoed_by = None
+
             trade_record = {
                 "trade_id": trade_id,
                 "cycle_id": cycle_id,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "ticker": trade.get("ticker", "UNKNOWN"),
+                "ticker": ticker,
                 "direction": trade.get("direction", "UNKNOWN"),
-                "quantity": trade.get("quantity", 0),
+                "quantity": quantity,
+                "price": price,
+                "total_value": price * quantity,
                 "rationale": trade.get("rationale", ""),
                 "confidence": trade.get("confidence", 0.0),
                 "proposed_by": "trading_agent",
+                "approved_by": approved_by,
+                "vetoed_by": vetoed_by,
                 "judge_score": judge_scores.get("overall_score", 0.0),
                 "phoenix_trace_id": state.get("phoenix_trace_id", ""),
                 "executed": True,
