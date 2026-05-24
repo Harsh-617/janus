@@ -1,3 +1,13 @@
+## Fix #13 — Constraint phoenix_experiment_id writeback
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/db/firestore_client.py` — update_constraint() function added
+- `backend/agents/meta_agent.py` — experiment ID now awaited and written 
+  back to each constraint record in Firestore
+**What was built**: After each Janus Loop run, the Phoenix experiment ID is 
+written back to all constraint records it covers. Constraint records now 
+fully match PRD schema including phoenix_experiment_id field.
+
 ## Fix #12 — Gemini dual-architecture documentation
 **Date**: 2026-05-24
 **Files modified**:

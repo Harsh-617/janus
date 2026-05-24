@@ -1,5 +1,5 @@
 from config import settings
-from db.firestore_client import get_cycles, save_constraint, get_active_constraints
+from db.firestore_client import get_cycles, save_constraint, get_active_constraints, update_constraint
 from services.gemini_client import generate
 from services.phoenix_service import get_scores_from_cycles, create_constraint_experiment
 from services.phoenix_mcp_client import get_recent_traces, list_available_tools
@@ -155,14 +155,18 @@ the underperforming dimensions. Do not duplicate existing constraints.
             constraint_ids = [c["constraint_id"] for c in constraints_generated]
             loop_run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
             scores_before = await get_scores_from_cycles(recent_cycles)
-            asyncio.create_task(
-                create_constraint_experiment(
-                    constraint_ids=constraint_ids,
-                    scores_before=scores_before,
-                    scores_after={},
-                    loop_run_id=loop_run_id,
-                )
+            experiment_id = await create_constraint_experiment(
+                constraint_ids=constraint_ids,
+                scores_before=scores_before,
+                scores_after={},
+                loop_run_id=loop_run_id,
             )
+            if experiment_id:
+                for cid in constraint_ids:
+                    await update_constraint(cid, {"phoenix_experiment_id": experiment_id})
+                logging.info(f"[Janus Loop] Phoenix experiment {experiment_id} linked to {len(constraint_ids)} constraints")
+            else:
+                logging.warning("[Janus Loop] Phoenix experiment creation returned None — phoenix_experiment_id not written")
 
             span.set_attribute("janus_loop.constraints_generated", len(constraints_generated))
             span.set_attribute("janus_loop.learning_events_analyzed", len(learning_events))

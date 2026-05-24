@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 
 from google.cloud import firestore
@@ -54,6 +55,18 @@ async def save_constraint(constraint_id: str, data: dict) -> None:
         db.collection(COL_CONSTRAINTS).document(constraint_id).set(data, merge=True)
 
     await asyncio.to_thread(_set)
+
+
+async def update_constraint(constraint_id: str, updates: dict) -> None:
+    """Updates specific fields on an existing constraint document."""
+    def _update():
+        try:
+            doc_ref = db.collection(COL_CONSTRAINTS).document(constraint_id)
+            doc_ref.update(updates)
+        except Exception as e:
+            logging.warning(f"Failed to update constraint {constraint_id}: {e}")
+
+    await asyncio.to_thread(_update)
 
 
 async def get_active_constraints(agent_id: str | None = None) -> list[dict]:
