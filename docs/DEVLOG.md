@@ -775,3 +775,13 @@ across the entire backend.
 **Notes for team**:
 - Dev B: when you import settings in your files, use `from config import settings`
 - The .env file must be present at backend/.env for the server to start
+
+## Fix #9 — LangGraph Firestore checkpointing
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/graph/janus_graph.py` — FirestoreSaver added to graph compilation, falls back to no checkpointer on error; thread_id config added to graph ainvoke call
+**What was built**: LangGraph graph state now persisted to Firestore between cycles via FirestoreSaver (from langgraph-checkpoint-firestore 0.1.7). Each cycle gets its own thread_id (`janus_cycle_{cycle_id}`). Matches PRD spec for stateful graph with checkpointing.
+
+**Notes**:
+- The installed package exports `FirestoreSaver`, not `FirestoreCheckpointer` — uses `project_id` constructor arg, not a `client` arg
+- `compiled_graph.ainvoke()` is called inside `run_decision_cycle()` in `janus_graph.py`, so both the checkpointer init and the config injection live in that file
