@@ -7,6 +7,7 @@ import { LiveIndicator } from "@/components/shared/live-indicator";
 import { Button } from "@/components/ui/button";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { fetchCycles, fetchJanusLoopStatus } from "@/lib/api";
+import { AGENT_COLORS, AGENT_DISPLAY_NAMES } from "@/lib/constants";
 import type {
   DecisionCycle,
   AgentName,

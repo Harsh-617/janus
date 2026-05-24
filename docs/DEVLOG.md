@@ -1,3 +1,11 @@
+## Fix #1 — AGENT_COLORS/AGENT_DISPLAY_NAMES import bug
+**Date**: 2026-05-24
+**File**: `frontend/app/agents/page.tsx`
+**What was fixed**: Added missing import for AGENT_COLORS and AGENT_DISPLAY_NAMES
+from @/lib/constants. These were used on lines 292-297 without being imported,
+causing a ReferenceError crash when active constraints were present on the
+Agent Control Room page.
+
 ## Fix #9 — Portfolio P&L sparkline
 **Date**: 2026-05-24
 **Files modified**:
