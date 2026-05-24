@@ -4,6 +4,8 @@ import logging
 import httpx
 from datetime import datetime, timezone
 
+_dataset_id: str | None = None
+
 
 async def post_cycle_evaluations(state: JanusState) -> bool:
     """
@@ -96,6 +98,50 @@ async def post_cycle_evaluations(state: JanusState) -> bool:
         return False
 
 
+async def _get_or_create_dataset_id(client: httpx.AsyncClient) -> str | None:
+    """Return cached dataset ID, fetching or creating the dataset as needed."""
+    global _dataset_id
+    if _dataset_id is not None:
+        return _dataset_id
+
+    base = settings.PHOENIX_BASE_URL
+    dataset_name = "janus_learning_events"
+
+    # Try to find existing dataset by name
+    get_resp = await client.get(
+        f"{base}/v1/datasets",
+        params={"name": dataset_name},
+    )
+    if get_resp.status_code == 200:
+        data = get_resp.json()
+        items = data.get("data", data) if isinstance(data, dict) else data
+        if isinstance(items, list) and items:
+            _dataset_id = items[0].get("id") or items[0].get("dataset_id")
+            return _dataset_id
+
+    # Dataset not found — create it
+    create_resp = await client.post(
+        f"{base}/v1/datasets",
+        json={"name": dataset_name, "description": "Janus learning events for self-correction"},
+        headers={"Content-Type": "application/json"},
+    )
+    if create_resp.status_code in (200, 201):
+        body = create_resp.json()
+        data = body.get("data", body) if isinstance(body, dict) else body
+        _dataset_id = (
+            data.get("id") or data.get("dataset_id")
+            if isinstance(data, dict)
+            else None
+        )
+        return _dataset_id
+
+    logging.warning(
+        f"[Evaluations] Could not create dataset: "
+        f"{create_resp.status_code} {create_resp.text[:200]}"
+    )
+    return None
+
+
 async def post_learning_event_to_dataset(state: JanusState) -> bool:
     """
     If this cycle is a learning event, add it to the Phoenix
@@ -134,18 +180,16 @@ async def post_learning_event_to_dataset(state: JanusState) -> bool:
     }
 
     try:
-        dataset_url = f"{settings.PHOENIX_BASE_URL}/v1/datasets"
-        payload = {
-            "name": "janus_learning_events",
-            "description": "Janus learning events for self-correction",
-            "inputs": [example["input"]],
-            "outputs": [example["output"]],
-            "metadata": [example["metadata"]],
-        }
         async with httpx.AsyncClient(timeout=10.0) as client:
+            dataset_id = await _get_or_create_dataset_id(client)
+            if not dataset_id:
+                logging.warning("[Evaluations] No dataset ID — skipping dataset post")
+                return False
+
+            examples_url = f"{settings.PHOENIX_BASE_URL}/v1/datasets/{dataset_id}/examples"
             response = await client.post(
-                dataset_url,
-                json=payload,
+                examples_url,
+                json={"examples": [example]},
                 headers={"Content-Type": "application/json"},
             )
             if response.status_code in (200, 201, 204):
@@ -156,7 +200,7 @@ async def post_learning_event_to_dataset(state: JanusState) -> bool:
                 return True
             else:
                 logging.warning(
-                    f"[Evaluations] Dataset post returned "
+                    f"[Evaluations] Dataset examples post returned "
                     f"{response.status_code}: {response.text[:200]}"
                 )
                 return False

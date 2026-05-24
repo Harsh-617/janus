@@ -1003,6 +1003,13 @@ with array extraction and ?? 0 fallbacks.
 **What was built**: Groq supports up to 6 keys, Alpha Vantage up to 4.
 Keys loaded from numbered env vars, empty ones filtered out automatically.
 
+## Fix: Alpha Vantage key rotation skip exhausted keys
+**Date**: 2026-05-24
+**File**: `backend/tools/news.py`
+**What was fixed**: random.choice() was picking exhausted keys randomly.
+Replaced with sequential rotation that permanently removes exhausted 
+keys from the pool for the session.
+
 ## Fix: Arena layout aggressive spacing overhaul
 **Date**: 2026-05-24
 **Files modified**: page.tsx, layout-wrapper.tsx, portfolio-panel.tsx
@@ -1013,3 +1020,8 @@ Reduced panel height. Restored P&L sparkline.
 **Date**: 2026-05-24
 **File**: `backend/services/gemini_client.py`
 **What was fixed**: Keys hitting daily TPD limits were not being permanently removed from rotation. Added _exhausted_keys set that removes daily-limit keys for the session. Only TPM (per-minute) keys are retried normally.
+
+## Fix: Phoenix datasets 405 error
+**Date**: 2026-05-24
+**File**: `backend/observability/evaluations.py`
+**What was fixed**: POST to /v1/datasets was returning 405. Fixed to first GET/create dataset to obtain ID, then POST examples to /v1/datasets/{id}/examples. Dataset ID cached to avoid repeated lookups.
