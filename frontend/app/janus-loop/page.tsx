@@ -5,37 +5,19 @@ import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { LoopTimeline } from "@/components/janus-loop/loop-timeline";
 import { ConstraintTable } from "@/components/janus-loop/constraint-table";
 import { ExperimentViewer } from "@/components/janus-loop/experiment-viewer";
+import type { Constraint } from "@/lib/types";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface LoopStatus {
-  active_constraints: number;
-  total_constraints: number;
-  loop_run_count: number;
-  last_run_at: string | null;
-  avg_score_last_10: number;
-  learning_events_last_10: number;
+  active_constraints: Constraint[];
+  constraint_count: number;
+  recent_cycles_analyzed: number;
+  learning_events_count: number;
+  avg_judge_score: number;
 }
 
-interface PerformanceDelta {
-  safety_before: number;
-  safety_after: number | null;
-  cycles_active: number;
-}
-
-interface Constraint {
-  constraint_id: string;
-  generated_at: string;
-  target_agent: string;
-  condition: string;
-  rule: string;
-  rationale: string;
-  status: "ACTIVE" | "EXPIRED";
-  performance_delta: PerformanceDelta;
-  expires_after_cycles: number;
-  generated_by: string;
-}
 
 export default function JanusLoopPage() {
   const [status, setStatus] = useState<LoopStatus | null>(null);

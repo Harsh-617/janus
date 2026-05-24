@@ -1,12 +1,11 @@
 "use client";
 
 interface LoopStatus {
-  active_constraints: number;
-  total_constraints: number;
-  loop_run_count: number;
-  last_run_at: string | null;
-  avg_score_last_10: number;
-  learning_events_last_10: number;
+  active_constraints: object[];
+  constraint_count: number;
+  recent_cycles_analyzed: number;
+  learning_events_count: number;
+  avg_judge_score: number;
 }
 
 interface LoopTimelineProps {
@@ -15,12 +14,6 @@ interface LoopTimelineProps {
   isTriggering: boolean;
 }
 
-function minutesAgo(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (diff < 1) return "just now";
-  if (diff === 1) return "1 minute ago";
-  return `${diff} minutes ago`;
-}
 
 const STAGES = [
   "Query Phoenix",
@@ -35,15 +28,13 @@ export function LoopTimeline({
   isTriggering,
 }: LoopTimelineProps) {
   const stats = [
-    { label: "Loop Runs", value: status.loop_run_count ?? 0 },
-    { label: "Active Constraints", value: Array.isArray(status.active_constraints) ? status.active_constraints.length : (status.active_constraints ?? 0) },
-    { label: "Avg Score (last 10)", value: (status.avg_score_last_10 ?? 0).toFixed(1) },
-    { label: "Learning Events (last 10)", value: status.learning_events_last_10 ?? 0 },
+    { label: "Cycles Analyzed", value: status.recent_cycles_analyzed ?? 0 },
+    { label: "Active Constraints", value: status.constraint_count ?? 0 },
+    { label: "Avg Judge Score", value: (status.avg_judge_score ?? 0).toFixed(1) },
+    { label: "Learning Events", value: status.learning_events_count ?? 0 },
   ];
 
-  const lastRunText = status.last_run_at
-    ? `Last run: ${minutesAgo(status.last_run_at)}`
-    : "Never run";
+  const lastRunText = "Never run";
 
   return (
     <div className="flex flex-col gap-6">

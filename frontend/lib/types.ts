@@ -137,6 +137,23 @@ export type SSEEvent =
   | ConnectedEvent
   | PingEvent;
 
+export interface Constraint {
+  constraint_id: string;
+  generated_at: string;
+  target_agent: string;
+  condition: string;
+  rule: string;
+  rationale: string;
+  status: "ACTIVE" | "EXPIRED";
+  performance_delta: {
+    safety_before: number;
+    safety_after: number | null;
+    cycles_active: number;
+  };
+  expires_after_cycles: number;
+  generated_by: string;
+}
+
 // Janus loop types
 export interface JanusLoopStatus {
   active_constraints: BehavioralConstraint[];

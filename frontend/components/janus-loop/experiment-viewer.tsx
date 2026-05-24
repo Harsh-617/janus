@@ -1,23 +1,6 @@
 "use client";
 
-interface PerformanceDelta {
-  safety_before: number | undefined;
-  safety_after: number | undefined;
-  cycles_active: number;
-}
-
-interface Constraint {
-  constraint_id: string;
-  generated_at: string;
-  target_agent: string;
-  condition: string;
-  rule: string;
-  rationale: string;
-  status: "ACTIVE" | "EXPIRED";
-  performance_delta: PerformanceDelta;
-  expires_after_cycles: number;
-  generated_by: string;
-}
+import type { Constraint } from "@/lib/types";
 
 interface ExperimentViewerProps {
   constraints: Constraint[];

@@ -1,3 +1,13 @@
+## Hotfix #10 — Constraint type conflict
+**Date**: 2026-05-24
+**Files**: `constraint-table.tsx`, `experiment-viewer.tsx`, `janus-loop/page.tsx`
+**What was fixed**: Duplicate Constraint type definitions with incompatible safety_after types (null vs undefined). Unified to import from @/lib/types.
+
+## Fix: Janus Loop status type mismatch
+**Date**: 2026-05-24
+**File**: `frontend/app/janus-loop/page.tsx`, `frontend/components/janus-loop/loop-timeline.tsx`
+**What was fixed**: Page-local LoopStatus interface had wrong field names and types vs actual API response. Fixed interface to match backend exactly. Avg score and active constraint count now display correctly.
+
 ## Fix: Per-agent scores and radar charts
 **Date**: 2026-05-24
 **File**: `frontend/app/agents/page.tsx`
