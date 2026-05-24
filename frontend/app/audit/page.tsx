@@ -30,7 +30,8 @@ export default function AuditPage() {
         setLoading(true);
       }
 
-      const cyclesData = await fetchCycles(newLimit || limit);
+      const raw = await fetchCycles(newLimit || limit);
+      const cyclesData = Array.isArray(raw) ? raw : (raw as any).cycles || [];
       setCycles(cyclesData);
       if (newLimit) setLimit(newLimit);
     } catch (error) {
@@ -50,6 +51,7 @@ export default function AuditPage() {
   }, [cycleLimit]);
 
   const filteredCycles = useMemo(() => {
+    if (!Array.isArray(cycles)) return [];
     return cycles.filter((cycle) => {
       // Search filter
       if (searchQuery) {
