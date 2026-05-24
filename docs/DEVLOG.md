@@ -1,3 +1,13 @@
+## Fix #12 — Gemini dual-architecture documentation
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/gemini_client.py` — architecture note comment block added at top
+- `README.md` — LLM Architecture Note section added explaining Groq for dev,
+  Gemini for production, and Google Cloud services in use
+**What was built**: Clear documentation of the dual-architecture approach so 
+judges understand Gemini is the intended production LLM and Groq is a 
+development substitute.
+
 ## Fix #11 — app/arena/page.tsx redirect
 **Date**: 2026-05-24
 **File modified**: `frontend/app/arena/page.tsx`
