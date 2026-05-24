@@ -1,3 +1,14 @@
+## Fix #8 — Agent memory writes
+**Date**: 2026-05-24
+**Files created/modified**:
+- `backend/services/memory_service.py` — update_agent_memories() updates all 
+  5 agent memory records after every cycle
+- `backend/graph/execution.py` — calls update_agent_memories() at end of 
+  execute_cycle_results()
+**What was built**: Agent memory records now written to Firestore after every 
+cycle. Tracks active constraints per agent, performance trend, and behavioral 
+notes from learning events. Matches PRD agent memory schema.
+
 ## Fix #7 — Trade record missing fields
 **Date**: 2026-05-24
 **File modified**: `backend/graph/execution.py`

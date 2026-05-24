@@ -156,4 +156,11 @@ async def execute_cycle_results(state: JanusState) -> dict:
     if current_prices:
         await update_portfolio_prices(settings.FIRESTORE_PORTFOLIO_ID, current_prices)
 
+    from services.memory_service import update_agent_memories
+    await update_agent_memories(
+        cycle_number=state.get("cycle_number", 0),
+        judge_scores=state.get("judge_scores", {}),
+        active_constraints=state.get("active_constraints", []),
+    )
+
     return summary
