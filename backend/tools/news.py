@@ -1,4 +1,5 @@
 import logging
+import random
 import requests
 
 from config import settings
@@ -19,9 +20,14 @@ def get_market_news(tickers: list[str] = None, limit: int = 5) -> list[str]:
     Falls back to hardcoded headlines if the API fails.
     """
     try:
+        av_keys = settings.alpha_vantage_api_keys
+        if not av_keys:
+            logging.warning("[news] No Alpha Vantage API keys configured, using fallback")
+            return _FALLBACK_HEADLINES
+        api_key = random.choice(av_keys)
         params = {
             "function": "NEWS_SENTIMENT",
-            "apikey": settings.ALPHA_VANTAGE_API_KEY,
+            "apikey": api_key,
             "limit": 10,
             "sort": "LATEST",
         }

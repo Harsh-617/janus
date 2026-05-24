@@ -994,6 +994,15 @@ with array extraction and ?? 0 fallbacks.
 - `frontend/components/arena/portfolio-panel.tsx` — P&L sparkline restored as compact 60px chart
 **What was fixed**: Two-panel section now exactly 500px so Market Controls header is always visible. P&L sparkline restored.
 
+## Fix: Multi-key rotation for Groq and Alpha Vantage
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/config.py` — numbered key fields + helper properties
+- `backend/services/gemini_client.py` — uses settings.groq_api_keys
+- `backend/tools/news.py` — random key selection from pool
+**What was built**: Groq supports up to 6 keys, Alpha Vantage up to 4.
+Keys loaded from numbered env vars, empty ones filtered out automatically.
+
 ## Fix: Arena layout aggressive spacing overhaul
 **Date**: 2026-05-24
 **Files modified**: page.tsx, layout-wrapper.tsx, portfolio-panel.tsx

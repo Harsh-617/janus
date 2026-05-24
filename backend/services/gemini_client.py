@@ -30,9 +30,9 @@ _client_cycle = None
 def get_clients():
     global _clients, _client_cycle
     if _clients is None:
-        keys = [k.strip() for k in settings.GROQ_API_KEYS.split(",") if k.strip()]
+        keys = settings.groq_api_keys
         if not keys:
-            keys = [settings.GROQ_API_KEY]
+            raise ValueError("No Groq API keys configured")
         _clients = [groq.AsyncGroq(api_key=k) for k in keys]
         _client_cycle = itertools.cycle(_clients)
         logging.info(f"[LLMClient] Initialized with {len(_clients)} Groq key(s)")
