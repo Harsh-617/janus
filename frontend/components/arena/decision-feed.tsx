@@ -88,14 +88,14 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
       case "agent_thinking":
         return (
           <div className="flex items-center gap-2">
-            <div className="relative flex h-2 w-2">
+            <div className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--janus-warning)] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--janus-warning)]"></span>
             </div>
-            <span className="text-sm text-[var(--janus-text-primary)]">
-              <span className="font-semibold">
-                {AGENT_DISPLAY_NAMES[event.data.agent]}
-              </span>{" "}
+            <span className="text-sm font-semibold text-[var(--janus-text-primary)]">
+              {AGENT_DISPLAY_NAMES[event.data.agent]}
+            </span>
+            <span className="text-sm text-[var(--janus-text-muted)]">
               is analyzing...
             </span>
           </div>
@@ -112,7 +112,7 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
                 {event.data.trades_executed !== 1 ? "s" : ""}
               </span>
               {event.data.learning_event && (
-                <span className="text-xs px-2 py-0.5 rounded bg-[var(--janus-warning)]/20 text-[var(--janus-warning)] border border-[var(--janus-warning)]/30">
+                <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
                   Learning Event
                 </span>
               )}

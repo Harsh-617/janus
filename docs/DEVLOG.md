@@ -1,3 +1,8 @@
+## Fix: Decision Feed cycle_complete display improved
+**Date**: 2026-05-24
+**File**: `frontend/components/arena/decision-feed.tsx`
+**What was fixed**: cycle_complete events now show decision badge (EXECUTE→green, HOLD→amber, HALT→red via StatusIndicator), judge score number badge (ScoreBadge), trade count ("3 trades" / "0 trades"), learning event badge in purple/blue, and critical finding truncated to 100 chars. agent_thinking events improved: agent name is bold, "is analyzing..." is in muted text, pulsing dot indicator present.
+
 ## Fix: Arena layout final polish
 **Date**: 2026-05-24
 **Files modified**:
