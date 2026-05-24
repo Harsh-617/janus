@@ -1,3 +1,10 @@
+## Fix: Missing target agent in constraints table
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/db/firestore_client.py` — filter out constraints with no target_agent
+- `frontend/app/agents/page.tsx` — show "Unknown" for missing target_agent as fallback
+**What was fixed**: Constraint rows with blank Target Agent cell caused by null target_agent in Firestore.
+
 ## Fix: Agent scores field names and agent ID mismatch
 **Date**: 2026-05-24
 **File**: `backend/api/agents.py`

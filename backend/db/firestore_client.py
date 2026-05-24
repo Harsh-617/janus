@@ -84,6 +84,7 @@ async def get_active_constraints(agent_id: str | None = None) -> list[dict]:
             docs.sort(key=lambda x: x.get("generated_at", ""), reverse=True)
             return docs[:5]
         all_docs = [doc.to_dict() for doc in query.stream()]
+        all_docs = [d for d in all_docs if d.get("target_agent")]
         all_docs.sort(key=lambda x: x.get("generated_at", ""), reverse=True)
         per_agent: dict[str, list] = {}
         for doc in all_docs:

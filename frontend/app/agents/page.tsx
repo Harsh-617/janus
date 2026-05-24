@@ -363,13 +363,17 @@ export default function AgentsPage() {
                         <span
                           className="text-xs font-semibold px-2 py-1 rounded"
                           style={{
-                            backgroundColor: `${
-                              AGENT_COLORS[constraint.target_agent]
-                            }20`,
-                            color: AGENT_COLORS[constraint.target_agent],
+                            backgroundColor: constraint.target_agent
+                              ? `${AGENT_COLORS[constraint.target_agent]}20`
+                              : "rgba(128,128,128,0.12)",
+                            color: constraint.target_agent
+                              ? AGENT_COLORS[constraint.target_agent]
+                              : "var(--janus-text-secondary)",
                           }}
                         >
-                          {AGENT_DISPLAY_NAMES[constraint.target_agent]}
+                          {constraint.target_agent
+                            ? AGENT_DISPLAY_NAMES[constraint.target_agent]
+                            : "Unknown"}
                         </span>
                       </td>
                       <td className="py-3 text-xs text-[var(--janus-text-secondary)]">
