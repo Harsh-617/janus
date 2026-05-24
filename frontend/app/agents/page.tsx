@@ -44,7 +44,7 @@ export default function AgentsPage() {
         fetchJanusLoopStatus(),
       ]);
 
-      setCycles(cyclesData);
+      setCycles(Array.isArray(cyclesData) ? cyclesData : (cyclesData as any).cycles || []);
       setJanusStatus(statusData);
       setLastRefreshed(new Date());
     } catch (error) {
@@ -60,7 +60,7 @@ export default function AgentsPage() {
   }, []);
 
   const deriveAgentStats = (agentId: AgentName) => {
-    if (cycles.length === 0) {
+    if (!Array.isArray(cycles) || cycles.length === 0) {
       return {
         avgScore: null,
         dimensionScores: null,
