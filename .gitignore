@@ -61,6 +61,30 @@ frontend/.env.production
 frontend/.vercel/
 .npm/
 
+# Type checking / linting caches
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Coverage reports
+coverage.xml
+junit*.xml
+
+# Certificates / keys
+*.pem
+*.key
+*.p12
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
 # Misc
 *.tmp
 *.bak

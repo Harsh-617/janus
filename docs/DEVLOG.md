@@ -1,3 +1,8 @@
+## Fix: Phoenix datasets creation
+**Date**: 2026-05-24
+**File**: `backend/observability/evaluations.py`
+**What was fixed**: Dataset creation 405 error. `POST /v1/datasets` is not a valid endpoint in arize-phoenix 15.x — the correct endpoint is `POST /v1/datasets/upload` with payload `{"action": "update", "name": ..., "inputs": [...], "outputs": [...], "metadata": [...]}`. Refactored `post_learning_event_to_dataset` to use this upload endpoint directly (creates-or-updates in one call), removing the separate get-then-create two-step. Renamed `_get_or_create_dataset_id` to `_get_cached_dataset_id` (now only does GET lookup; creation happens via upload). Added full GET response logging to debug future response shape issues.
+
 ## Fix: Firestore positional arguments warning
 **Date**: 2026-05-24
 **File**: `backend/db/firestore_client.py`
