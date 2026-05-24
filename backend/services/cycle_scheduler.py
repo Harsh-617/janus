@@ -8,6 +8,7 @@ from config import settings
 from graph.janus_graph import run_decision_cycle
 from graph.execution import execute_cycle_results
 from db.firestore_client import get_portfolio, get_active_constraints
+from tools.market_data import get_live_market_data
 
 # Global event queue — SSE clients subscribe to this
 _event_queue: asyncio.Queue = asyncio.Queue(maxsize=500)
@@ -34,6 +35,7 @@ async def broadcast_event(event_type: str, data: dict) -> None:
         except Exception:
             pass
 
+# LEGACY: replaced by get_live_market_data()
 async def get_mock_market_data() -> tuple[dict, list]:
     """
     Returns mock market prices and news headlines.
@@ -88,7 +90,20 @@ async def run_single_cycle() -> dict:
         if not portfolio:
             raise ValueError("Portfolio not found")
 
-        market_prices, news_headlines = await get_mock_market_data()
+        market_prices = await asyncio.to_thread(get_live_market_data)
+        if _market_shock["active"]:
+            for ticker, pct_change in _market_shock.get("effects", {}).items():
+                if ticker in market_prices:
+                    market_prices[ticker] = round(market_prices[ticker] * (1 + pct_change), 2)
+        news_headlines = [
+            "Federal Reserve holds rates steady amid mixed economic signals",
+            "Tech sector rallies on strong earnings reports",
+            "Gold prices rise as dollar weakens",
+            "Energy stocks outperform as oil demand forecasts improve",
+            "Bond yields stabilize after recent volatility",
+        ]
+        if _market_shock["active"] and _market_shock.get("description"):
+            news_headlines.insert(0, f"BREAKING: {_market_shock['description']}")
         active_constraints = await get_active_constraints()
         constraint_rules = [c.get("rule", "") for c in active_constraints if c.get("rule")]
 

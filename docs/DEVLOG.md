@@ -1,3 +1,10 @@
+## Fix #5 — yfinance real market data
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/tools/market_data.py` — implemented with yfinance, fallback to hardcoded prices on failure
+- `backend/services/cycle_scheduler.py` — replaced get_mock_market_data() call with get_live_market_data()
+**What was built**: Live market price fetching via yfinance for 8 tickers. Graceful fallback if yfinance is unavailable. Single-ticker helper function also added.
+
 ## Fix #4 — janus-loop/page.tsx
 **Date**: 2026-05-24
 **File**: `frontend/app/janus-loop/page.tsx`
