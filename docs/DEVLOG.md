@@ -1,3 +1,10 @@
+## Fix #6 — Janus two-face divider
+**Date**: 2026-05-24
+**Files created/modified**:
+- `frontend/components/layout/janus-divider.tsx` — vertical divider with two-face SVG icon in gold
+- `frontend/app/page.tsx` — divider inserted between panels, subtle blue/gold tinting added, forward/backward face labels added
+**What was built**: Visual two-face motif implemented on the Arena page. Left panel has ice blue tint (forward face), right panel has gold tint (backward face), separated by a vertical Janus divider with SVG icon. Matches PRD Section 10 design spec.
+
 ## Fix #5 — DM Sans body font
 **Date**: 2026-05-24
 **Files modified**:
