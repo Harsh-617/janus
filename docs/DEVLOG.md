@@ -1,3 +1,10 @@
+## Fix #14 — Complete README
+**Date**: 2026-05-24
+**File modified**: `README.md`
+**What was built**: Full project README with setup instructions, architecture
+overview, agent descriptions, API endpoint table, and Janus Loop explanation.
+Ready for hackathon submission.
+
 ## Fix #13 — Constraint phoenix_experiment_id writeback
 **Date**: 2026-05-24
 **Files modified**:
