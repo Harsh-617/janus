@@ -1,3 +1,10 @@
+## Fix #6 — Alpha Vantage news integration
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/tools/news.py` — implemented with Alpha Vantage NEWS_SENTIMENT API, fallback to hardcoded headlines on failure or rate limit
+- `backend/services/cycle_scheduler.py` — replaced hardcoded news strings with get_market_news() call using live ticker list
+**What was built**: Live news headline fetching from Alpha Vantage. Graceful fallback if API is unavailable or rate limited.
+
 ## Fix #5 — yfinance real market data
 **Date**: 2026-05-24
 **Files modified**:

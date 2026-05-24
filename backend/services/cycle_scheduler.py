@@ -9,6 +9,7 @@ from graph.janus_graph import run_decision_cycle
 from graph.execution import execute_cycle_results
 from db.firestore_client import get_portfolio, get_active_constraints
 from tools.market_data import get_live_market_data
+from tools.news import get_market_news
 
 # Global event queue — SSE clients subscribe to this
 _event_queue: asyncio.Queue = asyncio.Queue(maxsize=500)
@@ -95,13 +96,13 @@ async def run_single_cycle() -> dict:
             for ticker, pct_change in _market_shock.get("effects", {}).items():
                 if ticker in market_prices:
                     market_prices[ticker] = round(market_prices[ticker] * (1 + pct_change), 2)
-        news_headlines = [
-            "Federal Reserve holds rates steady amid mixed economic signals",
-            "Tech sector rallies on strong earnings reports",
-            "Gold prices rise as dollar weakens",
-            "Energy stocks outperform as oil demand forecasts improve",
-            "Bond yields stabilize after recent volatility",
-        ]
+        # LEGACY: replaced by get_market_news()
+        # "Federal Reserve holds rates steady amid mixed economic signals",
+        # "Tech sector rallies on strong earnings reports",
+        # "Gold prices rise as dollar weakens",
+        # "Energy stocks outperform as oil demand forecasts improve",
+        # "Bond yields stabilize after recent volatility",
+        news_headlines = get_market_news(tickers=list(market_prices.keys()))
         if _market_shock["active"] and _market_shock.get("description"):
             news_headlines.insert(0, f"BREAKING: {_market_shock['description']}")
         active_constraints = await get_active_constraints()
