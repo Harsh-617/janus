@@ -36,7 +36,7 @@ export function LoopTimeline({
 }: LoopTimelineProps) {
   const stats = [
     { label: "Loop Runs", value: status.loop_run_count ?? 0 },
-    { label: "Active Constraints", value: status.active_constraints ?? 0 },
+    { label: "Active Constraints", value: Array.isArray(status.active_constraints) ? status.active_constraints.length : (status.active_constraints ?? 0) },
     { label: "Avg Score (last 10)", value: (status.avg_score_last_10 ?? 0).toFixed(1) },
     { label: "Learning Events (last 10)", value: status.learning_events_last_10 ?? 0 },
   ];

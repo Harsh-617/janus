@@ -46,7 +46,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${cinzel.variable} ${dmSans.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[var(--janus-background)]">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[var(--janus-background)]">
         {children}
       </body>
     </html>
