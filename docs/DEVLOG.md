@@ -1,3 +1,10 @@
+## Fix #7 — /api/agents endpoint
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/api/agents.py` — GET /api/agents returning per-agent state, scores, and active constraints aggregated from Firestore
+- `backend/main.py` — agents router registered
+**What was built**: Dedicated agents endpoint. Aggregates last 20 cycles to compute per-agent avg judge score and dimension scores. Returns active constraints per agent and circuit breaker status.
+
 ## Fix #6 — Alpha Vantage news integration
 **Date**: 2026-05-24
 **Files modified**:

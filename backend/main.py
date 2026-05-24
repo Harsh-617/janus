@@ -77,6 +77,12 @@ try:
 except ImportError:
     logger.warning("api.janus_loop router not found — skipping")
 
+try:
+    from api.agents import router as agents_router
+    app.include_router(agents_router, prefix="/api", tags=["agents"])
+except ImportError:
+    logger.warning("api.agents router not found — skipping")
+
 
 @app.get("/health")
 async def health():
