@@ -1,3 +1,8 @@
+## Fix #4 — janus-loop/page.tsx
+**Date**: 2026-05-24
+**File**: `frontend/app/janus-loop/page.tsx`
+**What was built**: Main Janus Loop page. Fetches status + constraint history on mount, polls status every 10s, handles trigger flow with banner message, wires LoopTimeline + ConstraintTable + ExperimentViewer together.
+
 ## Fix #3 — experiment-viewer.tsx
 **Date**: 2026-05-24
 **File**: `frontend/components/janus-loop/experiment-viewer.tsx`
