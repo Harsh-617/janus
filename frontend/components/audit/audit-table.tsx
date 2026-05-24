@@ -27,6 +27,7 @@ const AGENT_DISPLAY_NAMES: Record<string, string> = {
   fraud_agent: "Fraud Agent",
   regulator_agent: "Regulator Agent",
   judge_agent: "Judge Agent",
+  llm_judge: "LLM Judge",
   meta_agent: "Meta Agent",
 };
 
@@ -56,8 +57,8 @@ function extractDecisionText(data: Record<string, unknown>): string | null {
 }
 
 function extractRationale(data: Record<string, unknown>): string | null {
-  for (const key of ["rationale", "reasoning", "explanation", "analysis", "summary"]) {
-    if (typeof data[key] === "string") return data[key] as string;
+  for (const key of ["rationale", "reasoning", "explanation", "analysis", "summary", "thesis", "verdict", "reason", "critical_finding"]) {
+    if (typeof data[key] === "string" && (data[key] as string).length > 0) return data[key] as string;
   }
   return null;
 }

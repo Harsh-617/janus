@@ -1,3 +1,14 @@
+## Fix #27 — Reasoning chain data in Audit Log
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/graph/execution.py` — decisions field added to cycle summary 
+  with per-agent reasoning data
+- `frontend/components/audit/audit-table.tsx` — verified rendering 
+  matches new data shape
+**What was built**: Cycle documents now store per-agent decisions and 
+reasoning. Audit Log expanded drawer shows real reasoning chains instead 
+of "No per-agent reasoning data available".
+
 ## Hotfix #10 — Constraint type conflict
 **Date**: 2026-05-24
 **Files**: `constraint-table.tsx`, `experiment-viewer.tsx`, `janus-loop/page.tsx`

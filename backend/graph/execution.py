@@ -115,6 +115,30 @@ async def execute_cycle_results(state: JanusState) -> dict:
         "fraud_alerts_count": len(state.get("fraud_alerts", [])),
         "phoenix_trace_id": state.get("phoenix_trace_id", ""),
         "market_shock_active": state.get("market_shock_active", False),
+        "decisions": {
+            "trading_agent": {
+                "action": state.get("trading_proposal", {}).get("action", ""),
+                "thesis": state.get("trading_proposal", {}).get("thesis", ""),
+                "confidence": state.get("trading_proposal", {}).get("confidence", 0),
+            },
+            "risk_agent": {
+                "decision": state.get("risk_report", {}).get("decision", ""),
+                "verdict": state.get("risk_report", {}).get("risk_report", {}).get("verdict", ""),
+            },
+            "fraud_agent": {
+                "status": state.get("fraud_report", {}).get("status", ""),
+                "alerts": state.get("fraud_report", {}).get("alerts", []),
+            },
+            "regulator_agent": {
+                "final_decision": state.get("regulator_decision", {}).get("final_decision", ""),
+                "reason": state.get("regulator_decision", {}).get("reason", ""),
+            },
+            "llm_judge": {
+                "overall_score": state.get("judge_scores", {}).get("overall_score", 0),
+                "critical_finding": state.get("judge_scores", {}).get("critical_finding", ""),
+                "recommended_constraint": state.get("judge_scores", {}).get("recommended_constraint", ""),
+            },
+        },
     }
     await save_cycle(cycle_id, cycle_record)
 
