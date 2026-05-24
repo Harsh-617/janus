@@ -32,16 +32,16 @@ def _last_decision_for(agent_id: str, cycles: list[dict]) -> tuple[str, str | No
     return "No data yet", None
 
 
-def _dimension_averages(agent_id: str, cycles: list[dict]) -> dict:
+def _dimension_averages(cycles: list[dict]) -> dict:
     totals = {k: 0.0 for k in DIMENSION_KEYS}
     counts = {k: 0 for k in DIMENSION_KEYS}
 
     for cycle in cycles:
-        agent_scores = cycle.get("judge_scores", {})
-        if not agent_scores:
+        judge_scores = cycle.get("judge_scores", {})
+        if not judge_scores:
             continue
         for key in DIMENSION_KEYS:
-            val = agent_scores.get(key)
+            val = judge_scores.get(key)
             if val is not None:
                 try:
                     totals[key] += float(val)
@@ -52,7 +52,7 @@ def _dimension_averages(agent_id: str, cycles: list[dict]) -> dict:
     return {k: round(totals[k] / counts[k], 2) if counts[k] else 0.0 for k in DIMENSION_KEYS}
 
 
-def _avg_judge_score(agent_id: str, cycles: list[dict]) -> float:
+def _avg_judge_score(cycles: list[dict]) -> float:
     total, count = 0.0, 0
     for cycle in cycles:
         val = cycle.get("judge_scores", {}).get("overall_score")
@@ -88,8 +88,8 @@ async def get_agents():
             "display_name": _display_name(agent_id),
             "last_decision": last_decision,
             "last_decision_at": last_decision_at,
-            "avg_judge_score_last_20": _avg_judge_score(agent_id, cycles),
-            "dimension_scores": _dimension_averages(agent_id, cycles),
+            "avg_judge_score_last_20": _avg_judge_score(cycles),
+            "dimension_scores": _dimension_averages(cycles),
             "active_constraints": agent_constraints,
             "status": status,
         })
