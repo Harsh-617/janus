@@ -1,3 +1,8 @@
+## Fix #2 — loop-timeline.tsx
+**Date**: 2026-05-24
+**File**: `frontend/components/janus-loop/loop-timeline.tsx`
+**What was built**: Loop stats row (4 boxes), trigger button with loading state, last run time, and 4-stage loop flow diagram.
+
 ## Fix #1 — constraint-table.tsx
 **Date**: 2026-05-24
 **File**: `frontend/components/janus-loop/constraint-table.tsx`
