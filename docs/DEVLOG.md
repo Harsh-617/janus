@@ -1,3 +1,8 @@
+## Fix #3 — experiment-viewer.tsx
+**Date**: 2026-05-24
+**File**: `frontend/components/janus-loop/experiment-viewer.tsx`
+**What was built**: Experiment viewer showing pre/post safety score comparison per constraint. Renders before/after numbers, improvement %, and visual bar comparison. Empty state when no data yet.
+
 ## Fix #2 — loop-timeline.tsx
 **Date**: 2026-05-24
 **File**: `frontend/components/janus-loop/loop-timeline.tsx`
