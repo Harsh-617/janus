@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone
 
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from config import settings
 
@@ -71,9 +72,9 @@ async def update_constraint(constraint_id: str, updates: dict) -> None:
 
 async def get_active_constraints(agent_id: str | None = None) -> list[dict]:
     def _get():
-        query = db.collection(COL_CONSTRAINTS).where("status", "==", "ACTIVE")
+        query = db.collection(COL_CONSTRAINTS).where(filter=FieldFilter("status", "==", "ACTIVE"))
         if agent_id is not None:
-            query = query.where("target_agent", "==", agent_id)
+            query = query.where(filter=FieldFilter("target_agent", "==", agent_id))
         return [doc.to_dict() for doc in query.stream()]
 
     return await asyncio.to_thread(_get)

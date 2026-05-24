@@ -1,3 +1,8 @@
+## Fix: Firestore positional arguments warning
+**Date**: 2026-05-24
+**File**: `backend/db/firestore_client.py`
+**What was fixed**: Replaced deprecated positional .where() calls with filter=FieldFilter() keyword argument to silence warnings.
+
 ## Fix: Decision Feed cycle_complete display improved
 **Date**: 2026-05-24
 **File**: `frontend/components/arena/decision-feed.tsx`
