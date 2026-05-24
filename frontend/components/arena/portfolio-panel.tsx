@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { Portfolio } from "@/lib/types";
+import { API_BASE } from "@/lib/constants";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -43,7 +44,7 @@ export function PortfolioPanel({ portfolio }: PortfolioPanelProps) {
   const [history, setHistory] = useState<HistoryPoint[]>([]);
 
   useEffect(() => {
-    fetch("/api/portfolio/history")
+    fetch(`${API_BASE}/api/portfolio/history`)
       .then((r) => r.json())
       .then((data) => setHistory(data.history ?? []))
       .catch(() => {});

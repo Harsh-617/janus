@@ -875,6 +875,13 @@ Tightened hasDelta check to typeof === "number", added ?? 0 fallbacks.
 Fixed to use .length when value is array. Added suppressHydrationWarning 
 to body tag to silence browser extension attribute injection warning.
 
+## Hotfix #8 — P&L sparkline broken URL
+**Date**: 2026-05-24
+**File**: `frontend/components/arena/portfolio-panel.tsx`
+**What was fixed**: fetch("/api/portfolio/history") was a relative URL 
+hitting the Next.js server and getting a 404. Fixed to use API_BASE 
+from @/lib/constants so it correctly hits the FastAPI backend.
+
 ## Hotfix #1 — cycles array extraction in agents page and loop-timeline toFixed
 **Date**: 2026-05-24
 **Files**: `frontend/app/agents/page.tsx`, 
