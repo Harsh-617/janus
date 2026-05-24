@@ -1,3 +1,13 @@
+## Fix #2 — Phoenix MCP Server integration
+**Date**: 2026-05-24
+**Files created/modified**:
+- `backend/services/phoenix_mcp_client.py` — JSON-RPC MCP client for Phoenix
+- `backend/agents/meta_agent.py` — queries Phoenix MCP at start of every loop run
+**What was built**: Meta-agent now queries Phoenix via MCP (JSON-RPC over HTTP) 
+on every Janus Loop run. Lists available tools to verify connectivity, fetches 
+recent learning event traces. Falls back gracefully if Phoenix MCP is offline.
+Satisfies PRD Section 6.5 MCP requirement.
+
 ## Fix #1 — AGENT_COLORS/AGENT_DISPLAY_NAMES import bug
 **Date**: 2026-05-24
 **File**: `frontend/app/agents/page.tsx`

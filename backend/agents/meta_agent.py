@@ -2,6 +2,7 @@ from config import settings
 from db.firestore_client import get_cycles, save_constraint, get_active_constraints
 from services.gemini_client import generate
 from services.phoenix_service import get_scores_from_cycles, create_constraint_experiment
+from services.phoenix_mcp_client import get_recent_traces, list_available_tools
 from observability.tracing import trace_agent_call
 import asyncio
 import logging
@@ -58,6 +59,15 @@ async def run_janus_loop() -> dict:
     Returns a summary of what was generated.
     """
     logging.info("[Janus Loop] Starting self-correction run")
+
+    tools = await list_available_tools()
+    if tools:
+        logging.info(f"[Janus Loop] Phoenix MCP connected — tools available: {tools}")
+    else:
+        logging.info("[Janus Loop] Phoenix MCP unavailable — falling back to Firestore")
+
+    mcp_traces = await get_recent_traces(limit=20)
+    logging.info(f"[Janus Loop] Phoenix MCP returned {len(mcp_traces)} learning event traces")
 
     try:
         recent_cycles = await get_cycles(limit=20)
