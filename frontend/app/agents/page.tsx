@@ -18,6 +18,23 @@ import type {
 import { RefreshCw, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+function formatLastAction(raw: string | undefined): string {
+  if (!raw) return "No data yet";
+  const trimmed = raw.trim();
+  if (/^[A-Z_]+$/.test(trimmed)) return trimmed;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed.action) return String(parsed.action);
+    if (parsed.status) return String(parsed.status);
+  } catch {
+    const actionMatch = trimmed.match(/"action"\s*:\s*"([^"]+)"/);
+    if (actionMatch) return actionMatch[1];
+    const statusMatch = trimmed.match(/"status"\s*:\s*"([^"]+)"/);
+    if (statusMatch) return statusMatch[1];
+  }
+  return "See audit log";
+}
+
 const AGENT_ORDER: AgentName[] = [
   "trading_agent",
   "risk_agent",
@@ -81,7 +98,7 @@ export default function AgentsPage() {
     if (agentApiData) {
       const avgScore: number = agentApiData.avg_judge_score_last_20;
       const dimensionScores: DimensionScores = agentApiData.dimension_scores;
-      const lastDecision: string = agentApiData.last_decision;
+      const lastDecision: string = formatLastAction(agentApiData.last_decision);
 
       let stats: Record<string, string | number> = {};
       if (Array.isArray(cycles) && cycles.length > 0) {

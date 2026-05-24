@@ -1,3 +1,17 @@
+## Fix: Firestore composite index error in get_active_constraints
+**Date**: 2026-05-24
+**File**: `backend/db/firestore_client.py`
+**What was fixed**: order_by(generated_at) on a filtered query requires a composite Firestore index. Moved sorting to Python after fetch to avoid the index requirement.
+
+## Fix: Agent Control Room — scores, constraints, last action
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/api/agents.py` — fixed judge score field names
+- `backend/db/firestore_client.py` — limit constraints to 5 most recent per agent
+- `frontend/app/agents/page.tsx` — last action formatted properly
+**What was fixed**: Scores showing 0.0 due to wrong field names.
+Constraint list limited to 5 most recent. Last action formatted.
+
 ## Fix: Custom event UX — single inject button, auto-validate suggestions, price range check
 **Date**: 2026-05-24
 **Files modified**:
