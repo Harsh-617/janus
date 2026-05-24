@@ -72,10 +72,25 @@ async def update_constraint(constraint_id: str, updates: dict) -> None:
 
 async def get_active_constraints(agent_id: str | None = None) -> list[dict]:
     def _get():
-        query = db.collection(COL_CONSTRAINTS).where(filter=FieldFilter("status", "==", "ACTIVE"))
+        query = (
+            db.collection(COL_CONSTRAINTS)
+            .where(filter=FieldFilter("status", "==", "ACTIVE"))
+        )
         if agent_id is not None:
-            query = query.where(filter=FieldFilter("target_agent", "==", agent_id))
-        return [doc.to_dict() for doc in query.stream()]
+            docs = [
+                doc.to_dict()
+                for doc in query.where(filter=FieldFilter("target_agent", "==", agent_id)).stream()
+            ]
+            docs.sort(key=lambda x: x.get("generated_at", ""), reverse=True)
+            return docs[:5]
+        all_docs = [doc.to_dict() for doc in query.stream()]
+        all_docs.sort(key=lambda x: x.get("generated_at", ""), reverse=True)
+        per_agent: dict[str, list] = {}
+        for doc in all_docs:
+            bucket = per_agent.setdefault(doc.get("target_agent", ""), [])
+            if len(bucket) < 5:
+                bucket.append(doc)
+        return [doc for bucket in per_agent.values() for doc in bucket]
 
     return await asyncio.to_thread(_get)
 

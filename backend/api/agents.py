@@ -37,10 +37,7 @@ def _dimension_averages(agent_id: str, cycles: list[dict]) -> dict:
     counts = {k: 0 for k in DIMENSION_KEYS}
 
     for cycle in cycles:
-        judge_scores = cycle.get("judge_scores")
-        if not judge_scores:
-            continue
-        agent_scores = judge_scores if not isinstance(judge_scores, dict) or "correctness" in judge_scores else judge_scores.get(agent_id)
+        agent_scores = cycle.get("judge_scores", {})
         if not agent_scores:
             continue
         for key in DIMENSION_KEYS:
@@ -58,13 +55,7 @@ def _dimension_averages(agent_id: str, cycles: list[dict]) -> dict:
 def _avg_judge_score(agent_id: str, cycles: list[dict]) -> float:
     total, count = 0.0, 0
     for cycle in cycles:
-        judge_scores = cycle.get("judge_scores")
-        if not judge_scores:
-            continue
-        agent_scores = judge_scores if not isinstance(judge_scores, dict) or "overall_score" in judge_scores else judge_scores.get(agent_id)
-        if not agent_scores:
-            continue
-        val = agent_scores.get("overall_score")
+        val = cycle.get("judge_scores", {}).get("overall_score")
         if val is not None:
             try:
                 total += float(val)
