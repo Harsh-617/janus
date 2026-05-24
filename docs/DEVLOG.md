@@ -1,3 +1,8 @@
+## Fix #11 — app/arena/page.tsx redirect
+**Date**: 2026-05-24
+**File modified**: `frontend/app/arena/page.tsx`
+**What was built**: /arena now redirects to / where the real Arena page lives. Prevents blank page if anyone navigates to /arena directly.
+
 ## Fix #10 — Reasoning chain expansion in Audit Log
 **Date**: 2026-05-24
 **File modified**: `frontend/app/audit/page.tsx`
