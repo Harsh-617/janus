@@ -1,3 +1,10 @@
+## Fix: Decision Feed empty and right panel layout
+**Date**: 2026-05-24
+**Files modified**: 
+- `frontend/app/page.tsx`
+- `frontend/components/arena/decision-feed.tsx`
+**What was fixed**: Decision Feed not displaying SSE events. Right panel layout fixed so both forward and backward face panels are always visible.
+
 ## Critical Fix — risk_decision scope and memory_service constraints
 **Date**: 2026-05-24
 **Files**: `backend/graph/execution.py`, `backend/services/memory_service.py`
@@ -943,3 +950,8 @@ with array extraction and ?? 0 fallbacks.
 **Date**: 2026-05-24
 **Files modified**: topbar.tsx and layout-wrapper.tsx
 **What was fixed**: After toggling circuit breaker, portfolio refetch now fires immediately so topbar status updates instantly instead of waiting up to 10s for the next poll.
+
+## Fix: SSE Decision Feed empty — event format mismatch
+**Date**: 2026-05-24
+**File**: `frontend/hooks/use-agent-stream.ts`
+**What was fixed**: Backend sends SSE events as default "message" events with type embedded in JSON body. Frontend was using named addEventListener calls which never fired. Replaced with single onmessage handler that reads type from parsed JSON body.

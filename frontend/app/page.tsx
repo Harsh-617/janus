@@ -47,7 +47,7 @@ export default function Arena() {
             <p className="text-[10px] uppercase tracking-widest mb-2 text-right" style={{ color: "#C9A84C" }}>
               THE BACKWARD FACE ▶
             </p>
-            <div className="flex-1" style={{ background: "linear-gradient(to bottom, rgba(201, 168, 76, 0.03), transparent)" }}>
+            <div className="flex-1 min-h-[400px]" style={{ background: "linear-gradient(to bottom, rgba(201, 168, 76, 0.03), transparent)" }}>
               <DecisionFeed events={events} connected={connected} />
             </div>
           </div>

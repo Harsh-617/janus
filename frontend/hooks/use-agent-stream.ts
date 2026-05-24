@@ -42,79 +42,47 @@ export function useAgentStream() {
         }, 3000);
       };
 
-      eventSource.addEventListener("connected", (e) => {
-        const event: SSEEvent = {
-          type: "connected",
-          data: {},
-          timestamp: new Date().toISOString(),
-        };
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-      });
+      eventSource.onmessage = (e) => {
+        try {
+          const parsed = JSON.parse(e.data);
+          const eventType = parsed.type;
 
-      eventSource.addEventListener("ping", (e) => {
-        const event: SSEEvent = {
-          type: "ping",
-          data: {},
-          timestamp: new Date().toISOString(),
-        };
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-      });
+          if (eventType === "ping" || eventType === "connected") return;
 
-      eventSource.addEventListener("cycle_start", (e) => {
-        const data = JSON.parse(e.data);
-        const event: SSEEvent = {
-          type: "cycle_start",
-          data,
-          timestamp: new Date().toISOString(),
-        };
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-        setActiveAgents({} as Record<AgentName, boolean>);
-      });
+          const event: SSEEvent = {
+            type: eventType,
+            timestamp: parsed.timestamp || new Date().toISOString(),
+            data: parsed.data || parsed,
+            ...parsed,
+          };
 
-      eventSource.addEventListener("agent_thinking", (e) => {
-        const data = JSON.parse(e.data);
-        const event: SSEEvent = {
-          type: "agent_thinking",
-          data,
-          timestamp: new Date().toISOString(),
-        };
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-        setActiveAgents((prev) => ({ ...prev, [data.agent]: true }));
-      });
+          setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
 
-      eventSource.addEventListener("cycle_complete", (e) => {
-        const data = JSON.parse(e.data);
-        const event: CycleCompleteEvent = {
-          type: "cycle_complete",
-          data,
-          timestamp: new Date().toISOString(),
-        };
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-        setActiveAgents({} as Record<AgentName, boolean>);
-        setLastCycle(data);
-        setCycleCount((prev) => prev + 1);
-      });
+          if (eventType === "cycle_start") {
+            setActiveAgents({} as Record<AgentName, boolean>);
+          }
 
-      eventSource.addEventListener("cycle_error", (e) => {
-        const data = JSON.parse(e.data);
-        const event: SSEEvent = {
-          type: "cycle_error",
-          data,
-          timestamp: new Date().toISOString(),
-        };
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-        setActiveAgents({} as Record<AgentName, boolean>);
-      });
+          if (eventType === "agent_thinking") {
+            const agentId = parsed.data?.agent_id || parsed.data?.agent || parsed.agent_id || parsed.agent;
+            if (agentId) {
+              setActiveAgents((prev) => ({ ...prev, [agentId]: true }));
+            }
+          }
 
-      eventSource.addEventListener("circuit_breaker_activated", (e) => {
-        const data = JSON.parse(e.data);
-        const event: SSEEvent = {
-          type: "circuit_breaker_activated",
-          data,
-          timestamp: new Date().toISOString(),
-        };
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-      });
+          if (eventType === "cycle_complete") {
+            const data = parsed.data || parsed;
+            setActiveAgents({} as Record<AgentName, boolean>);
+            setLastCycle(data);
+            setCycleCount((prev) => prev + 1);
+          }
+
+          if (eventType === "cycle_error") {
+            setActiveAgents({} as Record<AgentName, boolean>);
+          }
+        } catch (err) {
+          console.error("SSE parse error:", err);
+        }
+      };
     };
 
     connect();

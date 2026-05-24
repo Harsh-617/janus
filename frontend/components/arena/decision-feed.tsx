@@ -33,6 +33,8 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
         return <AlertCircle className="h-4 w-4 text-[var(--janus-danger)]" />;
       case "circuit_breaker_activated":
         return <AlertTriangle className="h-4 w-4 text-[var(--janus-danger)]" />;
+      case "trade_executed":
+        return <Activity className="h-4 w-4 text-[#C9A84C]" />;
       default:
         return <Clock className="h-4 w-4 text-[var(--janus-text-muted)]" />;
     }
@@ -52,7 +54,23 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
   };
 
   const renderEventContent = (event: SSEEvent) => {
-    switch (event.type) {
+    switch (event.type as string) {
+      case "trade_executed": {
+        const d = (event as any).data;
+        return (
+          <div>
+            <div className="text-sm font-medium text-[var(--janus-text-primary)]">
+              {d.direction} {Number(d.quantity).toFixed(1)} {d.ticker} @ ${Number(d.price).toFixed(2)}
+            </div>
+            {d.rationale && (
+              <div className="text-xs text-[var(--janus-text-muted)] mt-1">
+                {truncateText(d.rationale, 80)}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       case "cycle_start":
         return (
           <div>
