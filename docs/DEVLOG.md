@@ -1025,3 +1025,11 @@ Reduced panel height. Restored P&L sparkline.
 **Date**: 2026-05-24
 **File**: `backend/observability/evaluations.py`
 **What was fixed**: POST to /v1/datasets was returning 405. Fixed to first GET/create dataset to obtain ID, then POST examples to /v1/datasets/{id}/examples. Dataset ID cached to avoid repeated lookups.
+
+
+## Fix: Market shock visual feedback and timestamp
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/components/arena/market-shock-panel.tsx` -- active scenario highlighted, real timestamp shown
+- `backend/api/market_shock.py` -- activated_at timestamp added to status response
+**What was fixed**: No visual feedback on clicked scenario. 'Activated at unknown' timestamp fixed.

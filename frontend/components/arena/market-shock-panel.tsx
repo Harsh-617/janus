@@ -63,6 +63,8 @@ export function MarketShockPanel() {
     null
   );
   const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
+  const [activeScenario, setActiveScenario] = useState<string | null>(null);
+  const [activatedAt, setActivatedAt] = useState<Date | null>(null);
   const [customDescription, setCustomDescription] = useState("");
   const [customEffects, setCustomEffects] = useState("");
   const [customMessage, setCustomMessage] = useState<{
@@ -90,12 +92,15 @@ export function MarketShockPanel() {
   }, []);
 
   const handlePresetShock = async (scenarioId: string) => {
+    setActiveScenario(scenarioId);
     try {
       setLoading(scenarioId);
       await applyPresetMarketShock(scenarioId);
+      setActivatedAt(new Date());
       await fetchStatuses();
     } catch (error) {
       console.error("Failed to apply market shock:", error);
+      setActiveScenario(null);
     } finally {
       setLoading(null);
     }
@@ -105,6 +110,8 @@ export function MarketShockPanel() {
     try {
       setLoading("clear");
       await clearMarketShock();
+      setActiveScenario(null);
+      setActivatedAt(null);
       await fetchStatuses();
     } catch (error) {
       console.error("Failed to clear market shock:", error);
@@ -209,6 +216,8 @@ export function MarketShockPanel() {
                   Activated at{" "}
                   {shockStatus.activated_at
                     ? new Date(shockStatus.activated_at).toLocaleTimeString()
+                    : activatedAt
+                    ? activatedAt.toLocaleTimeString()
                     : "unknown"}
                 </div>
               </div>
@@ -243,6 +252,7 @@ export function MarketShockPanel() {
             {PRESET_SCENARIOS.map((scenario) => {
               const Icon = scenario.icon;
               const isLoading = loading === scenario.id;
+              const isActive = activeScenario === scenario.id;
 
               return (
                 <Button
@@ -252,7 +262,8 @@ export function MarketShockPanel() {
                   variant="outline"
                   className={cn(
                     "h-auto flex-col items-start p-3 border-[var(--janus-border)] hover:border-[var(--janus-warning)] hover:bg-[var(--janus-warning)]/10",
-                    isLoading && "opacity-50"
+                    isLoading && "opacity-50",
+                    isActive && "border-[#C9A84C] bg-[#C9A84C]/10"
                   )}
                 >
                   <div className="flex items-center gap-2 mb-2 w-full">
@@ -264,6 +275,11 @@ export function MarketShockPanel() {
                     <span className="text-xs font-semibold text-[var(--janus-text-primary)]">
                       {scenario.name}
                     </span>
+                    {isActive && (
+                      <span className="ml-auto text-[10px] font-semibold text-[#C9A84C]">
+                        ✓ Active
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-[var(--janus-text-muted)] text-left">
                     {scenario.description}

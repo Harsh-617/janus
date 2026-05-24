@@ -3,9 +3,12 @@ from pydantic import BaseModel
 from services.cycle_scheduler import set_market_shock, get_scheduler_status
 from db.firestore_client import save_portfolio, get_portfolio
 from config import settings
+from datetime import datetime, timezone
 import logging
 
 router = APIRouter()
+
+_active_shock_meta: dict = {"activated_at": None, "scenario_id": None, "scenario_name": None}
 
 PRESET_SCENARIOS = {
     "oil_shock": {
@@ -55,6 +58,9 @@ async def trigger_preset_shock(scenario_id: str):
         description=scenario["description"],
         effects=scenario["effects"],
     )
+    _active_shock_meta["activated_at"] = datetime.now(timezone.utc).isoformat()
+    _active_shock_meta["scenario_id"] = scenario_id
+    _active_shock_meta["scenario_name"] = scenario["name"]
     logging.info(f"[MarketShock] Preset triggered: {scenario_id}")
     return {
         "status": "shock_activated",
@@ -72,6 +78,9 @@ async def trigger_custom_shock(request: CustomShockRequest):
         description=request.description,
         effects=request.effects,
     )
+    _active_shock_meta["activated_at"] = datetime.now(timezone.utc).isoformat()
+    _active_shock_meta["scenario_id"] = None
+    _active_shock_meta["scenario_name"] = "Custom Event"
     logging.info(f"[MarketShock] Custom shock triggered: {request.description}")
     return {"status": "shock_activated", "description": request.description}
 
@@ -79,6 +88,9 @@ async def trigger_custom_shock(request: CustomShockRequest):
 async def clear_shock():
     """Clear active market shock, return to normal conditions."""
     set_market_shock(active=False, description="", effects={})
+    _active_shock_meta["activated_at"] = None
+    _active_shock_meta["scenario_id"] = None
+    _active_shock_meta["scenario_name"] = None
     logging.info("[MarketShock] Shock cleared")
     return {"status": "shock_cleared"}
 
@@ -89,6 +101,9 @@ async def shock_status():
     return {
         "active": status["market_shock_active"],
         "description": status["market_shock_description"],
+        "activated_at": _active_shock_meta["activated_at"] if status["market_shock_active"] else None,
+        "scenario_id": _active_shock_meta["scenario_id"] if status["market_shock_active"] else None,
+        "scenario_name": _active_shock_meta["scenario_name"] if status["market_shock_active"] else None,
     }
 
 @router.post("/circuit-breaker/activate")
