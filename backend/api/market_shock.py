@@ -37,6 +37,57 @@ class CustomShockRequest(BaseModel):
     description: str
     effects: dict = {}
 
+class ValidateEventRequest(BaseModel):
+    description: str
+    price_effects: dict = {}
+
+@router.post("/market-shock/validate")
+async def validate_event(request: ValidateEventRequest):
+    """Validate and improve a custom event description using the LLM."""
+    import json
+    from services.gemini_client import generate
+
+    system_prompt = "You are a financial news validator. Respond only with valid JSON, no markdown."
+    user_message = (
+        f"Analyze this event description and determine if it is a realistic financial market event.\n\n"
+        f"Event: '{request.description}'\n\n"
+        "Respond ONLY with valid JSON in this exact format:\n"
+        "{\n"
+        '  "valid": true,\n'
+        '  "headline": "Rewritten as professional financial news headline (only if valid)",\n'
+        '  "reason": "Why it is or is not valid (one sentence)",\n'
+        '  "suggestions": []\n'
+        "}\n\n"
+        "A valid event must:\n"
+        "- Be a realistic event that could affect financial markets\n"
+        "- Be specific enough to suggest price movements\n"
+        "- Not be apocalyptic, fictional, or impossible\n\n"
+        "If valid, suggestions should be empty [].\n"
+        "If invalid, headline should be empty string and suggestions should contain 3 alternative events."
+    )
+
+    try:
+        raw = await generate(
+            system_prompt=system_prompt,
+            user_message=user_message,
+            temperature=0.3,
+        )
+        text = raw.strip()
+        if text.startswith("```"):
+            text = "\n".join(text.split("\n")[1:-1])
+        result = json.loads(text)
+        if request.price_effects:
+            warnings = []
+            for ticker, value in request.price_effects.items():
+                if not isinstance(value, (int, float)) or value < -0.99 or value > 5.0:
+                    warnings.append(f"{ticker}: {value} is out of valid range (-0.99 to 5.0)")
+            if warnings:
+                result["price_effects_warning"] = "; ".join(warnings)
+        return result
+    except Exception as e:
+        logging.warning(f"[MarketShock] Validation LLM call failed: {e}")
+        return {"valid": True, "headline": request.description, "reason": "", "suggestions": []}
+
 @router.get("/market-shock/scenarios")
 async def list_scenarios():
     """List all preset market shock scenarios."""

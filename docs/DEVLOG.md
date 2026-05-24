@@ -1,3 +1,22 @@
+## Fix: Custom event UX — single inject button, auto-validate suggestions, price range check
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/components/arena/market-shock-panel.tsx`
+- `backend/api/market_shock.py`
+**What was fixed**: Removed separate Validate button — validation now 
+happens on Inject click. Suggestion pills auto-validate. Price effects 
+validated against -99% to +500% range.
+
+## Feature: Custom event AI validation and news injection
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/api/market_shock.py` — POST /api/market-shock/validate endpoint
+- `backend/services/cycle_scheduler.py` — custom event injected as BREAKING news
+- `frontend/components/arena/market-shock-panel.tsx` — full validation UI
+**What was built**: Custom market events are validated by LLM before injection.
+Invalid events show 3 AI-generated alternatives. Valid events are rewritten 
+as professional headlines and injected as BREAKING news that agents react to.
+
 ## Fix: Phoenix datasets creation
 **Date**: 2026-05-24
 **File**: `backend/observability/evaluations.py`

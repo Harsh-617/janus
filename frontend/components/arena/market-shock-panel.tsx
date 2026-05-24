@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   applyPresetMarketShock,
-  applyCustomMarketShock,
   clearMarketShock,
   fetchMarketShockStatus,
   activateCircuitBreaker,
@@ -15,6 +14,7 @@ import {
   stopStream,
   fetchStreamStatus,
 } from "@/lib/api";
+import { API_BASE } from "@/lib/constants";
 import {
   Zap,
   TrendingDown,
@@ -27,6 +27,8 @@ import {
   Pause,
   X,
   Loader2,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import type { MarketShockStatus, StreamStatus } from "@/lib/types";
 
@@ -57,20 +59,52 @@ const PRESET_SCENARIOS = [
   },
 ];
 
+interface ValidationResult {
+  valid: boolean;
+  headline: string;
+  reason: string;
+  suggestions: string[];
+}
+
+function parseEffectsPreview(effects: string): { preview: string; isValid: boolean; hasRangeError: boolean } {
+  if (!effects.trim()) return { preview: "", isValid: true, hasRangeError: false };
+  try {
+    const items: string[] = [];
+    for (const part of effects.split(",")) {
+      const [ticker, delta] = part.trim().split(":");
+      if (!ticker || delta === undefined) throw new Error();
+      const value = parseFloat(delta);
+      if (isNaN(value)) throw new Error();
+      if (value < -0.99 || value > 5.0) {
+        const pct = Math.round(value * 100);
+        const sign = pct >= 0 ? "+" : "";
+        return {
+          preview: `Invalid: ${ticker.trim().toUpperCase()} ${sign}${pct}% exceeds maximum range (-99% to +500%)`,
+          isValid: false,
+          hasRangeError: true,
+        };
+      }
+      const pct = Math.round(value * 100);
+      items.push(`${ticker.trim().toUpperCase()} ${pct >= 0 ? "+" : ""}${pct}%`);
+    }
+    return { preview: `Will affect: ${items.join(" | ")}`, isValid: true, hasRangeError: false };
+  } catch {
+    return { preview: "Invalid format", isValid: false, hasRangeError: false };
+  }
+}
+
 export function MarketShockPanel() {
   const [loading, setLoading] = useState<string | null>(null);
-  const [shockStatus, setShockStatus] = useState<MarketShockStatus | null>(
-    null
-  );
+  const [shockStatus, setShockStatus] = useState<MarketShockStatus | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
   const [activeScenario, setActiveScenario] = useState<string | null>(null);
   const [activatedAt, setActivatedAt] = useState<Date | null>(null);
   const [customDescription, setCustomDescription] = useState("");
   const [customEffects, setCustomEffects] = useState("");
-  const [customMessage, setCustomMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [injectMessage, setInjectMessage] = useState<string | null>(null);
 
   const fetchStatuses = async () => {
     try {
@@ -147,39 +181,6 @@ export function MarketShockPanel() {
     }
   };
 
-  const handleCustomShock = async () => {
-    let parsedEffects: { [ticker: string]: number } = {};
-    if (customEffects.trim()) {
-      try {
-        for (const part of customEffects.split(",")) {
-          const [ticker, delta] = part.trim().split(":");
-          if (!ticker || delta === undefined) throw new Error("bad format");
-          const value = parseFloat(delta);
-          if (isNaN(value)) throw new Error("bad number");
-          parsedEffects[ticker.trim().toUpperCase()] = value;
-        }
-      } catch {
-        parsedEffects = {};
-      }
-    }
-    try {
-      setLoading("custom");
-      setCustomMessage(null);
-      await applyCustomMarketShock(parsedEffects);
-      setCustomDescription("");
-      setCustomEffects("");
-      setCustomMessage({ type: "success", text: "Event injected successfully." });
-      setTimeout(() => setCustomMessage(null), 4000);
-    } catch (error) {
-      setCustomMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Injection failed.",
-      });
-    } finally {
-      setLoading(null);
-    }
-  };
-
   const handleToggleStream = async () => {
     try {
       setLoading("toggle_stream");
@@ -195,6 +196,82 @@ export function MarketShockPanel() {
       setLoading(null);
     }
   };
+
+  const handleDescriptionChange = (value: string) => {
+    setCustomDescription(value);
+    setValidationResult(null);
+    setValidationError(null);
+  };
+
+  const handleInjectEvent = async () => {
+    if (descLen < 10 || effectsPreview.hasRangeError) return;
+
+    let headline = customDescription;
+
+    if (!validationResult?.valid) {
+      setIsValidating(true);
+      setValidationResult(null);
+      setValidationError(null);
+      try {
+        const res = await fetch(`${API_BASE}/api/market-shock/validate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description: customDescription }),
+        });
+        if (!res.ok) throw new Error(`Validation failed: ${res.status}`);
+        const result: ValidationResult = await res.json();
+        setValidationResult(result);
+        setIsValidating(false);
+        if (!result.valid) return;
+        headline = result.headline || customDescription;
+      } catch (e) {
+        setValidationError(e instanceof Error ? e.message : "Validation request failed.");
+        setIsValidating(false);
+        return;
+      }
+    } else {
+      headline = validationResult.headline || customDescription;
+    }
+
+    let parsedEffects: { [ticker: string]: number } = {};
+    if (customEffects.trim()) {
+      try {
+        for (const part of customEffects.split(",")) {
+          const [ticker, delta] = part.trim().split(":");
+          if (!ticker || delta === undefined) throw new Error();
+          const value = parseFloat(delta);
+          if (isNaN(value)) throw new Error();
+          parsedEffects[ticker.trim().toUpperCase()] = value;
+        }
+      } catch {
+        parsedEffects = {};
+      }
+    }
+
+    try {
+      setLoading("inject");
+      const res = await fetch(`${API_BASE}/api/market-shock/custom`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: headline, effects: parsedEffects }),
+      });
+      if (!res.ok) throw new Error(`Injection failed: ${res.status}`);
+      setCustomDescription("");
+      setCustomEffects("");
+      setValidationResult(null);
+      setValidationError(null);
+      setInjectMessage("Event injected — agents will react in next cycle");
+      setTimeout(() => setInjectMessage(null), 5000);
+      await fetchStatuses();
+    } catch (e) {
+      setValidationError(e instanceof Error ? e.message : "Injection failed.");
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const effectsPreview = parseEffectsPreview(customEffects);
+  const descLen = customDescription.length;
 
   return (
     <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6">
@@ -378,27 +455,104 @@ export function MarketShockPanel() {
         <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wide mb-3">
           Custom Event
         </h3>
-        <div className="space-y-2">
-          <input
-            type="text"
-            value={customDescription}
-            onChange={(e) => setCustomDescription(e.target.value)}
-            placeholder="Describe a market event..."
-            className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
-          />
-          <input
-            type="text"
-            value={customEffects}
-            onChange={(e) => setCustomEffects(e.target.value)}
-            placeholder="e.g. AAPL:-0.10,GLD:+0.15 (optional)"
-            className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
-          />
+        <div className="space-y-3">
+          {/* Description input with char count */}
+          <div>
+            <input
+              type="text"
+              value={customDescription}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
+              maxLength={200}
+              placeholder="Describe a market event..."
+              className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
+            />
+            <p className={cn(
+              "text-[10px] mt-1 text-right",
+              descLen > 180 ? "text-[var(--janus-danger)]" : "text-[var(--janus-text-muted)]"
+            )}>
+              {descLen}/200
+            </p>
+          </div>
+
+          {/* Effects input with live preview */}
+          <div>
+            <input
+              type="text"
+              value={customEffects}
+              onChange={(e) => setCustomEffects(e.target.value)}
+              placeholder="e.g. AAPL:-0.10,GLD:+0.15 (optional)"
+              className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
+            />
+            {customEffects.trim() && (
+              <p className={cn(
+                "text-[10px] mt-1",
+                effectsPreview.isValid ? "text-[var(--janus-success)]" : "text-[var(--janus-danger)]"
+              )}>
+                {effectsPreview.preview}
+              </p>
+            )}
+          </div>
+
+          {/* Validation result */}
+          {validationResult && validationResult.valid && (
+            <div className="rounded-md p-3 bg-[var(--janus-success)]/10 border border-[var(--janus-success)]/30">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-[var(--janus-success)] mt-0.5 shrink-0" />
+                <div className="text-xs text-[var(--janus-success)]">
+                  <span className="font-semibold">Your event: </span>
+                  &ldquo;{validationResult.headline}&rdquo;
+                </div>
+              </div>
+              {validationResult.reason && (
+                <p className="text-[10px] text-[var(--janus-text-muted)] mt-1 ml-6">
+                  {validationResult.reason}
+                </p>
+              )}
+            </div>
+          )}
+
+          {validationResult && !validationResult.valid && (
+            <div className="rounded-md p-3 bg-[var(--janus-danger)]/10 border border-[var(--janus-danger)]/30">
+              <div className="flex items-start gap-2">
+                <XCircle className="h-4 w-4 text-[var(--janus-danger)] mt-0.5 shrink-0" />
+                <p className="text-xs text-[var(--janus-danger)]">{validationResult.reason}</p>
+              </div>
+              {validationResult.suggestions && validationResult.suggestions.length > 0 && (
+                <div className="mt-2 ml-6 flex flex-col gap-1">
+                  {validationResult.suggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setCustomDescription(s);
+                        setValidationResult({ valid: true, headline: s, reason: "", suggestions: [] });
+                        setValidationError(null);
+                      }}
+                      className="text-left text-[10px] text-[var(--janus-text-secondary)] bg-[var(--janus-border)]/30 hover:bg-[var(--janus-border)]/60 rounded px-2 py-1 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {validationError && (
+            <p className="text-xs text-[var(--janus-danger)]">{validationError}</p>
+          )}
+
+          {/* Inject button */}
           <Button
-            onClick={handleCustomShock}
-            disabled={!customDescription.trim() || loading === "custom"}
+            onClick={handleInjectEvent}
+            disabled={descLen < 10 || isValidating || loading === "inject" || effectsPreview.hasRangeError}
             className="w-full bg-[#C9A84C] hover:bg-[#C9A84C]/80 text-[#13151A] font-semibold disabled:opacity-50"
           >
-            {loading === "custom" ? (
+            {isValidating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Validating...
+              </>
+            ) : loading === "inject" ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Injecting...
@@ -407,17 +561,9 @@ export function MarketShockPanel() {
               "Inject Event"
             )}
           </Button>
-          {customMessage && (
-            <p
-              className={cn(
-                "text-xs mt-1",
-                customMessage.type === "success"
-                  ? "text-[var(--janus-success)]"
-                  : "text-[var(--janus-danger)]"
-              )}
-            >
-              {customMessage.text}
-            </p>
+
+          {injectMessage && (
+            <p className="text-xs text-[var(--janus-success)]">{injectMessage}</p>
           )}
         </div>
       </div>
