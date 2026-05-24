@@ -27,7 +27,8 @@ export default function ObservabilityPage() {
     const fetchData = async () => {
       try {
         const cyclesData = await fetchCycles(20);
-        setCycles(cyclesData);
+        const cyclesArr = Array.isArray(cyclesData) ? cyclesData : (cyclesData as unknown as { cycles: DecisionCycle[] }).cycles || [];
+        setCycles(cyclesArr);
       } catch (error) {
         console.error("Failed to fetch cycles:", error);
       } finally {
@@ -59,7 +60,7 @@ export default function ObservabilityPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const chartData = cycles
+  const chartData = Array.isArray(cycles) ? cycles
     .slice()
     .reverse()
     .map((cycle) => ({
@@ -70,7 +71,7 @@ export default function ObservabilityPage() {
       "Hallucination Risk": 10 - cycle.judge_hallucination_risk, // Invert
       Compliance: cycle.judge_compliance,
       Explainability: cycle.judge_explainability,
-    }));
+    })) : [];
 
   return (
     <LayoutWrapper>
