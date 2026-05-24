@@ -919,7 +919,12 @@ from @/lib/constants so it correctly hits the FastAPI backend.
 array. loop-timeline crashing on undefined avg_score_last_10. Fixed both 
 with array extraction and ?? 0 fallbacks.
 
-## Hotfix #9 � Custom market shock UI
+## Hotfix #9 — Custom market shock UI
 **Date**: 2026-05-24
 **File**: `frontend/components/arena/market-shock-panel.tsx`
 **What was built**: Custom market shock input section added below preset buttons. Allows injecting a custom event description and optional price effects (TICKER:delta format). Calls applyCustomMarketShock from lib/api.ts.
+
+## Fix #32 — Circuit breaker topbar lag
+**Date**: 2026-05-24
+**Files modified**: topbar.tsx and layout-wrapper.tsx
+**What was fixed**: After toggling circuit breaker, portfolio refetch now fires immediately so topbar status updates instantly instead of waiting up to 10s for the next poll.

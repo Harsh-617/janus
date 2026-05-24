@@ -13,9 +13,10 @@ import {
 
 interface TopbarProps {
   portfolio: Portfolio | null;
+  onCircuitBreakerToggle?: () => void;
 }
 
-export function Topbar({ portfolio }: TopbarProps) {
+export function Topbar({ portfolio, onCircuitBreakerToggle }: TopbarProps) {
   const [isRunning, setIsRunning] = useState(false);
 
   const handleRunCycle = async () => {
@@ -36,6 +37,7 @@ export function Topbar({ portfolio }: TopbarProps) {
       } else {
         await activateCircuitBreaker();
       }
+      onCircuitBreakerToggle?.();
     } catch (error) {
       console.error("Failed to toggle circuit breaker:", error);
     }
