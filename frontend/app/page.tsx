@@ -17,28 +17,30 @@ export default function Arena() {
 
   return (
     <LayoutWrapper>
-      <div className="space-y-6">
+      <div className="flex flex-col gap-2">
         {/* Agent Status Bar */}
-        <AgentStatusBar
-          activeAgents={activeAgents}
-          lastCycle={lastCycle}
-          connected={connected}
-        />
+        <div className="mb-2">
+          <AgentStatusBar
+            activeAgents={activeAgents}
+            lastCycle={lastCycle}
+            connected={connected}
+          />
+        </div>
 
         {/* Main Layout: Forward Face | Divider | Backward Face */}
-        <div className="flex gap-0 min-h-[600px]">
+        <div className="flex gap-0 h-[480px] overflow-hidden">
           {/* Left: Portfolio Panel — Forward Face */}
           <div className="flex-1 flex flex-col">
             <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: "#4CADCE" }}>
               ◀ THE FORWARD FACE
             </p>
-            <div className="flex-1" style={{ background: "linear-gradient(to bottom, rgba(76, 173, 206, 0.03), transparent)" }}>
+            <div className="flex-1 h-full" style={{ background: "linear-gradient(to bottom, rgba(76, 173, 206, 0.03), transparent)" }}>
               <PortfolioPanel portfolio={portfolio} />
             </div>
           </div>
 
           {/* Janus Divider */}
-          <div className="w-10 flex-shrink-0">
+          <div className="w-10 flex-shrink-0 h-full">
             <JanusDivider />
           </div>
 
@@ -47,7 +49,7 @@ export default function Arena() {
             <p className="text-[10px] uppercase tracking-widest mb-2 text-right" style={{ color: "#C9A84C" }}>
               THE BACKWARD FACE ▶
             </p>
-            <div className="flex-1 min-h-[400px]" style={{ background: "linear-gradient(to bottom, rgba(201, 168, 76, 0.03), transparent)" }}>
+            <div className="flex-1 h-full overflow-y-auto" style={{ background: "linear-gradient(to bottom, rgba(201, 168, 76, 0.03), transparent)" }}>
               <DecisionFeed events={events} connected={connected} />
             </div>
           </div>

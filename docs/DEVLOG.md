@@ -1,3 +1,20 @@
+## Fix: Arena layout final polish
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/app/page.tsx` — reduced spacing, adjusted panel height
+- `frontend/components/arena/portfolio-panel.tsx` — removed allocation 
+  chart, positions list fixed height with internal scroll
+**What was fixed**: Freed up vertical space so Market Controls header 
+is visible without scrolling.
+
+## Fix: Arena layout polish — compact agent bar, panel heights
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/app/page.tsx` — panel heights adjusted
+- `frontend/app/globals.css` — scrollbar-hide utility added
+- Agent status component — more compact styling
+**What was fixed**: Agent status bar reduced in height. Left panel scrollbar hidden. Two-panel height set so Market Controls header peeks at bottom. Right panel scrolls internally.
+
 ## Fix: Decision Feed empty and right panel layout
 **Date**: 2026-05-24
 **Files modified**: 
@@ -955,3 +972,30 @@ with array extraction and ?? 0 fallbacks.
 **Date**: 2026-05-24
 **File**: `frontend/hooks/use-agent-stream.ts`
 **What was fixed**: Backend sends SSE events as default "message" events with type embedded in JSON body. Frontend was using named addEventListener calls which never fired. Replaced with single onmessage handler that reads type from parsed JSON body.
+
+## Fix: Arena layout fixed height panels with internal scroll
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/app/page.tsx` — two-panel container fixed height, panels scroll internally
+- `frontend/components/arena/decision-feed.tsx` — internal scroll only
+**What was fixed**: Panels were growing vertically as content was added causing blank space and layout breaking. Now fixed height with overflow scroll inside each panel.
+
+## Fix: Left panel compact — no scroll, smaller fonts
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/components/arena/portfolio-panel.tsx` — compact fonts, reduced padding, smaller chart, hide empty P&L section
+- `frontend/app/page.tsx` — removed scroll from left panel
+**What was fixed**: Left panel was too tall due to large fonts and padding. Made compact so all content fits statically. Market Controls header now visible without scrolling.
+
+## Fix: Arena hard fixed height, restore P&L sparkline
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/app/page.tsx` — hard 500px height for two-panel section
+- `frontend/components/arena/portfolio-panel.tsx` — P&L sparkline restored as compact 60px chart
+**What was fixed**: Two-panel section now exactly 500px so Market Controls header is always visible. P&L sparkline restored.
+
+## Fix: Arena layout aggressive spacing overhaul
+**Date**: 2026-05-24
+**Files modified**: page.tsx, layout-wrapper.tsx, portfolio-panel.tsx
+**What was fixed**: Removed excess padding between topbar and content.
+Reduced panel height. Restored P&L sparkline.

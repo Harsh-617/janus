@@ -44,15 +44,15 @@ export function AgentStatusBar({
   };
 
   return (
-    <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide">
+    <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-2">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xs font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide">
           Agent Status
         </h2>
         <LiveIndicator active={connected} label={connected ? "Connected" : "Disconnected"} />
       </div>
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-5 gap-2">
         {AGENT_ORDER.map((agent) => {
           const isActive = activeAgents[agent];
           const status = getAgentStatus(agent);
@@ -63,27 +63,27 @@ export function AgentStatusBar({
             <div
               key={agent}
               className={cn(
-                "flex flex-col gap-2 p-3 rounded-md border transition-all",
+                "flex items-center gap-2 py-2 px-3 rounded-md border transition-all",
                 isActive
                   ? "border-[var(--janus-blue)] bg-[var(--janus-blue)]/10"
                   : "border-[var(--janus-border)] bg-[var(--janus-background)]"
               )}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex-shrink-0 relative">
                 <div
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: color }}
                 />
                 {isActive && (
-                  <div className="relative flex h-2 w-2">
+                  <div className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--janus-blue)] opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--janus-blue)]"></span>
                   </div>
                 )}
               </div>
 
-              <div>
-                <div className="text-xs font-semibold text-[var(--janus-text-primary)] mb-1">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[var(--janus-text-primary)] truncate">
                   {AGENT_DISPLAY_NAMES[agent]}
                 </div>
                 <div
@@ -98,11 +98,7 @@ export function AgentStatusBar({
                 </div>
               </div>
 
-              {score !== null && (
-                <div className="mt-1">
-                  <ScoreBadge score={score} size="sm" />
-                </div>
-              )}
+              {score !== null && <ScoreBadge score={score} size="sm" />}
             </div>
           );
         })}
