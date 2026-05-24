@@ -7,7 +7,7 @@ import { LiveIndicator } from "@/components/shared/live-indicator";
 import { Button } from "@/components/ui/button";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { fetchCycles, fetchJanusLoopStatus } from "@/lib/api";
-import { AGENT_COLORS, AGENT_DISPLAY_NAMES } from "@/lib/constants";
+import { API_BASE, AGENT_COLORS, AGENT_DISPLAY_NAMES } from "@/lib/constants";
 import type {
   DecisionCycle,
   AgentName,
@@ -29,10 +29,23 @@ const AGENT_ORDER: AgentName[] = [
 export default function AgentsPage() {
   const [cycles, setCycles] = useState<DecisionCycle[]>([]);
   const [janusStatus, setJanusStatus] = useState<JanusLoopStatus | null>(null);
+  const [agentData, setAgentData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const { activeAgents, connected } = useAgentStream();
+
+  const fetchAgentData = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/agents`);
+      if (res.ok) {
+        const data = await res.json();
+        setAgentData(Array.isArray(data) ? data : data.agents || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch /api/agents:", error);
+    }
+  };
 
   const fetchData = async (isRefresh = false) => {
     try {
@@ -42,6 +55,7 @@ export default function AgentsPage() {
       const [cyclesData, statusData] = await Promise.all([
         fetchCycles(50),
         fetchJanusLoopStatus(),
+        fetchAgentData(),
       ]);
 
       setCycles(Array.isArray(cyclesData) ? cyclesData : (cyclesData as any).cycles || []);
@@ -57,9 +71,65 @@ export default function AgentsPage() {
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(fetchAgentData, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
-  const deriveAgentStats = (agentId: AgentName) => {
+  const deriveAgentStats = (agentId: AgentName, agentDataParam: any[]) => {
+    const agentApiData = agentDataParam.find((a) => a.agent_id === agentId);
+
+    if (agentApiData) {
+      const avgScore: number = agentApiData.avg_judge_score_last_20;
+      const dimensionScores: DimensionScores = agentApiData.dimension_scores;
+      const lastDecision: string = agentApiData.last_decision;
+
+      let stats: Record<string, string | number> = {};
+      if (Array.isArray(cycles) && cycles.length > 0) {
+        switch (agentId) {
+          case "trading_agent":
+            stats = {
+              "Cycles": cycles.length,
+              "Avg Score": avgScore.toFixed(1),
+              "Learning Events": cycles.filter((c) => c.learning_event).length,
+            };
+            break;
+          case "risk_agent":
+            stats = {
+              "Cycles": cycles.length,
+              "Avg Safety": dimensionScores.safety.toFixed(1),
+              "High Risk": cycles.filter((c) => c.judge_safety < 5).length,
+            };
+            break;
+          case "fraud_agent": {
+            const totalAlerts = cycles.reduce((sum, c) => sum + c.fraud_alerts_count, 0);
+            stats = {
+              "Total Alerts": totalAlerts,
+              "Avg/Cycle": (totalAlerts / cycles.length).toFixed(1),
+              "Critical": cycles.filter((c) => c.fraud_alerts_count > 2).length,
+            };
+            break;
+          }
+          case "regulator_agent":
+            stats = {
+              "EXECUTE": cycles.filter((c) => c.final_decision === "EXECUTE").length,
+              "HOLD": cycles.filter((c) => c.final_decision === "HOLD").length,
+              "HALT": cycles.filter((c) => c.final_decision === "HALT").length,
+            };
+            break;
+          case "judge_agent":
+            stats = {
+              "Avg Score": avgScore.toFixed(1),
+              "Learning Events": cycles.filter((c) => c.learning_event).length,
+              "Low Scores": cycles.filter((c) => c.judge_overall_score < 6).length,
+            };
+            break;
+        }
+      }
+
+      return { avgScore, dimensionScores, stats, lastDecision };
+    }
+
+    // Fall back to cycle-derived stats when no per-agent API data is available
     if (!Array.isArray(cycles) || cycles.length === 0) {
       return {
         avgScore: null,
@@ -69,7 +139,6 @@ export default function AgentsPage() {
       };
     }
 
-    // Calculate average scores
     const avgScore =
       cycles.reduce((sum, c) => sum + c.judge_overall_score, 0) / cycles.length;
 
@@ -79,13 +148,11 @@ export default function AgentsPage() {
       safety:
         cycles.reduce((sum, c) => sum + c.judge_safety, 0) / cycles.length,
       hallucination_risk:
-        cycles.reduce((sum, c) => sum + c.judge_hallucination_risk, 0) /
-        cycles.length,
+        cycles.reduce((sum, c) => sum + c.judge_hallucination_risk, 0) / cycles.length,
       compliance:
         cycles.reduce((sum, c) => sum + c.judge_compliance, 0) / cycles.length,
       explainability:
-        cycles.reduce((sum, c) => sum + c.judge_explainability, 0) /
-        cycles.length,
+        cycles.reduce((sum, c) => sum + c.judge_explainability, 0) / cycles.length,
     };
 
     let stats: Record<string, string | number> = {};
@@ -100,7 +167,6 @@ export default function AgentsPage() {
         };
         lastDecision = "Proposed trades in last cycle";
         break;
-
       case "risk_agent":
         stats = {
           "Cycles": cycles.length,
@@ -109,12 +175,8 @@ export default function AgentsPage() {
         };
         lastDecision = "Risk assessment completed";
         break;
-
-      case "fraud_agent":
-        const totalAlerts = cycles.reduce(
-          (sum, c) => sum + c.fraud_alerts_count,
-          0
-        );
+      case "fraud_agent": {
+        const totalAlerts = cycles.reduce((sum, c) => sum + c.fraud_alerts_count, 0);
         stats = {
           "Total Alerts": totalAlerts,
           "Avg/Cycle": (totalAlerts / cycles.length).toFixed(1),
@@ -122,20 +184,15 @@ export default function AgentsPage() {
         };
         lastDecision = `${cycles[0]?.fraud_alerts_count || 0} alerts in last cycle`;
         break;
-
+      }
       case "regulator_agent":
-        const executeCount = cycles.filter(
-          (c) => c.final_decision === "EXECUTE"
-        ).length;
-        const haltCount = cycles.filter((c) => c.final_decision === "HALT").length;
         stats = {
-          "EXECUTE": executeCount,
+          "EXECUTE": cycles.filter((c) => c.final_decision === "EXECUTE").length,
           "HOLD": cycles.filter((c) => c.final_decision === "HOLD").length,
-          "HALT": haltCount,
+          "HALT": cycles.filter((c) => c.final_decision === "HALT").length,
         };
         lastDecision = `Last decision: ${cycles[0]?.final_decision || "N/A"}`;
         break;
-
       case "judge_agent":
         stats = {
           "Avg Score": avgScore.toFixed(1),
@@ -227,7 +284,7 @@ export default function AgentsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {AGENT_ORDER.map((agentId) => {
               const { avgScore, dimensionScores, stats, lastDecision } =
-                deriveAgentStats(agentId);
+                deriveAgentStats(agentId, agentData);
               const activeConstraints = getActiveConstraintsForAgent(agentId);
 
               return (

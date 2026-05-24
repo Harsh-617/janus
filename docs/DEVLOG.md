@@ -1,3 +1,11 @@
+## Fix: Per-agent scores and radar charts
+**Date**: 2026-05-24
+**File**: `frontend/app/agents/page.tsx`
+**What was fixed**: All 5 agent cards were showing identical scores 
+because stats were computed from global cycle averages. Now fetches 
+from /api/agents endpoint which returns real per-agent dimension scores. 
+Each agent card and radar chart now shows unique data.
+
 ## Fix #15 â€” Frontend env example and Phoenix URL config
 **Date**: 2026-05-24
 **Files created/modified**:
@@ -890,7 +898,7 @@ from @/lib/constants so it correctly hits the FastAPI backend.
 array. loop-timeline crashing on undefined avg_score_last_10. Fixed both 
 with array extraction and ?? 0 fallbacks.
 
-## Hotfix #9 — Custom market shock UI
+## Hotfix #9 ï¿½ Custom market shock UI
 **Date**: 2026-05-24
 **File**: `frontend/components/arena/market-shock-panel.tsx`
 **What was built**: Custom market shock input section added below preset buttons. Allows injecting a custom event description and optional price effects (TICKER:delta format). Calls applyCustomMarketShock from lib/api.ts.
