@@ -1,3 +1,12 @@
+## Fix #4 — Cinzel font for headers
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/app/layout.tsx` — Cinzel imported from next/font/google, added to html className
+- `frontend/app/globals.css` — font-cinzel CSS variable and utility class added
+- `frontend/components/layout/sidebar.tsx` — font-cinzel applied to JANUS brand heading
+- `frontend/app/janus-loop/page.tsx` — font-cinzel applied to page title (replaced font-serif)
+**What was built**: Cinzel (Roman-inspired serif) loaded and applied to all Janus brand headings and page titles, matching the PRD visual identity spec.
+
 ## Fix #3 — /api/constraints endpoint
 **Date**: 2026-05-24
 **Files modified**:

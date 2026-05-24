@@ -146,7 +146,7 @@ export default function JanusLoopPage() {
       {/* Page header */}
       <div className="mb-8">
         <h1
-          className="text-4xl font-bold font-serif tracking-wide mb-1"
+          className="text-4xl font-bold font-cinzel tracking-wide mb-1"
           style={{ color: "#C9A84C" }}
         >
           The Janus Loop

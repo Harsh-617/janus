@@ -61,7 +61,7 @@ export function Sidebar() {
               fill="currentColor"
             />
           </svg>
-          <h1 className="text-xl font-bold text-[var(--janus-gold)] tracking-wider">
+          <h1 className="text-xl font-bold font-cinzel text-[var(--janus-gold)] tracking-wider">
             JANUS
           </h1>
         </div>

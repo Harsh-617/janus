@@ -95,6 +95,7 @@
   --janus-text-primary: #e8e6e0;
   --janus-text-secondary: #8a8780;
   --janus-text-muted: #4a4845;
+  --font-cinzel: var(--font-cinzel);
 }
 
 .dark {
@@ -144,6 +145,7 @@
   --janus-text-primary: #e8e6e0;
   --janus-text-secondary: #8a8780;
   --janus-text-muted: #4a4845;
+  --font-cinzel: var(--font-cinzel);
 }
 
 @layer base {
@@ -156,4 +158,8 @@
   html {
     @apply font-sans;
   }
+}
+
+.font-cinzel {
+  font-family: var(--font-cinzel), serif;
 }
