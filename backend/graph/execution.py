@@ -8,14 +8,22 @@ import uuid
 from datetime import datetime, timezone
 
 
+def get_state_value(state, key, default=None):
+    """LangGraph may accumulate state fields as lists via reducers; extract the last item if so."""
+    val = state.get(key, default)
+    if isinstance(val, list):
+        return val[-1] if val else default
+    return val if val is not None else default
+
+
 async def execute_cycle_results(state: JanusState) -> dict:
     """
     After the graph completes, persist results to Firestore.
     Returns a summary dict for the SSE stream.
     """
     cycle_id = state["cycle_id"]
-    regulator_decision = state.get("regulator_decision", {})
-    judge_scores = state.get("judge_scores", {})
+    regulator_decision = get_state_value(state, "regulator_decision", {})
+    judge_scores = get_state_value(state, "judge_scores", {})
     final_decision = regulator_decision.get("final_decision", "HOLD")
 
     trades_executed = []
@@ -23,7 +31,7 @@ async def execute_cycle_results(state: JanusState) -> dict:
     if final_decision == "EXECUTE":
         trades_to_run = regulator_decision.get("trades_to_execute", [])
 
-        risk_decision = state.get("risk_report", {})
+        risk_decision = get_state_value(state, "risk_report", {})
         market_prices = state.get("market_prices", {})
 
         for trade in trades_to_run:
@@ -117,26 +125,26 @@ async def execute_cycle_results(state: JanusState) -> dict:
         "market_shock_active": state.get("market_shock_active", False),
         "decisions": {
             "trading_agent": {
-                "action": state.get("trading_proposal", {}).get("action", ""),
-                "thesis": state.get("trading_proposal", {}).get("thesis", ""),
-                "confidence": state.get("trading_proposal", {}).get("confidence", 0),
+                "action": get_state_value(state, "trading_proposal", {}).get("action", ""),
+                "thesis": get_state_value(state, "trading_proposal", {}).get("thesis", ""),
+                "confidence": get_state_value(state, "trading_proposal", {}).get("confidence", 0),
             },
             "risk_agent": {
-                "decision": state.get("risk_report", {}).get("decision", ""),
-                "verdict": state.get("risk_report", {}).get("risk_report", {}).get("verdict", ""),
+                "decision": risk_decision.get("decision", ""),
+                "verdict": risk_decision.get("risk_report", {}).get("verdict", ""),
             },
             "fraud_agent": {
-                "status": state.get("fraud_report", {}).get("status", ""),
-                "alerts": state.get("fraud_report", {}).get("alerts", []),
+                "status": get_state_value(state, "fraud_report", {}).get("status", ""),
+                "alerts": get_state_value(state, "fraud_report", {}).get("alerts", []),
             },
             "regulator_agent": {
-                "final_decision": state.get("regulator_decision", {}).get("final_decision", ""),
-                "reason": state.get("regulator_decision", {}).get("reason", ""),
+                "final_decision": regulator_decision.get("final_decision", ""),
+                "reason": regulator_decision.get("reason", ""),
             },
             "llm_judge": {
-                "overall_score": state.get("judge_scores", {}).get("overall_score", 0),
-                "critical_finding": state.get("judge_scores", {}).get("critical_finding", ""),
-                "recommended_constraint": state.get("judge_scores", {}).get("recommended_constraint", ""),
+                "overall_score": judge_scores.get("overall_score", 0),
+                "critical_finding": judge_scores.get("critical_finding", ""),
+                "recommended_constraint": judge_scores.get("recommended_constraint", ""),
             },
         },
     }
@@ -183,7 +191,7 @@ async def execute_cycle_results(state: JanusState) -> dict:
     from services.memory_service import update_agent_memories
     await update_agent_memories(
         cycle_number=state.get("cycle_number", 0),
-        judge_scores=state.get("judge_scores", {}),
+        judge_scores=get_state_value(state, "judge_scores", {}),
         active_constraints=state.get("active_constraints", []),
     )
 

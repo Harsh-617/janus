@@ -1,3 +1,8 @@
+## Critical Fix — list vs dict state values in execution
+**Date**: 2026-05-24
+**File**: `backend/graph/execution.py`
+**What was fixed**: LangGraph state fields were returning as lists instead of dicts because of how state reducers work. Added get_state_value() helper that extracts the last item if the value is a list. Cycles now persist correctly to Firestore.
+
 ## Critical Fix — Remove LangGraph Firestore checkpointer
 **Date**: 2026-05-24
 **File**: `backend/graph/janus_graph.py`
