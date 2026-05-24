@@ -44,7 +44,7 @@ export default function ObservabilityPage() {
   useEffect(() => {
     const checkPhoenix = async () => {
       try {
-        const response = await fetch("http://localhost:6006", {
+        const response = await fetch(process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006", {
           mode: "no-cors",
         });
         setPhoenixReachable(true);
@@ -233,12 +233,12 @@ export default function ObservabilityPage() {
                   <p className="text-xs text-[var(--janus-text-muted)] mt-3">
                     Then access Phoenix at:{" "}
                     <a
-                      href="http://localhost:6006"
+                      href={process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[var(--janus-blue)] hover:underline"
                     >
-                      http://localhost:6006
+                      {process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006"}
                     </a>
                   </p>
                 </div>
@@ -253,7 +253,7 @@ export default function ObservabilityPage() {
                 </code>
               </p>
               <iframe
-                src="http://localhost:6006"
+                src={process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006"}
                 className="w-full border-0 rounded-lg bg-[var(--janus-background)]"
                 style={{ minHeight: "500px" }}
                 title="Arize Phoenix"

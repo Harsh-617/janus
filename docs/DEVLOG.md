@@ -1,3 +1,15 @@
+## Fix #15 — Frontend env example and Phoenix URL config
+**Date**: 2026-05-24
+**Files created/modified**:
+- `frontend/.env.local.example` — created with NEXT_PUBLIC_API_URL and 
+  NEXT_PUBLIC_PHOENIX_URL
+- `.gitignore` or `frontend/.gitignore` — .env.local added if not already present
+- `frontend/app/observability/page.tsx` — Phoenix URL uses env var with 
+  localhost fallback
+**What was built**: Frontend environment variables properly documented and 
+configured. Phoenix URL is now configurable via NEXT_PUBLIC_PHOENIX_URL 
+instead of hardcoded. Matches README setup instructions.
+
 ## Fix #14 — Complete README
 **Date**: 2026-05-24
 **File modified**: `README.md`
