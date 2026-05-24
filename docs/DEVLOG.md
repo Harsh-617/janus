@@ -1008,3 +1008,8 @@ Keys loaded from numbered env vars, empty ones filtered out automatically.
 **Files modified**: page.tsx, layout-wrapper.tsx, portfolio-panel.tsx
 **What was fixed**: Removed excess padding between topbar and content.
 Reduced panel height. Restored P&L sparkline.
+
+## Fix: Groq key rotation skip daily-exhausted keys
+**Date**: 2026-05-24
+**File**: `backend/services/gemini_client.py`
+**What was fixed**: Keys hitting daily TPD limits were not being permanently removed from rotation. Added _exhausted_keys set that removes daily-limit keys for the session. Only TPM (per-minute) keys are retried normally.

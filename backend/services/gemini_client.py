@@ -21,22 +21,24 @@
 
 import groq
 import logging
-import itertools
+import asyncio
 from config import settings
 
-_clients = None
-_client_cycle = None
+_clients: list[tuple[str, groq.AsyncGroq]] | None = None
+_current_index: int = 0
+_exhausted_keys: set[str] = set()
 
-def get_clients():
-    global _clients, _client_cycle
+
+def get_clients() -> list[tuple[str, groq.AsyncGroq]]:
+    global _clients
     if _clients is None:
         keys = settings.groq_api_keys
         if not keys:
             raise ValueError("No Groq API keys configured")
-        _clients = [groq.AsyncGroq(api_key=k) for k in keys]
-        _client_cycle = itertools.cycle(_clients)
+        _clients = [(k, groq.AsyncGroq(api_key=k)) for k in keys]
         logging.info(f"[LLMClient] Initialized with {len(_clients)} Groq key(s)")
-    return _client_cycle
+    return _clients
+
 
 async def generate(
     system_prompt: str,
@@ -44,16 +46,51 @@ async def generate(
     model: str = None,
     temperature: float = 0.7,
 ) -> str:
-    client = next(get_clients())
+    global _current_index
     if model is None:
         model = settings.GEMINI_MODEL_FAST
-    response = await client.chat.completions.create(
-        model=model,
-        max_tokens=2048,
-        temperature=temperature,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-    )
-    return response.choices[0].message.content
+
+    all_clients = get_clients()
+    last_error: Exception | None = None
+
+    while True:
+        available = [
+            (i, k, c)
+            for i, (k, c) in enumerate(all_clients)
+            if k not in _exhausted_keys
+        ]
+        if not available:
+            msg = "All Groq keys exhausted for today — waiting for reset"
+            logging.warning(f"[LLMClient] {msg}")
+            if last_error is not None:
+                raise last_error
+            raise RuntimeError(msg)
+
+        pos = _current_index % len(available)
+        orig_idx, key, client = available[pos]
+
+        try:
+            response = await client.chat.completions.create(
+                model=model,
+                max_tokens=2048,
+                temperature=temperature,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+            )
+            _current_index = pos + 1
+            return response.choices[0].message.content
+        except groq.RateLimitError as e:
+            last_error = e
+            err_msg = str(e).lower()
+            if "per day" in err_msg or "tokens per day" in err_msg or "tpd" in err_msg:
+                logging.warning(
+                    f"[LLMClient] Key {orig_idx} marked as daily-exhausted — removing from pool"
+                )
+                _exhausted_keys.add(key)
+            elif "per minute" in err_msg or "tpm" in err_msg:
+                await asyncio.sleep(60)
+                _current_index = pos + 1
+            else:
+                raise
