@@ -119,18 +119,25 @@ async def initialize_portfolio() -> None:
     if existing is not None:
         return
 
+    initial_capital = settings.INITIAL_CAPITAL  # 1_000_000.0
+    cash = 245000.0
+    positions = {
+        "AAPL": {"shares": 1100, "avg_cost": 180.50, "current_price": 195.20, "sector": "Technology"},
+        "GLD": {"shares": 430, "avg_cost": 220.00, "current_price": 235.10, "sector": "Commodities"},
+        "BTC-USD": {"shares": 4.0, "avg_cost": 65000.00, "current_price": 72000.00, "sector": "Crypto"},
+        "TLT": {"shares": 1100, "avg_cost": 95.00, "current_price": 92.50, "sector": "Bonds"},
+        "XOM": {"shares": 425, "avg_cost": 110.00, "current_price": 118.30, "sector": "Energy"},
+    }
+    total_value = sum(p["shares"] * p["current_price"] for p in positions.values()) + cash
+    pnl_pct = round(((total_value - initial_capital) / initial_capital) * 100, 4)
+
     seed = {
         "portfolio_id": settings.FIRESTORE_PORTFOLIO_ID,
-        "cash": 245000.0,
-        "total_value": 1087500.0,
-        "pnl_pct": 0.0,
-        "positions": {
-            "AAPL": {"shares": 100, "avg_cost": 180.50, "current_price": 195.20, "sector": "Technology"},
-            "GLD": {"shares": 50, "avg_cost": 220.00, "current_price": 235.10, "sector": "Commodities"},
-            "BTC-USD": {"shares": 0.5, "avg_cost": 65000.00, "current_price": 72000.00, "sector": "Crypto"},
-            "TLT": {"shares": 200, "avg_cost": 95.00, "current_price": 92.50, "sector": "Bonds"},
-            "XOM": {"shares": 75, "avg_cost": 110.00, "current_price": 118.30, "sector": "Energy"},
-        },
+        "cash": cash,
+        "initial_capital": initial_capital,
+        "total_value": round(total_value, 2),
+        "pnl_pct": pnl_pct,
+        "positions": positions,
         "trade_count": 0,
         "cycle_count": 0,
         "circuit_breaker_active": False,

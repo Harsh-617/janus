@@ -1010,6 +1010,22 @@ Keys loaded from numbered env vars, empty ones filtered out automatically.
 Replaced with sequential rotation that permanently removes exhausted 
 keys from the pool for the session.
 
+## Fix: P&L calculation and portfolio value
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/db/firestore_client.py` — `initialize_portfolio()` now stores `initial_capital`, uses scaled positions that sum to ~$1M, calculates `total_value` from positions + cash instead of hardcoding it
+- `backend/api/portfolio.py` — `reset_portfolio()` gets the same fix; `GET /api/portfolio/debug` endpoint added
+
+**Root cause**: Two compounding bugs caused the −63% P&L / ~$363k portfolio value:
+
+1. `initial_capital` was never written to Firestore. `portfolio_service.py` correctly falls back to `portfolio.get("initial_capital", 1_000_000)` but missing the field is fragile.
+
+2. The seeded positions (100 AAPL + 50 GLD + 0.5 BTC + 200 TLT + 75 XOM + $245k cash) only totalled ~$340k at the seed prices — nowhere near $1M. The hardcoded `total_value: 1_087_500.0` was stale/wrong. When `update_portfolio_prices()` ran after the first cycle it recomputed the real total (~$340k), and with `initial_capital` defaulting to $1M: `((340k − 1M) / 1M) × 100 = −66%`. Live price drift moved it to −63%.
+
+**What was fixed**: Positions scaled up to represent a coherent ~$1M portfolio (1100 AAPL, 430 GLD, 4.0 BTC-USD, 1100 TLT, 425 XOM). `initial_capital: 1_000_000.0` now stored explicitly. `total_value` and `pnl_pct` calculated dynamically from positions + cash, not hardcoded.
+
+**Action required**: Call `POST /api/portfolio/reset` after deploying to apply the corrected data to the existing Firestore document. Use `GET /api/portfolio/debug` to inspect what's actually stored.
+
 ## Fix: Arena layout aggressive spacing overhaul
 **Date**: 2026-05-24
 **Files modified**: page.tsx, layout-wrapper.tsx, portfolio-panel.tsx
