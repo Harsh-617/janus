@@ -1,3 +1,8 @@
+## Fix #10 — Reasoning chain expansion in Audit Log
+**Date**: 2026-05-24
+**File modified**: `frontend/app/audit/page.tsx`
+**What was built**: Each audit log row now has an expand button that reveals the full reasoning chain — per-agent decisions with rationale, judge evaluation with all 5 dimension scores, trades executed, and a clickable Phoenix trace link. One row expanded at a time.
+
 ## Fix #8 — Agent memory writes
 **Date**: 2026-05-24
 **Files created/modified**:
