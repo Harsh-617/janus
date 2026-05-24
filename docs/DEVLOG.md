@@ -1,3 +1,10 @@
+## Fix #5 — DM Sans body font
+**Date**: 2026-05-24
+**Files modified**:
+- `frontend/app/layout.tsx` — DM_Sans imported from next/font/google, added to html className
+- `frontend/app/globals.css` — DM Sans set as primary body font with Geist fallback
+**What was built**: DM Sans loaded and set as the default body font across the entire frontend, matching the PRD typography spec. Geist retained as fallback.
+
 ## Fix #4 — Cinzel font for headers
 **Date**: 2026-05-24
 **Files modified**:
