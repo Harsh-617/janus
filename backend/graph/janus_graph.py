@@ -1,5 +1,4 @@
 from langgraph.graph import StateGraph, END
-from langgraph_checkpoint_firestore import FirestoreSaver
 from graph.state import JanusState, create_initial_state
 from agents.trading_agent import trading_agent_node
 from agents.risk_agent import risk_agent_node
@@ -7,7 +6,6 @@ from agents.fraud_agent import fraud_agent_node
 from agents.regulator_agent import regulator_agent_node
 from agents.judge_agent import judge_agent_node
 from observability.tracing import record_cycle_start
-from config import settings
 import logging
 
 
@@ -48,17 +46,7 @@ def build_janus_graph() -> StateGraph:
     return graph
 
 
-try:
-    checkpointer = FirestoreSaver(
-        project_id=settings.GOOGLE_CLOUD_PROJECT,
-        checkpoints_collection="langgraph_checkpoints",
-        writes_collection="langgraph_checkpoint_writes",
-    )
-    compiled_graph = build_janus_graph().compile(checkpointer=checkpointer)
-    logging.info("LangGraph Firestore checkpointer initialized")
-except Exception as e:
-    logging.warning(f"Firestore checkpointer failed, running without: {e}")
-    compiled_graph = build_janus_graph().compile()
+compiled_graph = build_janus_graph().compile()
 
 
 async def run_decision_cycle(

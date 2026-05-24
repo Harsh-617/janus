@@ -1,3 +1,8 @@
+## Critical Fix — Remove LangGraph Firestore checkpointer
+**Date**: 2026-05-24
+**File**: `backend/graph/janus_graph.py`
+**What was fixed**: FirestoreSaver checkpointer caused every cycle to crash with "Type is not msgpack serializable: _Span" because the OpenTelemetry tracing span object in LangGraph state cannot be serialized by msgpack. Removed checkpointer — state is already persisted manually via save_cycle() and save_trade() in execution.py.
+
 ## Fix #27 — Reasoning chain data in Audit Log
 **Date**: 2026-05-24
 **Files modified**:
