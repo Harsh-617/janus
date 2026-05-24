@@ -834,3 +834,51 @@ across the entire backend.
 **Notes**:
 - The installed package exports `FirestoreSaver`, not `FirestoreCheckpointer` — uses `project_id` constructor arg, not a `client` arg
 - `compiled_graph.ainvoke()` is called inside `run_decision_cycle()` in `janus_graph.py`, so both the checkpointer init and the config injection live in that file
+
+## Hotfix #7 — cycles array extraction in audit page
+**Date**: 2026-05-24
+**File**: `frontend/app/audit/page.tsx`
+**What was fixed**: API returns { cycles: [], count: N } but code was 
+storing the whole object. Fixed fetch to extract .cycles array. Added 
+Array.isArray guard in filteredCycles useMemo.
+
+## Hotfix #6 — cycles array extraction in observability page
+**Date**: 2026-05-24
+**File**: `frontend/app/observability/page.tsx`
+**What was fixed**: Same API response shape issue. Fixed fetch to extract 
+.cycles array. Added Array.isArray guard before chartData .slice() call.
+
+## Hotfix #5 — LayoutWrapper missing on janus-loop page
+**Date**: 2026-05-24
+**File**: `frontend/app/janus-loop/page.tsx`
+**What was fixed**: Sidebar and topbar not showing on /janus-loop. 
+Wrapped all three return paths (loading, error, main) with LayoutWrapper.
+
+## Hotfix #4 — toFixed errors in experiment-viewer
+**Date**: 2026-05-24
+**File**: `frontend/components/janus-loop/experiment-viewer.tsx`
+**What was fixed**: safety_before/safety_after undefined on some records.
+Added ?? 0 fallbacks on all toFixed calls, guarded improvement calculation,
+tightened filter to typeof === "number" check.
+
+## Hotfix #3 — toFixed errors in constraint-table
+**Date**: 2026-05-24
+**File**: `frontend/components/janus-loop/constraint-table.tsx`
+**What was fixed**: safety_before undefined on some constraint records.
+Tightened hasDelta check to typeof === "number", added ?? 0 fallbacks.
+
+## Hotfix #2 — Active constraints count and hydration warning
+**Date**: 2026-05-24
+**Files**: `frontend/components/janus-loop/loop-timeline.tsx`, 
+`frontend/app/layout.tsx`
+**What was fixed**: active_constraints rendered as object instead of count.
+Fixed to use .length when value is array. Added suppressHydrationWarning 
+to body tag to silence browser extension attribute injection warning.
+
+## Hotfix #1 — cycles array extraction in agents page and loop-timeline toFixed
+**Date**: 2026-05-24
+**Files**: `frontend/app/agents/page.tsx`, 
+`frontend/components/janus-loop/loop-timeline.tsx`
+**What was fixed**: agents page storing full API response instead of cycles 
+array. loop-timeline crashing on undefined avg_score_last_10. Fixed both 
+with array extraction and ?? 0 fallbacks.
