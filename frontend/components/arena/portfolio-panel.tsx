@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { Portfolio } from "@/lib/types";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -11,7 +12,17 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
+  LineChart,
+  Line,
+  ReferenceLine,
 } from "recharts";
+
+interface HistoryPoint {
+  cycle: number | string;
+  total_value: number;
+  pnl_pct: number | null;
+  timestamp: string;
+}
 
 interface PortfolioPanelProps {
   portfolio: Portfolio | null;
@@ -29,6 +40,15 @@ const SECTOR_COLORS: Record<string, string> = {
 };
 
 export function PortfolioPanel({ portfolio }: PortfolioPanelProps) {
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
+
+  useEffect(() => {
+    fetch("/api/portfolio/history")
+      .then((r) => r.json())
+      .then((data) => setHistory(data.history ?? []))
+      .catch(() => {});
+  }, []);
+
   if (!portfolio) {
     return (
       <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6 h-full">
@@ -212,6 +232,52 @@ export function PortfolioPanel({ portfolio }: PortfolioPanelProps) {
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* P&L Sparkline */}
+      <div className="mt-6">
+        <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "#C9A84C" }}>
+          P&L Over Time
+        </div>
+        {history.length < 2 ? (
+          <div className="text-xs text-[var(--janus-text-muted)]">
+            Not enough data for chart yet
+          </div>
+        ) : (() => {
+          const latestPnl = history[history.length - 1].pnl_pct ?? 0;
+          const lineColor = latestPnl >= 0 ? "#52E0A0" : "#E05252";
+          return (
+            <ResponsiveContainer width="100%" height={80}>
+              <LineChart data={history} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+                <XAxis dataKey="cycle" hide />
+                <YAxis hide />
+                <ReferenceLine y={0} stroke="#555" strokeDasharray="3 3" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#13151A",
+                    border: "1px solid #1E2028",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                  labelStyle={{ color: "#E8E6E0" }}
+                  formatter={(value: number) => {
+                    const sign = value >= 0 ? "+" : "";
+                    return [`${sign}${value.toFixed(2)}%`, "P&L"];
+                  }}
+                  labelFormatter={(label) => `Cycle ${label}`}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="pnl_pct"
+                  stroke={lineColor}
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          );
+        })()}
+      </div>
     </div>
   );
 }

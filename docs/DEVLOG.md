@@ -1,3 +1,10 @@
+## Fix #9 — Portfolio P&L sparkline
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/api/portfolio.py` — added GET /api/portfolio/history endpoint returning cycle-by-cycle portfolio value and P&L history
+- `frontend/components/arena/portfolio-panel.tsx` — added P&L sparkline LineChart using Recharts, fetches from /api/portfolio/history on mount
+**What was built**: Time-series P&L chart showing portfolio performance across cycles. Green line when profitable, red when negative. Tooltip on hover.
+
 ## Fix #8 — Phoenix Experiments
 **Date**: 2026-05-24
 **Files modified**:

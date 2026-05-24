@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from db.firestore_client import get_portfolio, save_portfolio
+from db.firestore_client import get_portfolio, save_portfolio, get_cycles
 from config import settings
 import logging
 
@@ -12,6 +12,24 @@ async def get_portfolio_state():
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return portfolio
+
+@router.get("/portfolio/history")
+async def get_portfolio_history():
+    """Get portfolio value history across recent cycles for charting."""
+    cycles = await get_cycles(limit=50)
+    history = []
+    for cycle in cycles:
+        if "total_portfolio_value" not in cycle:
+            continue
+        history.append({
+            "cycle": cycle.get("cycle_number", cycle.get("cycle_id")),
+            "total_value": cycle["total_portfolio_value"],
+            "pnl_pct": cycle.get("pnl_pct"),
+            "timestamp": cycle.get("timestamp"),
+        })
+    history.sort(key=lambda x: x["timestamp"] if x["timestamp"] else "")
+    return {"history": history}
+
 
 @router.post("/portfolio/reset")
 async def reset_portfolio():
