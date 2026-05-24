@@ -1,3 +1,10 @@
+## Fix #8 — Phoenix Experiments
+**Date**: 2026-05-24
+**Files modified**:
+- `backend/services/phoenix_service.py` — creates named Phoenix Experiment after each Janus Loop run with before/after score comparison
+- `backend/agents/meta_agent.py` — calls create_constraint_experiment after constraints are generated
+**What was built**: Every Janus Loop run now creates a Phoenix Experiment capturing the pre-constraint dimension scores. Experiment visible in Phoenix UI under the Experiments tab.
+
 ## Fix #7 — /api/agents endpoint
 **Date**: 2026-05-24
 **Files modified**:

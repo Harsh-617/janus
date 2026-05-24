@@ -1,7 +1,9 @@
 from config import settings
 from db.firestore_client import get_cycles, save_constraint, get_active_constraints
 from services.gemini_client import generate
+from services.phoenix_service import get_scores_from_cycles, create_constraint_experiment
 from observability.tracing import trace_agent_call
+import asyncio
 import logging
 import json
 import uuid
@@ -139,6 +141,18 @@ the underperforming dimensions. Do not duplicate existing constraints.
                 }
                 await save_constraint(constraint_id, constraint_record)
                 constraints_generated.append(constraint_record)
+
+            constraint_ids = [c["constraint_id"] for c in constraints_generated]
+            loop_run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            scores_before = await get_scores_from_cycles(recent_cycles)
+            asyncio.create_task(
+                create_constraint_experiment(
+                    constraint_ids=constraint_ids,
+                    scores_before=scores_before,
+                    scores_after={},
+                    loop_run_id=loop_run_id,
+                )
+            )
 
             span.set_attribute("janus_loop.constraints_generated", len(constraints_generated))
             span.set_attribute("janus_loop.learning_events_analyzed", len(learning_events))
