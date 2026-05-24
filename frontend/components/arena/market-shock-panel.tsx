@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   applyPresetMarketShock,
+  applyCustomMarketShock,
   clearMarketShock,
   fetchMarketShockStatus,
   activateCircuitBreaker,
@@ -62,6 +63,12 @@ export function MarketShockPanel() {
     null
   );
   const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
+  const [customDescription, setCustomDescription] = useState("");
+  const [customEffects, setCustomEffects] = useState("");
+  const [customMessage, setCustomMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const fetchStatuses = async () => {
     try {
@@ -130,6 +137,39 @@ export function MarketShockPanel() {
       console.error("Failed to run cycle:", error);
     } finally {
       setTimeout(() => setLoading(null), 2000);
+    }
+  };
+
+  const handleCustomShock = async () => {
+    let parsedEffects: { [ticker: string]: number } = {};
+    if (customEffects.trim()) {
+      try {
+        for (const part of customEffects.split(",")) {
+          const [ticker, delta] = part.trim().split(":");
+          if (!ticker || delta === undefined) throw new Error("bad format");
+          const value = parseFloat(delta);
+          if (isNaN(value)) throw new Error("bad number");
+          parsedEffects[ticker.trim().toUpperCase()] = value;
+        }
+      } catch {
+        parsedEffects = {};
+      }
+    }
+    try {
+      setLoading("custom");
+      setCustomMessage(null);
+      await applyCustomMarketShock(parsedEffects);
+      setCustomDescription("");
+      setCustomEffects("");
+      setCustomMessage({ type: "success", text: "Event injected successfully." });
+      setTimeout(() => setCustomMessage(null), 4000);
+    } catch (error) {
+      setCustomMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Injection failed.",
+      });
+    } finally {
+      setLoading(null);
     }
   };
 
@@ -311,6 +351,58 @@ export function MarketShockPanel() {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="my-6 border-t border-[#C9A84C]/30" />
+
+      {/* Custom Event */}
+      <div>
+        <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wide mb-3">
+          Custom Event
+        </h3>
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={customDescription}
+            onChange={(e) => setCustomDescription(e.target.value)}
+            placeholder="Describe a market event..."
+            className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
+          />
+          <input
+            type="text"
+            value={customEffects}
+            onChange={(e) => setCustomEffects(e.target.value)}
+            placeholder="e.g. AAPL:-0.10,GLD:+0.15 (optional)"
+            className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
+          />
+          <Button
+            onClick={handleCustomShock}
+            disabled={!customDescription.trim() || loading === "custom"}
+            className="w-full bg-[#C9A84C] hover:bg-[#C9A84C]/80 text-[#13151A] font-semibold disabled:opacity-50"
+          >
+            {loading === "custom" ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Injecting...
+              </>
+            ) : (
+              "Inject Event"
+            )}
+          </Button>
+          {customMessage && (
+            <p
+              className={cn(
+                "text-xs mt-1",
+                customMessage.type === "success"
+                  ? "text-[var(--janus-success)]"
+                  : "text-[var(--janus-danger)]"
+              )}
+            >
+              {customMessage.text}
+            </p>
+          )}
         </div>
       </div>
     </div>
