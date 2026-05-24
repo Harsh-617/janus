@@ -1,3 +1,8 @@
+## Fix #1 — constraint-table.tsx
+**Date**: 2026-05-24
+**File**: `frontend/components/janus-loop/constraint-table.tsx`
+**What was built**: Constraints table component showing agent, condition, rule, status badge, safety delta, cycles active, and generated date. Handles empty state.
+
 ## Step 22 — Real trade execution and portfolio position updates
 **Date**: 2026-05-24
 **Files created**:
