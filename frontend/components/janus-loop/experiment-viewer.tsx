@@ -1,8 +1,8 @@
 "use client";
 
 interface PerformanceDelta {
-  safety_before: number;
-  safety_after: number | null;
+  safety_before: number | undefined;
+  safety_after: number | undefined;
   cycles_active: number;
 }
 
@@ -32,7 +32,9 @@ function formatAgentName(raw: string): string {
 
 export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
   const completed = constraints.filter(
-    (c) => c.performance_delta.safety_after !== null
+    (c) =>
+      typeof c.performance_delta?.safety_after === "number" &&
+      typeof c.performance_delta?.safety_before === "number"
   );
 
   if (completed.length === 0) {
@@ -54,13 +56,13 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
     <div className="flex flex-col gap-4">
       {completed.map((c) => {
         const { safety_before, safety_after } = c.performance_delta;
-        const after = safety_after!;
-        const improvement = ((after - safety_before) / Math.max(safety_before, 0.01)) * 100;
-        const improvementStr =
-          (improvement >= 0 ? "+" : "") + improvement.toFixed(1) + "%";
+        const improvement = safety_before && safety_after
+          ? (((safety_after - safety_before) / safety_before) * 100).toFixed(1)
+          : "0.0";
+        const improvementStr = (Number(improvement) >= 0 ? "+" : "") + improvement + "%";
 
-        const beforePct = Math.min((safety_before / 10) * 100, 100);
-        const afterPct = Math.min((after / 10) * 100, 100);
+        const beforePct = Math.min(((safety_before ?? 0) / 10) * 100, 100);
+        const afterPct = Math.min(((safety_after ?? 0) / 10) * 100, 100);
 
         return (
           <div
@@ -105,7 +107,7 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
                   className="text-lg font-bold font-mono"
                   style={{ color: "#E05252" }}
                 >
-                  {safety_before.toFixed(1)}
+                  {(safety_before ?? 0).toFixed(1)}
                 </span>
               </div>
 
@@ -124,7 +126,7 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
                   className="text-lg font-bold font-mono"
                   style={{ color: "#52E0A0" }}
                 >
-                  {after.toFixed(1)}
+                  {(safety_after ?? 0).toFixed(1)}
                 </span>
               </div>
             </div>
@@ -155,7 +157,7 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
                   className="text-xs w-8 shrink-0 font-mono"
                   style={{ color: "#E05252" }}
                 >
-                  {safety_before.toFixed(1)}
+                  {(safety_before ?? 0).toFixed(1)}
                 </span>
               </div>
 
@@ -183,7 +185,7 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
                   className="text-xs w-8 shrink-0 font-mono"
                   style={{ color: "#52E0A0" }}
                 >
-                  {after.toFixed(1)}
+                  {(safety_after ?? 0).toFixed(1)}
                 </span>
               </div>
             </div>
