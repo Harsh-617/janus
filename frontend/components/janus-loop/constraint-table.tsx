@@ -88,10 +88,13 @@ export function ConstraintTable({ constraints }: ConstraintTableProps) {
           </thead>
           <tbody>
             {constraints.map((c, i) => {
-              const { safety_before, safety_after, cycles_active } =
-                c.performance_delta;
-              const hasDelta = safety_after !== null;
-              const delta = hasDelta ? safety_after! - safety_before : null;
+              const cycles_active = c.performance_delta?.cycles_active;
+              const safety_before = c.performance_delta?.safety_before;
+              const safety_after = c.performance_delta?.safety_after;
+              const hasDelta =
+                typeof safety_before === "number" &&
+                typeof safety_after === "number";
+              const delta = hasDelta ? safety_after - safety_before : null;
 
               return (
                 <tr
@@ -162,9 +165,9 @@ export function ConstraintTable({ constraints }: ConstraintTableProps) {
                   <td className="px-4 py-3 whitespace-nowrap font-mono text-xs">
                     {hasDelta ? (
                       <span style={{ color: "#34D399" }}>
-                        {safety_before.toFixed(1)} → {safety_after!.toFixed(1)}{" "}
-                        ({delta! >= 0 ? "+" : ""}
-                        {delta!.toFixed(1)})
+                        {(safety_before ?? 0).toFixed(1)} → {(safety_after ?? 0).toFixed(1)}{" "}
+                        ({delta !== null && delta >= 0 ? "+" : ""}
+                        {(delta ?? 0).toFixed(1)})
                       </span>
                     ) : (
                       <span style={{ color: "var(--janus-text-muted, #6B7280)" }}>
