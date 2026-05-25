@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Constraint } from "@/lib/types";
 
 interface ConstraintTableProps {
@@ -25,7 +26,19 @@ function truncate(text: string, max: number): string {
   return text.length > max ? text.slice(0, max) + "…" : text;
 }
 
+function formatCondition(text: string): string {
+  if (!text.includes(" ") && text.includes("_")) {
+    return text
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+  return text;
+}
+
 export function ConstraintTable({ constraints }: ConstraintTableProps) {
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
   if (constraints.length === 0) {
     return (
       <div
@@ -71,6 +84,7 @@ export function ConstraintTable({ constraints }: ConstraintTableProps) {
           </thead>
           <tbody>
             {constraints.map((c, i) => {
+              const isExpanded = expandedRow === c.constraint_id;
               const cycles_active = c.performance_delta?.cycles_active;
               const safety_before = c.performance_delta?.safety_before;
               const safety_after = c.performance_delta?.safety_after;
@@ -78,6 +92,10 @@ export function ConstraintTable({ constraints }: ConstraintTableProps) {
                 typeof safety_before === "number" &&
                 typeof safety_after === "number";
               const delta = hasDelta ? safety_after - safety_before : null;
+              const formattedCondition = formatCondition(c.condition);
+
+              const toggleExpand = () =>
+                setExpandedRow(isExpanded ? null : c.constraint_id);
 
               return (
                 <tr
@@ -85,14 +103,15 @@ export function ConstraintTable({ constraints }: ConstraintTableProps) {
                   className="transition-colors"
                   style={{
                     borderTop: i === 0 ? "none" : `1px solid #2A2D35`,
+                    background: isExpanded ? "#1E2130" : "transparent",
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLTableRowElement).style.background =
-                      "#1E2028";
+                      isExpanded ? "#252835" : "#1E2028";
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLTableRowElement).style.background =
-                      "transparent";
+                      isExpanded ? "#1E2130" : "transparent";
                   }}
                 >
                   {/* Agent */}
@@ -103,23 +122,52 @@ export function ConstraintTable({ constraints }: ConstraintTableProps) {
                     {formatAgentName(c.target_agent)}
                   </td>
 
-                  {/* Condition — monospace, truncated at 40 */}
-                  <td className="px-4 py-3">
+                  {/* Condition */}
+                  <td
+                    className="px-4 py-3 cursor-pointer select-none"
+                    onClick={toggleExpand}
+                  >
                     <span
-                      className="font-mono text-xs"
-                      title={c.condition}
+                      className="font-mono text-xs inline-flex items-start gap-1"
                       style={{ color: "var(--janus-text-secondary, #A0A0B0)" }}
                     >
-                      {truncate(c.condition, 40)}
+                      <span>
+                        {isExpanded
+                          ? formattedCondition
+                          : truncate(formattedCondition, 40)}
+                      </span>
+                      <span
+                        style={{
+                          color: "#C9A84C",
+                          fontSize: "0.6rem",
+                          flexShrink: 0,
+                          marginTop: "2px",
+                        }}
+                      >
+                        {isExpanded ? "▲" : "▼"}
+                      </span>
                     </span>
                   </td>
 
-                  {/* Rule — truncated at 80 */}
+                  {/* Rule */}
                   <td
-                    className="px-4 py-3 max-w-xs"
+                    className="px-4 py-3 max-w-xs cursor-pointer select-none"
                     style={{ color: "var(--janus-text-secondary, #A0A0B0)" }}
+                    onClick={toggleExpand}
                   >
-                    <span title={c.rule}>{truncate(c.rule, 80)}</span>
+                    <span className="inline-flex items-start gap-1">
+                      <span>{isExpanded ? c.rule : truncate(c.rule, 80)}</span>
+                      <span
+                        style={{
+                          color: "#C9A84C",
+                          fontSize: "0.6rem",
+                          flexShrink: 0,
+                          marginTop: "2px",
+                        }}
+                      >
+                        {isExpanded ? "▲" : "▼"}
+                      </span>
+                    </span>
                   </td>
 
                   {/* Status badge */}
@@ -148,12 +196,15 @@ export function ConstraintTable({ constraints }: ConstraintTableProps) {
                   <td className="px-4 py-3 whitespace-nowrap font-mono text-xs">
                     {hasDelta ? (
                       <span style={{ color: "#34D399" }}>
-                        {(safety_before ?? 0).toFixed(1)} → {(safety_after ?? 0).toFixed(1)}{" "}
+                        {(safety_before ?? 0).toFixed(1)} →{" "}
+                        {(safety_after ?? 0).toFixed(1)}{" "}
                         ({delta !== null && delta >= 0 ? "+" : ""}
                         {(delta ?? 0).toFixed(1)})
                       </span>
                     ) : (
-                      <span style={{ color: "var(--janus-text-muted, #6B7280)" }}>
+                      <span
+                        style={{ color: "var(--janus-text-muted, #6B7280)" }}
+                      >
                         —
                       </span>
                     )}

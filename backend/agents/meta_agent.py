@@ -10,6 +10,8 @@ import json
 import uuid
 from datetime import datetime, timezone
 
+_last_run_at: str | None = None
+
 META_AGENT_PROMPT = """You are the Janus Loop Meta Agent — a self-correction engine for an
 autonomous financial AI system. You analyze recent decision cycle history
 to identify failure patterns and generate behavioral constraints that
@@ -143,8 +145,8 @@ the underperforming dimensions. Do not duplicate existing constraints.
                     "expected_improvement": c.get("expected_improvement", ""),
                     "status": "ACTIVE",
                     "performance_delta": {
-                        "before": dim_avgs,
-                        "after": None,
+                        "safety_before": dim_avgs.get("safety", 0),
+                        "safety_after": None,
                         "cycles_active": 0,
                     },
                     "expires_after_cycles": 50,
@@ -171,6 +173,9 @@ the underperforming dimensions. Do not duplicate existing constraints.
             span.set_attribute("janus_loop.constraints_generated", len(constraints_generated))
             span.set_attribute("janus_loop.learning_events_analyzed", len(learning_events))
             span.set_attribute("janus_loop.pattern", parsed.get("pattern_analysis", "")[:200])
+
+            global _last_run_at
+            _last_run_at = datetime.now(timezone.utc).isoformat()
 
             logging.info(f"[Janus Loop] Generated {len(constraints_generated)} constraints")
             logging.info(f"[Janus Loop] Pattern: {parsed.get('pattern_analysis', '')[:100]}")

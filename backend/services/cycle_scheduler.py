@@ -76,6 +76,29 @@ async def get_mock_market_data() -> tuple[dict, list]:
 
     return base_prices, base_headlines
 
+async def _update_safety_deltas(constraints: list, current_safety: float) -> None:
+    """Update running average safety score for active constraints after each cycle."""
+    def _update():
+        for c in constraints:
+            cid = c.get("constraint_id")
+            if not cid:
+                continue
+            perf = c.get("performance_delta") or {}
+            # cycles_active is the pre-increment value; post-increment is +1
+            cycles_active = (perf.get("cycles_active") or 0) + 1
+            if cycles_active < 5:
+                continue
+            old_avg = perf.get("safety_after")
+            if old_avg is None:
+                new_avg = current_safety
+            else:
+                new_avg = (old_avg * (cycles_active - 1) + current_safety) / cycles_active
+            db.collection(COL_CONSTRAINTS).document(cid).update({
+                "performance_delta.safety_after": round(new_avg, 3)
+            })
+    await asyncio.to_thread(_update)
+
+
 async def _increment_and_expire_constraints() -> None:
     """Increment cycles_active on each active constraint; auto-expire when limit is reached."""
     def _update():
@@ -155,6 +178,11 @@ async def run_single_cycle() -> dict:
 
         # Persist results
         summary = await execute_cycle_results(final_state)
+
+        # Update safety delta running averages for active constraints
+        current_safety = summary.get("judge_safety")
+        if isinstance(current_safety, (int, float)) and active_constraints:
+            await _update_safety_deltas(active_constraints, float(current_safety))
 
         # Trigger Janus Loop on schedule
         from agents.meta_agent import maybe_run_janus_loop

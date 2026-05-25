@@ -1,3 +1,11 @@
+## Fix: Janus Loop page UX improvements
+**Date**: 2026-05-25
+**Files modified**:
+- `frontend/components/janus-loop/constraint-table.tsx` — expandable rows, condition formatting
+- `backend/services/cycle_scheduler.py` — safety_after running average computation
+- `backend/api/janus_loop.py` — last_run_at in status response
+- `backend/agents/meta_agent.py` — store last_run_at timestamp
+
 ## Fix: Blank target agent display in constraints table
 **Date**: 2026-05-24
 **Files modified**:

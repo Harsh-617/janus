@@ -8,6 +8,7 @@ router = APIRouter()
 @router.get("/janus-loop/status")
 async def get_loop_status():
     """Get Janus Loop status and active constraints."""
+    from agents.meta_agent import _last_run_at
     constraints = await get_active_constraints()
     cycles = await get_cycles(limit=20)
 
@@ -23,6 +24,7 @@ async def get_loop_status():
         "recent_cycles_analyzed": len(cycles),
         "learning_events_count": len(learning_events),
         "avg_judge_score": round(avg_score, 2),
+        "last_run_at": _last_run_at,
     }
 
 @router.get("/janus-loop/history")
