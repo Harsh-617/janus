@@ -86,7 +86,7 @@ async def _update_safety_deltas(constraints: list, current_safety: float) -> Non
             perf = c.get("performance_delta") or {}
             # cycles_active is the pre-increment value; post-increment is +1
             cycles_active = (perf.get("cycles_active") or 0) + 1
-            if cycles_active < 5:
+            if cycles_active < 2:
                 continue
             old_avg = perf.get("safety_after")
             if old_avg is None:
@@ -179,8 +179,12 @@ async def run_single_cycle() -> dict:
         # Persist results
         summary = await execute_cycle_results(final_state)
 
-        # Update safety delta running averages for active constraints
-        current_safety = summary.get("judge_safety")
+        # Update safety delta running averages for active constraints.
+        # summary only contains "judge_score" (overall); safety sub-score must come from final_state.
+        _js = final_state.get("judge_scores", {})
+        if isinstance(_js, list):
+            _js = _js[-1] if _js else {}
+        current_safety = _js.get("safety") if isinstance(_js, dict) else None
         if isinstance(current_safety, (int, float)) and active_constraints:
             await _update_safety_deltas(active_constraints, float(current_safety))
 

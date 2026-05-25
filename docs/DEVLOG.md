@@ -1,3 +1,22 @@
+## Fix: Experiment viewer titles, stats labels, safety backfill
+**Date**: 2026-05-25
+**Files modified**:
+- `frontend/components/janus-loop/experiment-viewer.tsx` — rule text as card title instead of constraint ID
+- `frontend/components/janus-loop/loop-timeline.tsx` — "Cycles Analyzed" relabeled to "Analysis Window"
+- `backend/api/janus_loop.py` — backfill endpoint for missing safety_before values
+
+## Fix: safety_after never written to Firestore
+**Date**: 2026-05-25
+**File**: `backend/services/cycle_scheduler.py`
+**What was fixed**: `_update_safety_deltas()` was never called because `summary.get("judge_safety")` always returned `None` — the `summary` dict returned by `execute_cycle_results()` only contains `"judge_score"` (overall), not the `"judge_safety"` sub-score. The `isinstance(None, (int, float))` guard silently blocked every call. Fixed by reading `judge_scores["safety"]` directly from `final_state` (with list-accumulation handling for LangGraph reducers) instead of from `summary`.
+
+## Fix: Safety delta — safety_before on constraint creation
+**Date**: 2026-05-25
+**Files modified**:
+- `backend/agents/meta_agent.py` — write safety_before when creating constraints
+- `backend/services/cycle_scheduler.py` — reduce threshold from 5 to 2 cycles
+**What was fixed**: safety_before never written to Firestore causing Safety Δ to always show "—". Now captures baseline safety score at constraint creation time.
+
 ## Fix: Janus Loop page UX improvements
 **Date**: 2026-05-25
 **Files modified**:
@@ -1131,3 +1150,10 @@ Reduced panel height. Restored P&L sparkline.
 - `frontend/components/arena/market-shock-panel.tsx` -- active scenario highlighted, real timestamp shown
 - `backend/api/market_shock.py` -- activated_at timestamp added to status response
 **What was fixed**: No visual feedback on clicked scenario. 'Activated at unknown' timestamp fixed.
+
+
+## Fix: Experiment viewer readability improvements
+**Date**: 2026-05-25
+**Files modified**:
+- `frontend/components/janus-loop/experiment-viewer.tsx`
+**What was fixed**: Card titles now show agent name + short rule description. Full rule shown below. Improvement context added. constraint_id hidden.

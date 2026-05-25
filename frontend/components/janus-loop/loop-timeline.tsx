@@ -37,10 +37,10 @@ export function LoopTimeline({
   isTriggering,
 }: LoopTimelineProps) {
   const stats = [
-    { label: "Cycles Analyzed", value: status.recent_cycles_analyzed ?? 0 },
-    { label: "Active Constraints", value: status.constraint_count ?? 0 },
-    { label: "Avg Judge Score", value: (status.avg_judge_score ?? 0).toFixed(1) },
-    { label: "Learning Events", value: status.learning_events_count ?? 0 },
+    { label: "Analysis Window", value: `Last ${status.recent_cycles_analyzed ?? 20}`, subtitle: undefined },
+    { label: "Active Constraints", value: status.constraint_count ?? 0, subtitle: undefined },
+    { label: "Avg Judge Score", value: (status.avg_judge_score ?? 0).toFixed(1), subtitle: undefined },
+    { label: "Learning Events", value: status.learning_events_count ?? 0, subtitle: "cycles scoring below 6.0" },
   ];
 
   const lastRunText = status.last_run_at
@@ -51,7 +51,7 @@ export function LoopTimeline({
     <div className="flex flex-col gap-6">
       {/* Section 1 — Stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map(({ label, value }) => (
+        {stats.map(({ label, value, subtitle }) => (
           <div
             key={label}
             className="flex flex-col gap-1 rounded-lg border px-4 py-4"
@@ -69,6 +69,11 @@ export function LoopTimeline({
             >
               {value}
             </span>
+            {subtitle && (
+              <span className="text-xs" style={{ color: "#8A8780" }}>
+                ({subtitle})
+              </span>
+            )}
           </div>
         ))}
       </div>

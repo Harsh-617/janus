@@ -56,23 +56,15 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
               border: "1px solid rgba(201, 168, 76, 0.2)",
             }}
           >
-            {/* Header row */}
-            <div className="flex items-center justify-between mb-2">
-              <span
-                className="font-mono text-sm font-semibold"
-                style={{ color: "#C9A84C" }}
-              >
-                {c.constraint_id}
-              </span>
-              <span
-                className="text-sm font-medium"
-                style={{ color: "#F0F0F0" }}
-              >
-                {formatAgentName(c.target_agent)}
-              </span>
-            </div>
+            {/* Title */}
+            <p
+              className="text-sm font-semibold leading-snug mb-1"
+              style={{ color: "#E8E6E0" }}
+            >
+              {formatAgentName(c.target_agent)} — {c.rule.slice(0, 60)}
+            </p>
 
-            {/* Rule text */}
+            {/* Full rule text */}
             <p
               className="text-xs italic mb-4"
               style={{ color: "#8A8780" }}
@@ -81,7 +73,7 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
             </p>
 
             {/* Before / After score numbers */}
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4 mb-2">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xs" style={{ color: "#8A8780" }}>
                   Before
@@ -113,6 +105,25 @@ export function ExperimentViewer({ constraints }: ExperimentViewerProps) {
                 </span>
               </div>
             </div>
+
+            {/* Improvement context */}
+            <p
+              className="text-xs mb-4"
+              style={{
+                color:
+                  Number(improvement) > 0
+                    ? "#52E0A0"
+                    : Number(improvement) < 0
+                    ? "#E05252"
+                    : "#8A8780",
+              }}
+            >
+              {Number(improvement) > 0
+                ? "Safety improved after applying this constraint"
+                : Number(improvement) < 0
+                ? "Safety decreased — constraint may need review"
+                : "No change detected yet"}
+            </p>
 
             {/* Visual bar comparison */}
             <div className="flex flex-col gap-2">
