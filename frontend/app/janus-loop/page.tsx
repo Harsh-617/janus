@@ -16,6 +16,7 @@ interface LoopStatus {
   recent_cycles_analyzed: number;
   learning_events_count: number;
   avg_judge_score: number;
+  last_run_at?: string | null;
 }
 
 

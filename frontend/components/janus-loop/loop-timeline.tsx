@@ -6,6 +6,7 @@ interface LoopStatus {
   recent_cycles_analyzed: number;
   learning_events_count: number;
   avg_judge_score: number;
+  last_run_at?: string | null;
 }
 
 interface LoopTimelineProps {
@@ -22,6 +23,14 @@ const STAGES = [
   "Inject into Agents",
 ];
 
+function timeAgo(iso: string): string {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 export function LoopTimeline({
   status,
   onTrigger,
@@ -34,7 +43,9 @@ export function LoopTimeline({
     { label: "Learning Events", value: status.learning_events_count ?? 0 },
   ];
 
-  const lastRunText = "Never run";
+  const lastRunText = status.last_run_at
+    ? `Last run ${timeAgo(status.last_run_at)}`
+    : "Never run";
 
   return (
     <div className="flex flex-col gap-6">
