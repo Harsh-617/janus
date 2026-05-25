@@ -124,13 +124,13 @@ async def execute_cycle_results(state: JanusState) -> dict:
         "market_shock_active": state.get("market_shock_active", False),
         "decisions": {
             "trading_agent": {
-                "action": get_state_value(state, "trading_proposal", {}).get("action", ""),
-                "thesis": get_state_value(state, "trading_proposal", {}).get("thesis", ""),
-                "confidence": get_state_value(state, "trading_proposal", {}).get("confidence", 0),
+                "action": "HOLD" if not state.get("trading_proposal") else "EXECUTE",
+                "thesis": state.get("trading_thesis", ""),
+                "confidence": state.get("trading_confidence", 0),
             },
             "risk_agent": {
                 "decision": risk_decision.get("decision", ""),
-                "verdict": risk_decision.get("risk_report", {}).get("verdict", ""),
+                "verdict": risk_decision.get("verdict", ""),
             },
             "fraud_agent": {
                 "status": get_state_value(state, "fraud_report", {}).get("status", ""),

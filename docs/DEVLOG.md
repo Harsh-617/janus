@@ -1152,6 +1152,12 @@ Reduced panel height. Restored P&L sparkline.
 **What was fixed**: No visual feedback on clicked scenario. 'Activated at unknown' timestamp fixed.
 
 
+## Fix: Audit Log display improvements
+**Date**: 2026-05-25
+**Files modified**:
+- `frontend/components/audit/audit-table.tsx`
+**What was fixed**: Cycle ID formatted as #shortid, rate limit errors cleaned up in Critical Finding, Phoenix trace link fixed, no-data message for old cycles.
+
 ## Fix: Experiment viewer readability improvements
 **Date**: 2026-05-25
 **Files modified**:

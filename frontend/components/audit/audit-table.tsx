@@ -66,6 +66,13 @@ function extractRationale(data: Record<string, unknown>): string | null {
 const PHOENIX_BASE_URL =
   process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006";
 
+function sanitizeCriticalFinding(text: string): string {
+  if (text.includes("429") || text.toLowerCase().includes("rate limit")) {
+    return "Rate limit — Judge could not evaluate this cycle";
+  }
+  return text;
+}
+
 export function AuditTable({ cycles, loading }: AuditTableProps) {
   const [sortField, setSortField] = useState<SortField>("cycle");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -146,6 +153,17 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
     const decisions = cycle.decisions ?? null;
     const tradesExecuted = cycle.trades_executed ?? null;
 
+    const cycleDate = new Date(cycle.timestamp);
+    const reasoningAvailableSince = new Date("2026-05-24");
+    const isOldCycle = cycleDate < reasoningAvailableSince;
+    const allNoData =
+      !decisions ||
+      Object.keys(decisions).length === 0 ||
+      Object.values(decisions).every(
+        (d) => extractRationale(d as Record<string, unknown>) === null
+      );
+    const showOldCycleNote = isOldCycle && allNoData;
+
     const judgeDimensions = [
       { name: "Correctness", score: cycle.judge_correctness },
       { name: "Safety", score: cycle.judge_safety },
@@ -167,6 +185,18 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
         <div className="text-sm font-semibold" style={{ color: "#C9A84C" }}>
           Reasoning Chain
         </div>
+
+        {showOldCycleNote && (
+          <p
+            className="text-xs italic rounded px-3 py-2 border"
+            style={{
+              color: "var(--janus-text-muted)",
+              borderColor: "var(--janus-border)",
+            }}
+          >
+            Detailed reasoning available for cycles after 2026-05-24. Earlier cycles show summary only.
+          </p>
+        )}
 
         {/* Per-agent decision blocks */}
         <div className="space-y-3">
@@ -255,7 +285,7 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
                 borderColor: "var(--janus-border)",
               }}
             >
-              {cycle.critical_finding}
+              {sanitizeCriticalFinding(cycle.critical_finding)}
             </p>
           )}
           {cycle.recommended_constraint && (
@@ -320,14 +350,14 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
             style={{ borderColor: "var(--janus-border)" }}
           >
             <a
-              href={`${PHOENIX_BASE_URL}/trace/${cycle.phoenix_trace_id}`}
+              href={PHOENIX_BASE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs hover:underline underline-offset-2 transition-opacity hover:opacity-80"
               style={{ color: "#C9A84C" }}
               onClick={(e) => e.stopPropagation()}
             >
-              View trace in Phoenix →
+              Open Phoenix →
             </a>
           </div>
         )}
@@ -439,7 +469,7 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
                   >
                     <td className="p-3">
                       <div className="text-xs font-mono text-[var(--janus-text-primary)]">
-                        {cycle.cycle_id.substring(0, 8)}...
+                        Cycle #{cycle.cycle_number}
                       </div>
                       <div className="text-xs text-[var(--janus-text-muted)]">
                         {formatDistanceToNow(new Date(cycle.timestamp), {
@@ -481,11 +511,12 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
                     <td className="p-3">
                       <span
                         className="text-xs text-[var(--janus-text-secondary)]"
-                        title={cycle.critical_finding}
+                        title={sanitizeCriticalFinding(cycle.critical_finding)}
                       >
-                        {cycle.critical_finding.length > 80
-                          ? cycle.critical_finding.substring(0, 80) + "..."
-                          : cycle.critical_finding}
+                        {(() => {
+                          const text = sanitizeCriticalFinding(cycle.critical_finding);
+                          return text.length > 80 ? text.substring(0, 80) + "..." : text;
+                        })()}
                       </span>
                     </td>
                     <td className="p-3">
