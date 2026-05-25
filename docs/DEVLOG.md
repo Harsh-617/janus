@@ -1,3 +1,17 @@
+## Fix: Audit log sort order newest first
+**Date**: 2026-05-25
+**Files modified**:
+- `backend/db/firestore_client.py` — order cycles by timestamp desc
+- `frontend/app/audit/page.tsx` — client-side sort as safety measure
+**What was fixed**: Cycles were not sorted newest-first causing mixed old/new cycles in the display.
+
+## Fix: Audit log auto-refresh and sort clarity
+**Date**: 2026-05-25
+**Files modified**:
+- `frontend/app/audit/page.tsx` — auto-refresh every 30s, manual refresh button
+- `frontend/components/audit/audit-table.tsx` — removed sort on cycle column
+**What was fixed**: Audit log was not auto-refreshing so new cycles didn't appear. Sort on cycle column was confusing.
+
 ## Fix: Experiment viewer titles, stats labels, safety backfill
 **Date**: 2026-05-25
 **Files modified**:
@@ -1163,3 +1177,8 @@ Reduced panel height. Restored P&L sparkline.
 **Files modified**:
 - `frontend/components/janus-loop/experiment-viewer.tsx`
 **What was fixed**: Card titles now show agent name + short rule description. Full rule shown below. Improvement context added. constraint_id hidden.
+
+## Fix: Audit table default sort newest-first
+**Date**: 2026-05-25
+**File**: `frontend/components/audit/audit-table.tsx`
+**What was fixed**: Default sort was by cycle_number causing new cycles to appear in wrong position. Fixed to sort by timestamp descending by default with proper Firestore timestamp handling.

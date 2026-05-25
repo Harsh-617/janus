@@ -6,7 +6,7 @@ import { AuditTable } from "@/components/audit/audit-table";
 import { Button } from "@/components/ui/button";
 import { fetchCycles } from "@/lib/api";
 import type { DecisionCycle } from "@/lib/types";
-import { Search, Filter, Loader2 } from "lucide-react";
+import { Search, Filter, Loader2, RefreshCw } from "lucide-react";
 
 export default function AuditPage() {
   const [cycles, setCycles] = useState<DecisionCycle[]>([]);
@@ -31,8 +31,20 @@ export default function AuditPage() {
       }
 
       const raw = await fetchCycles(newLimit || limit);
-      const cyclesData = Array.isArray(raw) ? raw : (raw as any).cycles || [];
-      setCycles(cyclesData);
+      const rawCycles = Array.isArray(raw) ? raw : (raw as any).cycles || [];
+      const sorted = [...rawCycles].sort((a, b) => {
+        const getTime = (c: any) => {
+          const t = c.timestamp || c.created_at;
+          if (!t) return 0;
+          if (typeof t === "string") return new Date(t).getTime();
+          if (typeof t === "number") return t;
+          if (t._seconds) return t._seconds * 1000;
+          if (t.seconds) return t.seconds * 1000;
+          return new Date(t).getTime();
+        };
+        return getTime(b) - getTime(a);
+      });
+      setCycles(sorted);
       if (newLimit) setLimit(newLimit);
     } catch (error) {
       console.error("Failed to fetch cycles:", error);
@@ -44,7 +56,9 @@ export default function AuditPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [limit]);
 
   useEffect(() => {
     fetchData(cycleLimit);
@@ -182,10 +196,19 @@ export default function AuditPage() {
           </div>
 
           {/* Results count */}
-          <div className="mt-4 pt-4 border-t border-[var(--janus-border)]">
+          <div className="mt-4 pt-4 border-t border-[var(--janus-border)] flex items-center justify-between">
             <span className="text-xs text-[var(--janus-text-muted)]">
               Showing {filteredCycles.length} of {cycles.length} cycles
             </span>
+            <Button
+              onClick={() => fetchData()}
+              variant="outline"
+              size="sm"
+              className="border-[var(--janus-border)] h-7 px-2 text-xs gap-1.5"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Refresh
+            </Button>
           </div>
         </div>
 

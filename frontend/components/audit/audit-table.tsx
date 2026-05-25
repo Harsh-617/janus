@@ -74,7 +74,7 @@ function sanitizeCriticalFinding(text: string): string {
 }
 
 export function AuditTable({ cycles, loading }: AuditTableProps) {
-  const [sortField, setSortField] = useState<SortField>("cycle");
+  const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
@@ -100,10 +100,20 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
         aVal = a.cycle_number;
         bVal = b.cycle_number;
         break;
-      case "timestamp":
-        aVal = new Date(a.timestamp).getTime();
-        bVal = new Date(b.timestamp).getTime();
+      case "timestamp": {
+        const getTime = (c: any) => {
+          const t = c.timestamp || c.created_at;
+          if (!t) return 0;
+          if (typeof t === "string") return new Date(t).getTime();
+          if (typeof t === "number") return t;
+          if (t._seconds) return t._seconds * 1000;
+          if (t.seconds) return t.seconds * 1000;
+          return new Date(t).getTime();
+        };
+        aVal = getTime(a);
+        bVal = getTime(b);
         break;
+      }
       default:
         return 0;
     }
@@ -397,19 +407,8 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
         <table className="w-full">
           <thead className="sticky top-0 bg-[var(--janus-surface)] border-b border-[var(--janus-border)]">
             <tr>
-              <th
-                className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide p-3 cursor-pointer hover:text-[var(--janus-text-primary)]"
-                onClick={() => handleSort("cycle")}
-              >
-                <div className="flex items-center gap-1">
-                  Cycle
-                  {sortField === "cycle" &&
-                    (sortDirection === "asc" ? (
-                      <ChevronUp className="h-3 w-3" />
-                    ) : (
-                      <ChevronDown className="h-3 w-3" />
-                    ))}
-                </div>
+              <th className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide p-3">
+                Cycle
               </th>
               <th className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide p-3">
                 Decision
@@ -469,7 +468,7 @@ export function AuditTable({ cycles, loading }: AuditTableProps) {
                   >
                     <td className="p-3">
                       <div className="text-xs font-mono text-[var(--janus-text-primary)]">
-                        Cycle #{cycle.cycle_number}
+                        #{cycle.cycle_id.slice(-8)}
                       </div>
                       <div className="text-xs text-[var(--janus-text-muted)]">
                         {formatDistanceToNow(new Date(cycle.timestamp), {
