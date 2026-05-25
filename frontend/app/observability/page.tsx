@@ -63,8 +63,8 @@ export default function ObservabilityPage() {
   const chartData = Array.isArray(cycles) ? cycles
     .slice()
     .reverse()
-    .map((cycle) => ({
-      cycle: cycle.cycle_number,
+    .map((cycle, index) => ({
+      cycle: index + 1,
       Overall: cycle.judge_overall_score,
       Correctness: cycle.judge_correctness,
       Safety: cycle.judge_safety,
@@ -132,7 +132,7 @@ export default function ObservabilityPage() {
                   stroke="#8A8780"
                   tick={{ fill: "#8A8780", fontSize: 12 }}
                   label={{
-                    value: "Cycle Number",
+                    value: "Cycle (last 20)",
                     position: "insideBottom",
                     offset: -5,
                     fill: "#8A8780",
