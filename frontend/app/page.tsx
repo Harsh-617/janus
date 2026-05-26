@@ -1,6 +1,7 @@
 "use client";
 
 import { AgentStatusBar } from "@/components/arena/agent-status-bar";
+import { PnlSparklineBar } from "@/components/arena/pnl-sparkline-bar";
 import { PortfolioPanel } from "@/components/arena/portfolio-panel";
 import { DecisionFeed } from "@/components/arena/decision-feed";
 import { MarketShockPanel } from "@/components/arena/market-shock-panel";
@@ -21,15 +22,18 @@ export default function Arena() {
         background: "#080A0C",
       }}
     >
-      {/* Agent status bar — 44px, never scrolls */}
+      {/* Agent status bar — 48px, never scrolls */}
       <AgentStatusBar
         activeAgents={activeAgents}
         lastCycle={lastCycle}
         connected={connected}
       />
 
-      {/* Middle content area — scrolls */}
-      <div style={{ display: "flex", flex: 1, minHeight: 0, overflowY: "auto" }}>
+      {/* P&L sparkline — 64px, never scrolls */}
+      <PnlSparklineBar portfolio={portfolio} />
+
+      {/* Middle content area — flex row, never scrolls itself */}
+      <div style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "row", overflow: "hidden" }}>
         {/* Left column: Portfolio — 300px */}
         <div
           style={{

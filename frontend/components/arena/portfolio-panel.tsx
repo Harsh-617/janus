@@ -1,24 +1,6 @@
 "use client";
 
 import type { Portfolio } from "@/lib/types";
-import { API_BASE } from "@/lib/constants";
-import { useEffect, useState } from "react";
-import {
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  ReferenceLine,
-} from "recharts";
-
-interface HistoryPoint {
-  cycle: number | string;
-  total_value: number;
-  pnl_pct: number | null;
-  timestamp: string;
-}
 
 interface PortfolioPanelProps {
   portfolio: Portfolio | null;
@@ -66,15 +48,6 @@ const ROW_STYLE: React.CSSProperties = {
 };
 
 export function PortfolioPanel({ portfolio }: PortfolioPanelProps) {
-  const [history, setHistory] = useState<HistoryPoint[]>([]);
-
-  useEffect(() => {
-    fetch(`${API_BASE}/api/portfolio/history`)
-      .then((r) => r.json())
-      .then((data) => setHistory(data.history ?? []))
-      .catch(() => {});
-  }, []);
-
   return (
     <div
       style={{
@@ -348,72 +321,6 @@ export function PortfolioPanel({ portfolio }: PortfolioPanelProps) {
               })
             )}
 
-            {/* P&L chart */}
-            <div style={{ borderTop: "1px solid #1C2128", padding: 12 }}>
-              <div
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 9,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  color: "#C9A84C",
-                  marginBottom: 8,
-                }}
-              >
-                P&L OVER TIME
-              </div>
-              {history.length >= 1 ? (() => {
-                const latestPnl = history[history.length - 1].pnl_pct ?? 0;
-                const lineColor = latestPnl >= 0 ? "#22C55E" : "#EF4444";
-                return (
-                  <ResponsiveContainer width="100%" height={60}>
-                    <LineChart
-                      data={history}
-                      margin={{ top: 4, right: 4, bottom: 4, left: 4 }}
-                    >
-                      <XAxis dataKey="cycle" hide />
-                      <YAxis hide />
-                      <ReferenceLine y={0} stroke="#1C2128" strokeDasharray="3 3" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#0D1117",
-                          border: "1px solid #1C2128",
-                          borderRadius: 3,
-                          fontSize: 10,
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                        labelStyle={{ color: "#4B5563" }}
-                        formatter={(value) => {
-                          const v = typeof value === "number" ? value : 0;
-                          const sign = v >= 0 ? "+" : "";
-                          return [`${sign}${v.toFixed(2)}%`, "P&L"];
-                        }}
-                        labelFormatter={(label) => `Cycle ${label}`}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="pnl_pct"
-                        stroke={lineColor}
-                        strokeWidth={1.5}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                );
-              })() : (
-                <p
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 10,
-                    color: "#4B5563",
-                    margin: 0,
-                  }}
-                >
-                  Waiting for data...
-                </p>
-              )}
-            </div>
           </>
         )}
       </div>
