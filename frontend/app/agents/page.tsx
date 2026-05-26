@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { AgentCard } from "@/components/agents/agent-card";
-import { LiveIndicator } from "@/components/shared/live-indicator";
-import { Button } from "@/components/ui/button";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { fetchCycles, fetchJanusLoopStatus } from "@/lib/api";
 import { API_BASE, AGENT_COLORS, AGENT_DISPLAY_NAMES } from "@/lib/constants";
@@ -14,7 +12,6 @@ import type {
   DimensionScores,
   JanusLoopStatus,
 } from "@/lib/types";
-import { RefreshCw, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 function formatLastAction(raw: string | undefined): string {
@@ -49,7 +46,7 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-  const { activeAgents, connected } = useAgentStream();
+  const { activeAgents } = useAgentStream();
 
   const fetchAgentData = async () => {
     try {
@@ -106,7 +103,7 @@ export default function AgentsPage() {
             stats = {
               "Cycles": cycles.length,
               "Avg Score": avgScore.toFixed(1),
-              "Learning Events": cycles.filter((c) => c.learning_event).length,
+              "Learning": cycles.filter((c) => c.learning_event).length,
             };
             break;
           case "risk_agent":
@@ -127,15 +124,15 @@ export default function AgentsPage() {
           }
           case "regulator_agent":
             stats = {
-              "EXECUTE": cycles.filter((c) => c.final_decision === "EXECUTE").length,
-              "HOLD": cycles.filter((c) => c.final_decision === "HOLD").length,
-              "HALT": cycles.filter((c) => c.final_decision === "HALT").length,
+              "Execute": cycles.filter((c) => c.final_decision === "EXECUTE").length,
+              "Hold": cycles.filter((c) => c.final_decision === "HOLD").length,
+              "Halt": cycles.filter((c) => c.final_decision === "HALT").length,
             };
             break;
           case "judge_agent":
             stats = {
               "Avg Score": avgScore.toFixed(1),
-              "Learning Events": cycles.filter((c) => c.learning_event).length,
+              "Learning": cycles.filter((c) => c.learning_event).length,
               "Low Scores": cycles.filter((c) => c.judge_overall_score < 6).length,
             };
             break;
@@ -145,28 +142,19 @@ export default function AgentsPage() {
       return { avgScore, dimensionScores, stats, lastDecision };
     }
 
-    // Fall back to cycle-derived stats when no per-agent API data is available
     if (!Array.isArray(cycles) || cycles.length === 0) {
-      return {
-        avgScore: null,
-        dimensionScores: null,
-        stats: {},
-        lastDecision: undefined,
-      };
+      return { avgScore: null, dimensionScores: null, stats: {}, lastDecision: undefined };
     }
 
     const avgScore =
       cycles.reduce((sum, c) => sum + c.judge_overall_score, 0) / cycles.length;
 
     const dimensionScores: DimensionScores = {
-      correctness:
-        cycles.reduce((sum, c) => sum + c.judge_correctness, 0) / cycles.length,
-      safety:
-        cycles.reduce((sum, c) => sum + c.judge_safety, 0) / cycles.length,
+      correctness: cycles.reduce((sum, c) => sum + c.judge_correctness, 0) / cycles.length,
+      safety: cycles.reduce((sum, c) => sum + c.judge_safety, 0) / cycles.length,
       hallucination_risk:
         cycles.reduce((sum, c) => sum + c.judge_hallucination_risk, 0) / cycles.length,
-      compliance:
-        cycles.reduce((sum, c) => sum + c.judge_compliance, 0) / cycles.length,
+      compliance: cycles.reduce((sum, c) => sum + c.judge_compliance, 0) / cycles.length,
       explainability:
         cycles.reduce((sum, c) => sum + c.judge_explainability, 0) / cycles.length,
     };
@@ -179,7 +167,7 @@ export default function AgentsPage() {
         stats = {
           "Cycles": cycles.length,
           "Avg Score": avgScore.toFixed(1),
-          "Learning Events": cycles.filter((c) => c.learning_event).length,
+          "Learning": cycles.filter((c) => c.learning_event).length,
         };
         lastDecision = "Proposed trades in last cycle";
         break;
@@ -203,16 +191,16 @@ export default function AgentsPage() {
       }
       case "regulator_agent":
         stats = {
-          "EXECUTE": cycles.filter((c) => c.final_decision === "EXECUTE").length,
-          "HOLD": cycles.filter((c) => c.final_decision === "HOLD").length,
-          "HALT": cycles.filter((c) => c.final_decision === "HALT").length,
+          "Execute": cycles.filter((c) => c.final_decision === "EXECUTE").length,
+          "Hold": cycles.filter((c) => c.final_decision === "HOLD").length,
+          "Halt": cycles.filter((c) => c.final_decision === "HALT").length,
         };
         lastDecision = `Last decision: ${cycles[0]?.final_decision || "N/A"}`;
         break;
       case "judge_agent":
         stats = {
           "Avg Score": avgScore.toFixed(1),
-          "Learning Events": cycles.filter((c) => c.learning_event).length,
+          "Learning": cycles.filter((c) => c.learning_event).length,
           "Low Scores": cycles.filter((c) => c.judge_overall_score < 6).length,
         };
         lastDecision = `Scored ${cycles[0]?.judge_overall_score.toFixed(1) || "N/A"} in last cycle`;
@@ -231,194 +219,269 @@ export default function AgentsPage() {
 
   if (loading) {
     return (
-        <div className="space-y-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-[var(--janus-border)] rounded w-1/3"></div>
-            <div className="h-4 bg-[var(--janus-border)] rounded w-1/2"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="h-96 bg-[var(--janus-surface)] rounded-lg"
-                ></div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 1,
+          background: "#1C2128",
+        }}
+      >
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            style={{ height: 480, background: "#0D1117" }}
+          />
+        ))}
+      </div>
     );
   }
 
   return (
-      <div className="space-y-6">
-        {/* Header */}
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Page Header */}
+      <div
+        style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid #1C2128",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+        }}
+      >
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-[var(--janus-text-primary)]">
-              Agent Control Room
-            </h1>
-            <div className="flex items-center gap-4">
-              <LiveIndicator active={connected} />
-              <Button
-                onClick={() => fetchData(true)}
-                disabled={refreshing}
-                size="sm"
-                variant="outline"
-                className="border-[var(--janus-border)]"
-              >
-                {refreshing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              color: "#4B5563",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              marginBottom: 4,
+            }}
+          >
+            AGENT CONTROL ROOM
           </div>
-          <p className="text-sm text-[var(--janus-text-muted)]">
+          <div
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: 13,
+              color: "#8B949E",
+            }}
+          >
             Real-time agent performance and behavioral constraints
-          </p>
-          <p className="text-xs text-[var(--janus-text-muted)] mt-2">
-            Last refreshed: {formatDistanceToNow(lastRefreshed, { addSuffix: true })}
-          </p>
+          </div>
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              color: "#4B5563",
+            }}
+          >
+            {formatDistanceToNow(lastRefreshed, { addSuffix: true })}
+          </span>
+          <button
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: refreshing ? "default" : "pointer",
+              fontSize: 12,
+              color: "#4B5563",
+              padding: "2px 4px",
+              lineHeight: 1,
+              opacity: refreshing ? 0.4 : 1,
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              if (!refreshing) e.currentTarget.style.color = "#E2E8F0";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "#4B5563";
+            }}
+            aria-label="Refresh"
+          >
+            ↻
+          </button>
+        </div>
+      </div>
 
-        {/* Agent Cards Grid */}
-        {cycles.length === 0 ? (
-          <div className="flex items-center justify-center h-64 bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg">
-            <div className="text-center">
-              <p className="text-[var(--janus-text-muted)] mb-2">
-                No cycle data available yet
-              </p>
-              <p className="text-xs text-[var(--janus-text-muted)]">
-                Run a decision cycle to see agent performance metrics
-              </p>
-            </div>
+      {/* Agent Grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 1,
+          background: "#1C2128",
+        }}
+      >
+        {AGENT_ORDER.map((agentId) => {
+          const { avgScore, dimensionScores, stats, lastDecision } =
+            deriveAgentStats(agentId, agentData);
+          const activeConstraints = getActiveConstraintsForAgent(agentId);
+
+          return (
+            <AgentCard
+              key={agentId}
+              agentId={agentId}
+              isThinking={activeAgents[agentId] || false}
+              avgScore={avgScore}
+              dimensionScores={dimensionScores}
+              activeConstraints={activeConstraints}
+              stats={stats}
+              lastDecision={lastDecision}
+            />
+          );
+        })}
+      </div>
+
+      {/* Active Behavioral Constraints Table */}
+      {janusStatus && janusStatus.active_constraints.length > 0 && (
+        <div
+          style={{
+            margin: "1px 0 0",
+            background: "#0D1117",
+            border: "1px solid #1C2128",
+          }}
+        >
+          <div
+            style={{
+              padding: "10px 14px",
+              borderBottom: "1px solid #1C2128",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              color: "#4B5563",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+            }}
+          >
+            ALL BEHAVIORAL CONSTRAINTS
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {AGENT_ORDER.map((agentId) => {
-              const { avgScore, dimensionScores, stats, lastDecision } =
-                deriveAgentStats(agentId, agentData);
-              const activeConstraints = getActiveConstraintsForAgent(agentId);
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #1C2128" }}>
+                  {["Target Agent", "Condition", "Rule", "Applied Cycles", "Status"].map(
+                    (col) => (
+                      <th
+                        key={col}
+                        style={{
+                          textAlign: "left",
+                          padding: "8px 14px",
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 9,
+                          color: "#4B5563",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                          fontWeight: 400,
+                        }}
+                      >
+                        {col}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {janusStatus.active_constraints.map((constraint) => {
+                  const ta = constraint.target_agent;
+                  const color = ta && AGENT_COLORS[ta] ? AGENT_COLORS[ta] : "#8B949E";
+                  const name = ta
+                    ? AGENT_DISPLAY_NAMES[ta] ??
+                      ta.split("_").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+                    : "Unknown";
 
-              return (
-                <AgentCard
-                  key={agentId}
-                  agentId={agentId}
-                  isThinking={activeAgents[agentId] || false}
-                  avgScore={avgScore}
-                  dimensionScores={dimensionScores}
-                  activeConstraints={activeConstraints}
-                  stats={stats}
-                  lastDecision={lastDecision}
-                />
-              );
-            })}
-          </div>
-        )}
-
-        {/* Active Behavioral Constraints Table */}
-        <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6">
-          <h2 className="text-sm font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide mb-4">
-            Active Behavioral Constraints
-          </h2>
-
-          {!janusStatus || janusStatus.active_constraints.length === 0 ? (
-            <div className="text-center py-8 text-[var(--janus-text-muted)]">
-              No active constraints. The Janus Loop will generate constraints
-              after analyzing cycle patterns.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--janus-border)]">
-                    <th className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide pb-3">
-                      Target Agent
-                    </th>
-                    <th className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide pb-3">
-                      Condition
-                    </th>
-                    <th className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide pb-3">
-                      Rule
-                    </th>
-                    <th className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide pb-3">
-                      Applied Cycles
-                    </th>
-                    <th className="text-left text-xs text-[var(--janus-text-muted)] uppercase tracking-wide pb-3">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {janusStatus.active_constraints.map((constraint) => (
+                  return (
                     <tr
                       key={constraint.constraint_id}
-                      className="border-b border-[var(--janus-border)] last:border-0"
+                      style={{ borderBottom: "1px solid #1C2128" }}
                     >
-                      <td className="py-3">
+                      <td style={{ padding: "8px 14px" }}>
                         <span
-                          className="text-xs font-semibold px-2 py-1 rounded"
                           style={{
-                            backgroundColor: (() => {
-                              const ta = constraint.target_agent
-                              if (ta && AGENT_COLORS[ta]) return `${AGENT_COLORS[ta]}20`
-                              return "rgba(128,128,128,0.2)"
-                            })(),
-                            color: (() => {
-                              const ta = constraint.target_agent
-                              if (ta && AGENT_COLORS[ta]) return AGENT_COLORS[ta]
-                              return "var(--janus-text-secondary)"
-                            })(),
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color,
+                            background: `${color}18`,
+                            borderRadius: 3,
+                            padding: "2px 6px",
                           }}
                         >
-                          {(() => {
-                            const ta = constraint.target_agent
-                            if (!ta) return "Unknown"
-                            if (AGENT_DISPLAY_NAMES[ta]) return AGENT_DISPLAY_NAMES[ta]
-                            return ta.split("_").map((w: string) =>
-                              w.charAt(0).toUpperCase() + w.slice(1)
-                            ).join(" ")
-                          })()}
+                          {name}
                         </span>
                       </td>
-                      <td className="py-3 text-xs text-[var(--janus-text-secondary)]">
+                      <td
+                        style={{
+                          padding: "8px 14px",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 11,
+                          color: "#8B949E",
+                          maxWidth: 200,
+                        }}
+                      >
                         <span title={constraint.condition}>
                           {constraint.condition.length > 40
-                            ? constraint.condition.substring(0, 40) + "..."
+                            ? constraint.condition.substring(0, 40) + "…"
                             : constraint.condition}
                         </span>
                       </td>
-                      <td className="py-3 text-xs text-[var(--janus-text-secondary)]">
+                      <td
+                        style={{
+                          padding: "8px 14px",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 11,
+                          color: "#8B949E",
+                          maxWidth: 260,
+                        }}
+                      >
                         <span title={constraint.rule}>
                           {constraint.rule.length > 50
-                            ? constraint.rule.substring(0, 50) + "..."
+                            ? constraint.rule.substring(0, 50) + "…"
                             : constraint.rule}
                         </span>
                       </td>
-                      <td className="py-3 text-xs text-[var(--janus-text-secondary)] font-mono">
+                      <td
+                        style={{
+                          padding: "8px 14px",
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 11,
+                          color: "#8B949E",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {constraint.performance_delta.cycles_active} /{" "}
                         {constraint.expires_after_cycles}
                       </td>
-                      <td className="py-3">
+                      <td style={{ padding: "8px 14px" }}>
                         <span
-                          className={`text-xs font-semibold px-2 py-1 rounded ${
-                            constraint.status === "ACTIVE"
-                              ? "bg-[var(--janus-success)]/20 text-[var(--janus-success)]"
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 10,
+                            fontWeight: 600,
+                            borderRadius: 3,
+                            padding: "2px 6px",
+                            ...(constraint.status === "ACTIVE"
+                              ? { background: "#22C55E18", color: "#22C55E" }
                               : constraint.status === "EXPIRED"
-                              ? "bg-[var(--janus-text-muted)]/20 text-[var(--janus-text-muted)]"
-                              : "bg-[var(--janus-danger)]/20 text-[var(--janus-danger)]"
-                          }`}
+                              ? { background: "#4B556318", color: "#4B5563" }
+                              : { background: "#EF444418", color: "#EF4444" }),
+                          }}
                         >
                           {constraint.status}
                         </span>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
+    </div>
   );
 }

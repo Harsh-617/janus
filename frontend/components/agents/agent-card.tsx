@@ -1,11 +1,9 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { AGENT_DISPLAY_NAMES, AGENT_COLORS } from "@/lib/constants";
 import { ScoreBadge } from "@/components/shared/score-badge";
 import { RadarChartComponent } from "./radar-chart";
 import type { AgentName, BehavioralConstraint, DimensionScores } from "@/lib/types";
-import { Activity } from "lucide-react";
 
 interface AgentCardProps {
   agentId: AgentName;
@@ -17,6 +15,37 @@ interface AgentCardProps {
   lastDecision?: string;
 }
 
+const AGENT_DOT_COLORS: Record<string, string> = {
+  trading_agent: "#4CADCE",
+  risk_agent: "#F59E0B",
+  fraud_agent: "#EF4444",
+  regulator_agent: "#22C55E",
+  judge_agent: "#A855F7",
+};
+
+const DIMENSION_LABELS = [
+  { key: "correctness", label: "CORRECT" },
+  { key: "safety", label: "SAFETY" },
+  { key: "hallucination_risk", label: "HALLUC", invert: true },
+  { key: "compliance", label: "COMPLY" },
+  { key: "explainability", label: "EXPLAIN" },
+] as const;
+
+function scoreColor(v: number): string {
+  if (v >= 7) return "#22C55E";
+  if (v >= 5) return "#F59E0B";
+  return "#EF4444";
+}
+
+function statValueColor(index: number, value: string | number): string {
+  if (index === 2) return "#EF4444";
+  if (index === 1) {
+    const n = parseFloat(String(value));
+    if (!isNaN(n) && n >= 0 && n <= 10) return scoreColor(n);
+  }
+  return "#E2E8F0";
+}
+
 export function AgentCard({
   agentId,
   isThinking,
@@ -26,116 +55,274 @@ export function AgentCard({
   stats,
   lastDecision,
 }: AgentCardProps) {
-  const agentColor = AGENT_COLORS[agentId];
+  const agentColor = AGENT_DOT_COLORS[agentId] ?? AGENT_COLORS[agentId];
   const agentName = AGENT_DISPLAY_NAMES[agentId];
+  const statsEntries = Object.entries(stats).slice(0, 3);
 
   return (
     <div
-      className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6 flex flex-col gap-4"
-      style={{ borderLeftWidth: "4px", borderLeftColor: agentColor }}
+      style={{
+        background: "#0D1117",
+        border: "1px solid #1C2128",
+        borderRadius: 4,
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+      }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* HEADER ROW */}
+      <div
+        style={{
+          padding: "10px 14px",
+          borderBottom: "1px solid #1C2128",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: agentColor }}
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              backgroundColor: agentColor,
+              flexShrink: 0,
+              boxShadow: isThinking ? `0 0 0 3px ${agentColor}33` : "none",
+            }}
           />
-          <h3 className="text-sm font-semibold text-[var(--janus-text-primary)]">
+          <span
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#E2E8F0",
+            }}
+          >
             {agentName}
-          </h3>
-        </div>
-        {isThinking && (
-          <div className="flex items-center gap-2 px-2 py-1 rounded bg-[var(--janus-blue)]/20 border border-[var(--janus-blue)]/30">
-            <Activity className="h-3 w-3 text-[var(--janus-blue)] animate-pulse" />
-            <span className="text-xs font-semibold text-[var(--janus-blue)] uppercase">
-              Thinking
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Overall Score */}
-      <div>
-        <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-2">
-          Overall Score
-        </div>
-        {avgScore !== null ? (
-          <ScoreBadge score={avgScore} size="lg" />
-        ) : (
-          <span className="text-sm text-[var(--janus-text-muted)]">
-            No data yet
           </span>
-        )}
+        </div>
+        {avgScore !== null && <ScoreBadge score={avgScore} size="md" />}
       </div>
 
-      {/* Radar Chart */}
-      <div className="flex justify-center">
+      {/* SCORE DIMENSIONS ROW */}
+      <div
+        style={{
+          padding: "10px 14px",
+          borderBottom: "1px solid #1C2128",
+          display: "flex",
+          gap: 8,
+        }}
+      >
+        {DIMENSION_LABELS.map(({ key, label, invert }) => {
+          const raw = dimensionScores ? (dimensionScores as Record<string, number>)[key] : null;
+          const display = raw !== null ? (invert ? 10 - raw : raw) : null;
+          const color = display !== null ? scoreColor(display) : "#4B5563";
+          const fillPct = display !== null ? (display / 10) * 100 : 0;
+
+          return (
+            <div
+              key={key}
+              style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}
+            >
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9,
+                  color: "#4B5563",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {label}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color,
+                }}
+              >
+                {display !== null ? display.toFixed(1) : "—"}
+              </span>
+              <div
+                style={{
+                  height: 3,
+                  background: "#1C2128",
+                  borderRadius: 1,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${fillPct}%`,
+                    background: color,
+                    borderRadius: 1,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* RADAR CHART */}
+      <div style={{ padding: "0 14px", height: 200, flexShrink: 0 }}>
         <RadarChartComponent scores={dimensionScores} agentColor={agentColor} />
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-2">
-        {Object.entries(stats).map(([key, value]) => (
-          <div
-            key={key}
-            className="p-2 rounded bg-[var(--janus-background)] border border-[var(--janus-border)]"
-          >
-            <div className="text-xs text-[var(--janus-text-muted)] mb-1">
-              {key}
+      {/* STATS ROW */}
+      {statsEntries.length > 0 && (
+        <div
+          style={{
+            borderTop: "1px solid #1C2128",
+            borderBottom: "1px solid #1C2128",
+            display: "flex",
+          }}
+        >
+          {statsEntries.map(([label, value], i) => (
+            <div
+              key={label}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                borderRight: i < statsEntries.length - 1 ? "1px solid #1C2128" : "none",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9,
+                  color: "#4B5563",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: 4,
+                }}
+              >
+                {label}
+              </div>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: statValueColor(i, value),
+                }}
+              >
+                {value}
+              </div>
             </div>
-            <div className="text-sm font-semibold text-[var(--janus-text-primary)] font-mono">
-              {value}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Active Constraints */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide">
-            Active Constraints
+      {/* CONSTRAINTS SECTION */}
+      <div style={{ padding: "10px 14px", flex: 1 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: activeConstraints.length > 0 ? 8 : 4,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              color: "#4B5563",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            ACTIVE CONSTRAINTS
           </span>
           <span
-            className={cn(
-              "text-xs font-semibold px-2 py-0.5 rounded",
-              activeConstraints.length > 0
-                ? "bg-[var(--janus-gold)]/20 text-[var(--janus-gold)]"
-                : "bg-[var(--janus-border)] text-[var(--janus-text-muted)]"
-            )}
+            style={{
+              background: "#1C2128",
+              color: "#8B949E",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              borderRadius: 3,
+              padding: "1px 6px",
+              lineHeight: 1.5,
+            }}
           >
             {activeConstraints.length}
           </span>
         </div>
-        {activeConstraints.length > 0 && (
-          <div className="space-y-1 max-h-24 overflow-y-auto">
+        {activeConstraints.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {activeConstraints.map((constraint) => (
               <div
                 key={constraint.constraint_id}
-                className="text-xs text-[var(--janus-text-secondary)] p-2 rounded bg-[var(--janus-background)] border border-[var(--janus-border)]"
+                className="line-clamp-2"
+                style={{
+                  padding: "6px 8px",
+                  background: "#080A0C",
+                  border: "1px solid #1C2128",
+                  borderRadius: 3,
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 11,
+                  color: "#8B949E",
+                }}
                 title={constraint.rule}
               >
-                {constraint.rule.length > 60
-                  ? constraint.rule.substring(0, 60) + "..."
-                  : constraint.rule}
+                {constraint.rule}
               </div>
             ))}
           </div>
+        ) : (
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              color: "#4B5563",
+            }}
+          >
+            No active constraints
+          </span>
         )}
       </div>
 
-      {/* Last Decision */}
+      {/* LAST ACTION */}
       {lastDecision && (
-        <div>
-          <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-2">
-            Last Action
-          </div>
-          <div className="text-xs text-[var(--janus-text-secondary)]">
-            {lastDecision.length > 80
-              ? lastDecision.substring(0, 80) + "..."
-              : lastDecision}
-          </div>
+        <div
+          style={{
+            padding: "8px 14px",
+            borderTop: "1px solid #1C2128",
+            display: "flex",
+            alignItems: "baseline",
+            gap: 8,
+            overflow: "hidden",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              color: "#4B5563",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              flexShrink: 0,
+            }}
+          >
+            LAST ACTION
+          </span>
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              color: "#8B949E",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {lastDecision}
+          </span>
         </div>
       )}
     </div>
