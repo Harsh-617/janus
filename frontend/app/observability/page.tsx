@@ -13,7 +13,65 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Activity, AlertCircle, CheckCircle } from "lucide-react";
+
+const PHOENIX_URL =
+  process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006";
+
+const PHOENIX_CATEGORIES = [
+  { label: "Traces", key: "traces" },
+  { label: "Evaluations", key: "evals" },
+  { label: "Datasets", key: "datasets" },
+  { label: "Experiments", key: "experiments" },
+  { label: "Playground", key: "playground" },
+];
+
+function PhoenixNavItem({
+  label,
+  count,
+  isActive,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: isActive ? "8px 14px 8px 12px" : "8px 14px",
+        borderBottom: "1px solid #111820",
+        borderLeft: isActive ? "2px solid #4CADCE" : "2px solid transparent",
+        fontFamily: "Inter, sans-serif",
+        fontSize: 12,
+        color: isActive ? "#E2E8F0" : hovered ? "#E2E8F0" : "#8B949E",
+        cursor: "pointer",
+        background: hovered && !isActive ? "#0D1117" : "transparent",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        transition: "background 0.1s, color 0.1s",
+      }}
+    >
+      <span>{label}</span>
+      {count != null && (
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            color: "#4B5563",
+          }}
+        >
+          {count}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function ObservabilityPage() {
   const [cycles, setCycles] = useState<DecisionCycle[]>([]);
@@ -21,12 +79,15 @@ export default function ObservabilityPage() {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("traces");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const cyclesData = await fetchCycles(20);
-        const cyclesArr = Array.isArray(cyclesData) ? cyclesData : (cyclesData as unknown as { cycles: DecisionCycle[] }).cycles || [];
+        const cyclesArr = Array.isArray(cyclesData)
+          ? cyclesData
+          : (cyclesData as unknown as { cycles: DecisionCycle[] }).cycles || [];
         setCycles(cyclesArr);
       } catch (error) {
         console.error("Failed to fetch cycles:", error);
@@ -37,16 +98,13 @@ export default function ObservabilityPage() {
 
     fetchData();
     const interval = setInterval(fetchData, 30000);
-
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     const checkPhoenix = async () => {
       try {
-        const response = await fetch(process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006", {
-          mode: "no-cors",
-        });
+        await fetch(PHOENIX_URL, { mode: "no-cors" });
         setPhoenixReachable(true);
       } catch {
         setPhoenixReachable(false);
@@ -55,211 +113,375 @@ export default function ObservabilityPage() {
 
     checkPhoenix();
     const interval = setInterval(checkPhoenix, 30000);
-
     return () => clearInterval(interval);
   }, []);
 
-  const chartData = Array.isArray(cycles) ? cycles
-    .slice()
-    .reverse()
-    .map((cycle, index) => ({
-      cycle: index + 1,
-      Overall: cycle.judge_overall_score,
-      Correctness: cycle.judge_correctness,
-      Safety: cycle.judge_safety,
-      "Hallucination Risk": 10 - cycle.judge_hallucination_risk, // Invert
-      Compliance: cycle.judge_compliance,
-      Explainability: cycle.judge_explainability,
-    })) : [];
+  const chartData = Array.isArray(cycles)
+    ? cycles
+        .slice()
+        .reverse()
+        .map((cycle, index) => ({
+          cycle: index + 1,
+          Overall: cycle.judge_overall_score,
+          Safety: cycle.judge_safety,
+          Correctness: cycle.judge_correctness,
+          Compliance: cycle.judge_compliance,
+          Explainability: cycle.judge_explainability,
+          "Hallucination Risk": 10 - cycle.judge_hallucination_risk,
+        }))
+    : [];
 
   return (
-      <div className="space-y-6">
-        {/* Header */}
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Page Header */}
+      <div
+        style={{
+          padding: "12px 20px",
+          borderBottom: "1px solid #1C2128",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          flexShrink: 0,
+        }}
+      >
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-[var(--janus-text-primary)]">
-              Observability
-            </h1>
-            <div className="flex items-center gap-2">
-              {phoenixReachable === null ? (
-                <Activity className="h-4 w-4 text-[var(--janus-text-muted)] animate-pulse" />
-              ) : phoenixReachable ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-[var(--janus-success)]" />
-                  <span className="text-xs text-[var(--janus-success)]">
-                    Phoenix Connected
-                  </span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4 text-[var(--janus-danger)]" />
-                  <span className="text-xs text-[var(--janus-danger)]">
-                    Phoenix Offline
-                  </span>
-                </>
-              )}
-            </div>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              color: "#4B5563",
+            }}
+          >
+            Observability
           </div>
-          <p className="text-sm text-[var(--janus-text-muted)]">
+          <div
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: 13,
+              color: "#8B949E",
+              marginTop: 3,
+            }}
+          >
             Live decision traces powered by Arize Phoenix
-          </p>
+          </div>
         </div>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2 }}
+        >
+          {phoenixReachable === null ? (
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                color: "#4B5563",
+              }}
+            >
+              checking...
+            </span>
+          ) : phoenixReachable ? (
+            <>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#22C55E",
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  color: "#22C55E",
+                }}
+              >
+                Phoenix Connected
+              </span>
+            </>
+          ) : (
+            <>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#EF4444",
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  color: "#EF4444",
+                }}
+              >
+                Phoenix Disconnected
+              </span>
+            </>
+          )}
+        </div>
+      </div>
 
-        {/* Score Trend Panel */}
-        <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6">
-          <h2 className="text-sm font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide mb-4">
-            Judge Score Trends (Last 20 Cycles)
-          </h2>
-
+      {/* Section 1: Score Trends */}
+      <div style={{ borderBottom: "1px solid #1C2128" }}>
+        <div
+          style={{
+            padding: "8px 20px",
+            borderBottom: "1px solid #1C2128",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "#4B5563",
+            }}
+          >
+            Judge Score Trends
+          </span>
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              color: "#2D3748",
+            }}
+          >
+            LAST 20 CYCLES
+          </span>
+        </div>
+        <div style={{ padding: "0 20px 16px" }}>
           {loading ? (
-            <div className="h-[300px] flex items-center justify-center">
-              <div className="animate-pulse text-[var(--janus-text-muted)]">
-                Loading...
-              </div>
+            <div
+              style={{
+                height: 300,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                color: "#4B5563",
+              }}
+            >
+              Loading...
             </div>
           ) : cycles.length === 0 ? (
-            <div className="h-[300px] flex items-center justify-center text-[var(--janus-text-muted)]">
+            <div
+              style={{
+                height: 300,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                color: "#4B5563",
+              }}
+            >
               No cycle data available yet
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E2028" />
+              <LineChart
+                data={chartData}
+                margin={{ top: 10, right: 10, bottom: 28, left: 0 }}
+              >
+                <CartesianGrid stroke="#1C2128" strokeDasharray="3 3" />
                 <XAxis
                   dataKey="cycle"
-                  stroke="#8A8780"
-                  tick={{ fill: "#8A8780", fontSize: 12 }}
+                  tick={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    fill: "#4B5563",
+                  }}
                   label={{
                     value: "Cycle (last 20)",
                     position: "insideBottom",
-                    offset: -5,
-                    fill: "#8A8780",
+                    offset: -12,
+                    fill: "#4B5563",
+                    fontSize: 10,
                   }}
+                  axisLine={{ stroke: "#1C2128" }}
+                  tickLine={false}
                 />
                 <YAxis
                   domain={[0, 10]}
-                  stroke="#8A8780"
-                  tick={{ fill: "#8A8780", fontSize: 12 }}
-                  label={{
-                    value: "Score",
-                    angle: -90,
-                    position: "insideLeft",
-                    fill: "#8A8780",
+                  tick={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    fill: "#4B5563",
                   }}
+                  axisLine={{ stroke: "#1C2128" }}
+                  tickLine={false}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#13151A",
-                    border: "1px solid #1E2028",
-                    borderRadius: "6px",
+                    background: "#0D1117",
+                    border: "1px solid #1C2128",
+                    borderRadius: 3,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    boxShadow: "none",
                   }}
-                  labelStyle={{ color: "#E8E6E0" }}
+                  labelStyle={{ color: "#8B949E" }}
+                  itemStyle={{ color: "#8B949E", fontSize: 10 }}
+                  cursor={{ stroke: "#1C2128", strokeWidth: 1 }}
                 />
                 <Legend
-                  wrapperStyle={{ paddingTop: "20px" }}
+                  wrapperStyle={{
+                    paddingTop: 8,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                  }}
                   iconType="line"
                 />
                 <Line
                   type="monotone"
                   dataKey="Overall"
                   stroke="#C9A84C"
-                  strokeWidth={3}
-                  dot={{ fill: "#C9A84C", r: 4 }}
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Safety"
+                  stroke="#22C55E"
+                  strokeWidth={1.5}
+                  dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="Correctness"
                   stroke="#4CADCE"
-                  strokeWidth={2}
-                  dot={{ fill: "#4CADCE", r: 3 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Safety"
-                  stroke="#52E0A0"
-                  strokeWidth={2}
-                  dot={{ fill: "#52E0A0", r: 3 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Hallucination Risk"
-                  stroke="#E05252"
-                  strokeWidth={2}
-                  dot={{ fill: "#E05252", r: 3 }}
+                  strokeWidth={1.5}
+                  dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="Compliance"
-                  stroke="#9B59B6"
-                  strokeWidth={2}
-                  dot={{ fill: "#9B59B6", r: 3 }}
+                  stroke="#A855F7"
+                  strokeWidth={1.5}
+                  dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="Explainability"
-                  stroke="#E0A052"
-                  strokeWidth={2}
-                  dot={{ fill: "#E0A052", r: 3 }}
+                  stroke="#F59E0B"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Hallucination Risk"
+                  stroke="#EF4444"
+                  strokeWidth={1.5}
+                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
+      </div>
 
-        {/* Phoenix Iframe */}
-        <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6">
-          <h2 className="text-sm font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide mb-4">
+      {/* Section 2: Phoenix Traces */}
+      <div style={{ display: "flex", minHeight: 500 }}>
+        {/* Left nav */}
+        <div
+          style={{
+            width: 200,
+            flexShrink: 0,
+            borderRight: "1px solid #1C2128",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              padding: "8px 14px",
+              borderBottom: "1px solid #1C2128",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "#4B5563",
+            }}
+          >
             Arize Phoenix Traces
-          </h2>
+          </div>
+          {PHOENIX_CATEGORIES.map((cat) => (
+            <PhoenixNavItem
+              key={cat.key}
+              label={cat.label}
+              count={
+                cat.key === "traces" && cycles.length > 0
+                  ? cycles.length
+                  : undefined
+              }
+              isActive={activeCategory === cat.key}
+              onClick={() => setActiveCategory(cat.key)}
+            />
+          ))}
+        </div>
 
+        {/* Right: iframe */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {phoenixReachable === false ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <AlertCircle className="h-12 w-12 text-[var(--janus-warning)]" />
-              <div className="text-center">
-                <p className="text-[var(--janus-text-primary)] font-semibold mb-2">
-                  Phoenix is not running
-                </p>
-                <p className="text-sm text-[var(--janus-text-muted)] mb-4">
-                  Start Phoenix locally to view traces and evaluations
-                </p>
-                <div className="bg-[var(--janus-background)] border border-[var(--janus-border)] rounded p-4 text-left">
-                  <p className="text-xs text-[var(--janus-text-muted)] mb-2">
-                    Run this command:
-                  </p>
-                  <code className="text-xs text-[var(--janus-blue)] font-mono">
-                    python backend/scripts/start_phoenix.py
-                  </code>
-                  <p className="text-xs text-[var(--janus-text-muted)] mt-3">
-                    Then access Phoenix at:{" "}
-                    <a
-                      href={process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[var(--janus-blue)] hover:underline"
-                    >
-                      {process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006"}
-                    </a>
-                  </p>
-                </div>
-              </div>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                padding: 32,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: 13,
+                  color: "#8B949E",
+                }}
+              >
+                Phoenix must be running locally.
+              </span>
+              <code
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  color: "#4CADCE",
+                  background: "#0D1117",
+                  border: "1px solid #1C2128",
+                  borderRadius: 3,
+                  padding: "2px 8px",
+                }}
+              >
+                python backend/scripts/start_phoenix.py
+              </code>
             </div>
           ) : (
-            <>
-              <p className="text-xs text-[var(--janus-text-muted)] mb-4">
-                Phoenix must be running locally. Start with:{" "}
-                <code className="text-[var(--janus-blue)] font-mono">
-                  python backend/scripts/start_phoenix.py
-                </code>
-              </p>
-              <iframe
-                src={process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006"}
-                className="w-full border-0 rounded-lg bg-[var(--janus-background)]"
-                style={{ minHeight: "500px" }}
-                title="Arize Phoenix"
-              />
-            </>
+            <iframe
+              src={PHOENIX_URL}
+              style={{
+                width: "100%",
+                flex: 1,
+                minHeight: 500,
+                border: "none",
+                background: "#080A0C",
+              }}
+              title="Arize Phoenix"
+            />
           )}
         </div>
       </div>
+    </div>
   );
 }
