@@ -89,6 +89,12 @@ try:
 except ImportError:
     logger.warning("api.routes.constraints router not found — skipping")
 
+try:
+    from api.routes.market_shock_parse import router as market_shock_parse_router
+    app.include_router(market_shock_parse_router, prefix="/api", tags=["market-shock"])
+except ImportError:
+    logger.warning("api.routes.market_shock_parse router not found — skipping")
+
 
 @app.get("/health")
 async def health():
