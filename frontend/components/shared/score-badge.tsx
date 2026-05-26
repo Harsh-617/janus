@@ -1,31 +1,51 @@
-import { cn } from "@/lib/utils";
-import { SCORE_THRESHOLDS } from "@/lib/constants";
-
 interface ScoreBadgeProps {
   score: number;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md";
+}
+
+function getScoreStyle(score: number) {
+  if (score >= 7) {
+    return {
+      background: "#0A1F0A",
+      color: "#22C55E",
+      border: "1px solid #0A3A0A",
+    };
+  }
+  if (score >= 5) {
+    return {
+      background: "#1A1500",
+      color: "#C9A84C",
+      border: "1px solid #332A00",
+    };
+  }
+  return {
+    background: "#1F0A0A",
+    color: "#EF4444",
+    border: "1px solid #3A0A0A",
+  };
 }
 
 export function ScoreBadge({ score, size = "md" }: ScoreBadgeProps) {
-  const getScoreColor = (score: number) => {
-    if (score >= SCORE_THRESHOLDS.pass) return "bg-[var(--janus-success)]/20 text-[var(--janus-success)] border-[var(--janus-success)]/30";
-    if (score >= SCORE_THRESHOLDS.warn) return "bg-[var(--janus-warning)]/20 text-[var(--janus-warning)] border-[var(--janus-warning)]/30";
-    return "bg-[var(--janus-danger)]/20 text-[var(--janus-danger)] border-[var(--janus-danger)]/30";
-  };
+  const colorStyle = getScoreStyle(score);
 
-  const sizeClasses = {
-    sm: "text-xs px-2 py-0.5",
-    md: "text-sm px-3 py-1",
-    lg: "text-base px-4 py-1.5",
-  };
+  const sizeStyle =
+    size === "sm"
+      ? { fontSize: 10, padding: "2px 6px" }
+      : { fontSize: 13, padding: "3px 10px" };
 
   return (
     <span
-      className={cn(
-        "inline-flex items-center justify-center rounded-md border font-mono font-semibold",
-        getScoreColor(score),
-        sizeClasses[size]
-      )}
+      style={{
+        ...colorStyle,
+        ...sizeStyle,
+        fontFamily: "'JetBrains Mono', monospace",
+        fontWeight: 600,
+        borderRadius: 3,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        lineHeight: 1,
+      }}
     >
       {score.toFixed(1)}
     </span>

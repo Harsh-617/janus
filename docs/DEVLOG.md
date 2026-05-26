@@ -1,3 +1,8 @@
+## 2026-05-26
+**[Dev A]** Step 1: Full design system foundation rewrite. globals.css with design tokens, layout shell, sidebar, topbar, shared components (ScoreBadge, StatusIndicator, LiveIndicator). Design system: #080A0C bg, JetBrains Mono for data, Inter for body, gold/blue two-face color split.
+
+---
+
 ## Fix: Audit log sort order newest first
 **Date**: 2026-05-25
 **Files modified**:

@@ -2,102 +2,142 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Bot,
-  RefreshCw,
-  Activity,
-  FileText,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { checkHealth } from "@/lib/api";
-import { LiveIndicator } from "@/components/shared/live-indicator";
 
-const navItems = [
-  { href: "/", label: "The Arena", icon: LayoutDashboard },
-  { href: "/agents", label: "Agent Control Room", icon: Bot },
-  { href: "/janus-loop", label: "Janus Loop", icon: RefreshCw },
-  { href: "/observability", label: "Observability", icon: Activity },
-  { href: "/audit", label: "Audit Log", icon: FileText },
+const NAV_ITEMS = [
+  {
+    href: "/",
+    label: "Arena",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="1" y="1" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="10" y="1" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="1" y="10" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="10" y="10" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    ),
+  },
+  {
+    href: "/agents",
+    label: "Agents",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="5.5" cy="9" r="1.5" fill="currentColor" />
+        <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+        <circle cx="12.5" cy="9" r="1.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    href: "/janus-loop",
+    label: "Janus Loop",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path
+          d="M9 1.5L15.5 5.25V12.75L9 16.5L2.5 12.75V5.25L9 1.5Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    href: "/observability",
+    label: "Observability",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="1" y="11" width="3" height="6" rx="0.5" fill="currentColor" />
+        <rect x="5.5" y="7" width="3" height="10" rx="0.5" fill="currentColor" />
+        <rect x="10" y="4" width="3" height="13" rx="0.5" fill="currentColor" />
+        <rect x="14.5" y="1" width="3" height="16" rx="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    href: "/audit",
+    label: "Audit",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <line x1="3" y1="5" x2="15" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="3" y1="9" x2="15" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="3" y1="13" x2="11" y2="13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
+
+const LIVE_DOT_ROUTES = new Set(["/", "/agents"]);
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [isHealthy, setIsHealthy] = useState(false);
-
-  useEffect(() => {
-    const checkBackendHealth = async () => {
-      try {
-        await checkHealth();
-        setIsHealthy(true);
-      } catch {
-        setIsHealthy(false);
-      }
-    };
-
-    checkBackendHealth();
-    const interval = setInterval(checkBackendHealth, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
-    <aside className="w-[200px] h-screen bg-[var(--janus-surface)] border-r border-[var(--janus-border)] flex flex-col">
-      <div className="p-6 border-b border-[var(--janus-border)]">
-        <div className="flex items-center gap-2">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="text-[var(--janus-gold)]"
+    <aside
+      style={{
+        width: 52,
+        height: "100vh",
+        flexShrink: 0,
+        background: "#0D1117",
+        borderRight: "1px solid #1C2128",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        paddingTop: 12,
+        gap: 4,
+      }}
+    >
+      {/* Logo */}
+      <div style={{ marginBottom: 20 }}>
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="Janus">
+          <circle cx="14" cy="14" r="13" stroke="#C9A84C" strokeWidth="1" />
+          <line x1="14" y1="1" x2="14" y2="27" stroke="#1C2128" strokeWidth="1.5" />
+          <circle cx="9" cy="13" r="2" fill="#4CADCE" />
+          <circle cx="19" cy="13" r="2" fill="#C9A84C" />
+        </svg>
+      </div>
+
+      {/* Nav items */}
+      {NAV_ITEMS.map(({ href, label, icon }) => {
+        const isActive = pathname === href;
+        const showDot = isActive && LIVE_DOT_ROUTES.has(href);
+
+        return (
+          <Link
+            key={href}
+            href={href}
+            title={label}
+            style={{
+              position: "relative",
+              width: 36,
+              height: 36,
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textDecoration: "none",
+              color: isActive ? "#C9A84C" : "#4B5563",
+              background: isActive ? "#161B22" : "transparent",
+              border: isActive ? "1px solid #2D2415" : "1px solid transparent",
+            }}
           >
-            <circle cx="8" cy="8" r="3" fill="currentColor" />
-            <circle cx="16" cy="8" r="3" fill="currentColor" />
-            <path
-              d="M12 12 L8 16 L12 20 L16 16 L12 12Z"
-              fill="currentColor"
-            />
-          </svg>
-          <h1 className="text-xl font-bold font-cinzel text-[var(--janus-gold)] tracking-wider">
-            JANUS
-          </h1>
-        </div>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-[var(--janus-gold)]/20 text-[var(--janus-gold)]"
-                  : "text-[var(--janus-text-secondary)] hover:text-[var(--janus-text-primary)] hover:bg-[var(--janus-border)]"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-[var(--janus-border)]">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--janus-text-muted)]">
-            Backend
-          </span>
-          <LiveIndicator active={isHealthy} />
-        </div>
-      </div>
+            {icon}
+            {showDot && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  width: 4,
+                  height: 4,
+                  borderRadius: "50%",
+                  background: "#C9A84C",
+                }}
+              />
+            )}
+          </Link>
+        );
+      })}
     </aside>
   );
 }

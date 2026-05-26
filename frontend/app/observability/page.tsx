@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { fetchCycles } from "@/lib/api";
 import type { DecisionCycle } from "@/lib/types";
 import {
@@ -74,7 +73,6 @@ export default function ObservabilityPage() {
     })) : [];
 
   return (
-    <LayoutWrapper>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -263,6 +261,5 @@ export default function ObservabilityPage() {
           )}
         </div>
       </div>
-    </LayoutWrapper>
   );
 }

@@ -1,162 +1,219 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Play, Power, PowerOff } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { Portfolio } from "@/lib/types";
-import {
-  runCycleOnce,
-  activateCircuitBreaker,
-  releaseCircuitBreaker,
-} from "@/lib/api";
+import { useEffect, useState, useRef } from "react";
+import { usePortfolio } from "@/hooks/use-portfolio";
+import { useCycles } from "@/hooks/use-cycles";
 
-interface TopbarProps {
-  portfolio: Portfolio | null;
-  onCircuitBreakerToggle?: () => void;
+const CYCLE_INTERVAL = 60;
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
-export function Topbar({ portfolio, onCircuitBreakerToggle }: TopbarProps) {
-  const [isRunning, setIsRunning] = useState(false);
+function formatPct(value: number) {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
 
-  const handleRunCycle = async () => {
-    try {
-      setIsRunning(true);
-      await runCycleOnce();
-    } catch (error) {
-      console.error("Failed to run cycle:", error);
-    } finally {
-      setTimeout(() => setIsRunning(false), 2000);
-    }
-  };
+function formatCountdown(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
 
-  const handleCircuitBreakerToggle = async () => {
-    try {
-      if (portfolio?.circuit_breaker_active) {
-        await releaseCircuitBreaker();
-      } else {
-        await activateCircuitBreaker();
-      }
-      onCircuitBreakerToggle?.();
-    } catch (error) {
-      console.error("Failed to toggle circuit breaker:", error);
-    }
-  };
+const SEP = (
+  <div
+    style={{
+      width: 1,
+      height: 20,
+      background: "#1C2128",
+      flexShrink: 0,
+    }}
+  />
+);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+interface MetricProps {
+  label: string;
+  value: React.ReactNode;
+}
 
-  const formatPercent = (value: number) => {
-    const sign = value >= 0 ? "+" : "";
-    return `${sign}${value.toFixed(2)}%`;
-  };
+function Metric({ label, value }: MetricProps) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "#4B5563",
+          lineHeight: 1,
+        }}
+      >
+        {label}
+      </span>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 1 }}>
+        {value}
+      </span>
+    </div>
+  );
+}
 
-  const getSystemStatus = () => {
-    if (!portfolio) return { label: "LOADING", color: "text-[var(--janus-text-muted)]" };
-    if (portfolio.circuit_breaker_active)
-      return { label: "CIRCUIT BREAKER", color: "text-[var(--janus-danger)]" };
-    if (portfolio.risk_mode === "HALTED")
-      return { label: "HALTED", color: "text-[var(--janus-danger)]" };
-    if (portfolio.risk_mode === "CRISIS")
-      return { label: "CRISIS MODE", color: "text-[var(--janus-warning)]" };
-    return { label: "LIVE", color: "text-[var(--janus-success)]" };
-  };
+export function Topbar() {
+  const { portfolio } = usePortfolio();
+  const { cycles } = useCycles(10);
+  const [countdown, setCountdown] = useState(CYCLE_INTERVAL);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const status = getSystemStatus();
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) return CYCLE_INTERVAL;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const isCircuitBreaker = portfolio?.circuit_breaker_active ?? false;
+
+  const statusLabel = !portfolio
+    ? "LOADING"
+    : isCircuitBreaker
+    ? "CIRCUIT BREAKER"
+    : "RUNNING";
+
+  const statusColor = !portfolio
+    ? "#4B5563"
+    : isCircuitBreaker
+    ? "#EF4444"
+    : "#22C55E";
+
+  const avgScore =
+    cycles.length > 0
+      ? cycles.reduce((sum, c) => sum + (c.judge_overall_score ?? 0), 0) / cycles.length
+      : null;
+
+  const pnl = portfolio?.pnl_pct ?? null;
+  const pnlColor =
+    pnl === null ? "#E2E8F0" : pnl >= 0 ? "#22C55E" : "#EF4444";
 
   return (
-    <header className="h-16 bg-[var(--janus-surface)] border-b border-[var(--janus-border)] px-6 flex items-center justify-between">
-      <div className="flex items-center gap-8">
-        <div>
-          <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-1">
-            Portfolio Value
-          </div>
-          <div className="text-2xl font-bold text-[var(--janus-gold)] font-mono">
-            {portfolio ? formatCurrency(portfolio.total_value) : "—"}
-          </div>
-        </div>
+    <header
+      style={{
+        height: 44,
+        background: "#0D1117",
+        borderBottom: "1px solid #1C2128",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 16px",
+        gap: 16,
+        flexShrink: 0,
+      }}
+    >
+      {/* JANUS wordmark */}
+      <span
+        className="cinzel"
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          letterSpacing: "0.15em",
+          color: "#C9A84C",
+          userSelect: "none",
+        }}
+      >
+        JANUS
+      </span>
 
-        <div>
-          <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-1">
-            P&L
-          </div>
-          <div
-            className={cn(
-              "text-2xl font-bold font-mono",
-              portfolio && portfolio.pnl_pct >= 0
-                ? "text-[var(--janus-success)]"
-                : "text-[var(--janus-danger)]"
-            )}
-          >
-            {portfolio ? formatPercent(portfolio.pnl_pct) : "—"}
-          </div>
-        </div>
+      {SEP}
 
-        <div>
-          <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-1">
-            Cycles
-          </div>
-          <div className="text-2xl font-bold text-[var(--janus-text-primary)] font-mono">
-            {portfolio?.cycle_count ?? 0}
-          </div>
-        </div>
+      {/* Status pill */}
+      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: statusColor,
+            flexShrink: 0,
+            animation: isCircuitBreaker ? "none" : "janus-pulse 2s ease-in-out infinite",
+          }}
+        />
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: statusColor,
+          }}
+        >
+          {statusLabel}
+        </span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide">
-            Status
-          </div>
-          <span
-            className={cn(
-              "text-sm font-bold uppercase tracking-wider",
-              status.color
-            )}
-          >
-            {status.label}
+      {SEP}
+
+      {/* Metrics */}
+      <Metric
+        label="PORTFOLIO"
+        value={
+          <span style={{ color: "#E2E8F0" }}>
+            {portfolio ? formatCurrency(portfolio.total_value) : "—"}
           </span>
-        </div>
+        }
+      />
 
-        <Button
-          onClick={handleRunCycle}
-          disabled={isRunning || portfolio?.circuit_breaker_active}
-          size="sm"
-          className="bg-[var(--janus-blue)] hover:bg-[var(--janus-blue)]/80 text-white"
-        >
-          <Play className="h-4 w-4 mr-2" />
-          Run Cycle
-        </Button>
+      <Metric
+        label="P&L"
+        value={
+          <span style={{ color: pnlColor }}>
+            {pnl !== null ? formatPct(pnl) : "—"}
+          </span>
+        }
+      />
 
-        <Button
-          onClick={handleCircuitBreakerToggle}
-          disabled={!portfolio}
-          size="sm"
-          variant="outline"
-          className={cn(
-            "border-[var(--janus-border)]",
-            portfolio?.circuit_breaker_active
-              ? "bg-[var(--janus-danger)]/20 text-[var(--janus-danger)] hover:bg-[var(--janus-danger)]/30"
-              : "text-[var(--janus-text-secondary)] hover:text-[var(--janus-text-primary)]"
-          )}
-        >
-          {portfolio?.circuit_breaker_active ? (
-            <>
-              <Power className="h-4 w-4 mr-2" />
-              Release
-            </>
-          ) : (
-            <>
-              <PowerOff className="h-4 w-4 mr-2" />
-              Circuit Breaker
-            </>
-          )}
-        </Button>
+      <Metric
+        label="CYCLE"
+        value={
+          <span style={{ color: "#C9A84C" }}>
+            {portfolio?.cycle_count ?? "—"}
+          </span>
+        }
+      />
+
+      <Metric
+        label="AVG SCORE"
+        value={
+          <span style={{ color: "#C9A84C" }}>
+            {avgScore !== null ? avgScore.toFixed(1) : "—"}
+          </span>
+        }
+      />
+
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Countdown */}
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          color: "#4B5563",
+          border: "1px solid #1C2128",
+          borderRadius: 4,
+          padding: "3px 8px",
+          userSelect: "none",
+        }}
+      >
+        Next cycle in {formatCountdown(countdown)}
       </div>
     </header>
   );

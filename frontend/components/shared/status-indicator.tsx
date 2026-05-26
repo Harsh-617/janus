@@ -1,47 +1,57 @@
-import { cn } from "@/lib/utils";
-import { DECISION_COLORS } from "@/lib/constants";
-
 interface StatusIndicatorProps {
-  status:
-    | "EXECUTE"
-    | "HOLD"
-    | "HALT"
-    | "APPROVE"
-    | "VETO"
-    | "MODIFY"
-    | "CLEAR"
-    | "ALERT";
-  className?: string;
+  status: string;
 }
 
-export function StatusIndicator({ status, className }: StatusIndicatorProps) {
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "EXECUTE":
-      case "APPROVE":
-      case "CLEAR":
-        return "bg-[var(--janus-success)]/20 text-[var(--janus-success)] border-[var(--janus-success)]/30";
-      case "HOLD":
-      case "MODIFY":
-        return "bg-[var(--janus-warning)]/20 text-[var(--janus-warning)] border-[var(--janus-warning)]/30";
-      case "HALT":
-      case "VETO":
-      case "ALERT":
-        return "bg-[var(--janus-danger)]/20 text-[var(--janus-danger)] border-[var(--janus-danger)]/30";
-      default:
-        return "bg-[var(--janus-text-muted)]/20 text-[var(--janus-text-muted)] border-[var(--janus-text-muted)]/30";
-    }
-  };
+function getStatusStyle(status: string): { dotColor: string; labelColor: string; pulse: boolean } {
+  switch (status.toUpperCase()) {
+    case "RUNNING":
+    case "ACTIVE":
+    case "EXECUTE":
+      return { dotColor: "#22C55E", labelColor: "#22C55E", pulse: false };
+    case "THINKING":
+    case "PROCESSING":
+      return { dotColor: "#4CADCE", labelColor: "#4CADCE", pulse: true };
+    case "MODIFIED":
+    case "ALERT":
+    case "WARNING":
+      return { dotColor: "#F59E0B", labelColor: "#F59E0B", pulse: false };
+    case "VETO":
+    case "HALT":
+    case "ERROR":
+    case "CIRCUIT BREAKER":
+      return { dotColor: "#EF4444", labelColor: "#EF4444", pulse: false };
+    default:
+      return { dotColor: "#4B5563", labelColor: "#8B949E", pulse: false };
+  }
+}
+
+export function StatusIndicator({ status }: StatusIndicatorProps) {
+  const { dotColor, labelColor, pulse } = getStatusStyle(status);
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center justify-center rounded-md border px-3 py-1 text-xs font-semibold uppercase tracking-wide",
-        getStatusStyle(status),
-        className
-      )}
-    >
-      {status}
-    </span>
+    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: dotColor,
+          flexShrink: 0,
+          animation: pulse ? "janus-pulse 2s ease-in-out infinite" : "none",
+        }}
+      />
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: labelColor,
+          lineHeight: 1,
+        }}
+      >
+        {status}
+      </span>
+    </div>
   );
 }

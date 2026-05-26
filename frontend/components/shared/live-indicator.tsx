@@ -1,30 +1,49 @@
-import { cn } from "@/lib/utils";
-
 interface LiveIndicatorProps {
-  active: boolean;
   label?: string;
 }
 
-export function LiveIndicator({ active, label }: LiveIndicatorProps) {
+export function LiveIndicator({ label }: LiveIndicatorProps) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative flex h-3 w-3">
-        {active && (
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--janus-success)] opacity-75"></span>
-        )}
+    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      <span
+        style={{
+          position: "relative",
+          display: "inline-flex",
+          width: 6,
+          height: 6,
+          flexShrink: 0,
+        }}
+      >
         <span
-          className={cn(
-            "relative inline-flex rounded-full h-3 w-3",
-            active ? "bg-[var(--janus-success)]" : "bg-[var(--janus-text-muted)]"
-          )}
-        ></span>
-      </div>
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            background: "#4CADCE",
+            animation: "janus-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite",
+            opacity: 0.75,
+          }}
+        />
+        <span
+          style={{
+            position: "relative",
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "#4CADCE",
+          }}
+        />
+      </span>
       {label && (
         <span
-          className={cn(
-            "text-sm font-medium",
-            active ? "text-[var(--janus-success)]" : "text-[var(--janus-text-muted)]"
-          )}
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "#4CADCE",
+            lineHeight: 1,
+          }}
         >
           {label}
         </span>

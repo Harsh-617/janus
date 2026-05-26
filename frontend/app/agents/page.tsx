@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { AgentCard } from "@/components/agents/agent-card";
 import { LiveIndicator } from "@/components/shared/live-indicator";
 import { Button } from "@/components/ui/button";
@@ -232,7 +231,6 @@ export default function AgentsPage() {
 
   if (loading) {
     return (
-      <LayoutWrapper>
         <div className="space-y-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-[var(--janus-border)] rounded w-1/3"></div>
@@ -247,12 +245,10 @@ export default function AgentsPage() {
             </div>
           </div>
         </div>
-      </LayoutWrapper>
     );
   }
 
   return (
-    <LayoutWrapper>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -424,6 +420,5 @@ export default function AgentsPage() {
           )}
         </div>
       </div>
-    </LayoutWrapper>
   );
 }

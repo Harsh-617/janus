@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { LoopTimeline } from "@/components/janus-loop/loop-timeline";
 import { ConstraintTable } from "@/components/janus-loop/constraint-table";
 import { ExperimentViewer } from "@/components/janus-loop/experiment-viewer";
@@ -108,26 +107,21 @@ export default function JanusLoopPage() {
 
   if (isLoading) {
     return (
-      <LayoutWrapper>
         <div className="flex items-center justify-center min-h-screen">
           <p style={{ color: "#8A8780" }}>Loading Janus Loop data...</p>
         </div>
-      </LayoutWrapper>
     );
   }
 
   if (error) {
     return (
-      <LayoutWrapper>
         <div className="flex items-center justify-center min-h-screen">
           <p className="text-red-500">{error}</p>
         </div>
-      </LayoutWrapper>
     );
   }
 
   return (
-    <LayoutWrapper>
     <div
       className="px-6 py-8 max-w-6xl mx-auto"
       style={{ color: "#E8E6E0" }}
@@ -189,6 +183,5 @@ export default function JanusLoopPage() {
         <ExperimentViewer constraints={constraints} />
       </div>
     </div>
-    </LayoutWrapper>
   );
 }

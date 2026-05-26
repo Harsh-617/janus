@@ -1,6 +1,5 @@
 "use client";
 
-import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { AgentStatusBar } from "@/components/arena/agent-status-bar";
 import { PortfolioPanel } from "@/components/arena/portfolio-panel";
 import { DecisionFeed } from "@/components/arena/decision-feed";
@@ -16,8 +15,7 @@ export default function Arena() {
   const { events, connected, activeAgents, lastCycle } = useAgentStream();
 
   return (
-    <LayoutWrapper>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 p-4">
         {/* Agent Status Bar */}
         <div className="mb-2">
           <AgentStatusBar
@@ -28,13 +26,13 @@ export default function Arena() {
         </div>
 
         {/* Main Layout: Forward Face | Divider | Backward Face */}
-        <div className="flex gap-0 h-[480px] overflow-hidden">
+        <div className="flex gap-0 h-[500px]">
           {/* Left: Portfolio Panel — Forward Face */}
-          <div className="flex-1 flex flex-col">
-            <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: "#4CADCE" }}>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <p className="text-[10px] uppercase tracking-widest mb-2 flex-shrink-0" style={{ color: "#4CADCE" }}>
               ◀ THE FORWARD FACE
             </p>
-            <div className="flex-1 h-full" style={{ background: "linear-gradient(to bottom, rgba(76, 173, 206, 0.03), transparent)" }}>
+            <div className="flex-1 overflow-y-auto" style={{ background: "linear-gradient(to bottom, rgba(76, 173, 206, 0.03), transparent)" }}>
               <PortfolioPanel portfolio={portfolio} />
             </div>
           </div>
@@ -45,11 +43,11 @@ export default function Arena() {
           </div>
 
           {/* Right: Decision Feed — Backward Face */}
-          <div className="flex-[2] flex flex-col">
-            <p className="text-[10px] uppercase tracking-widest mb-2 text-right" style={{ color: "#C9A84C" }}>
+          <div className="flex-[2] flex flex-col overflow-hidden">
+            <p className="text-[10px] uppercase tracking-widest mb-2 text-right flex-shrink-0" style={{ color: "#C9A84C" }}>
               THE BACKWARD FACE ▶
             </p>
-            <div className="flex-1 h-full overflow-y-auto" style={{ background: "linear-gradient(to bottom, rgba(201, 168, 76, 0.03), transparent)" }}>
+            <div className="flex-1 overflow-y-auto" style={{ background: "linear-gradient(to bottom, rgba(201, 168, 76, 0.03), transparent)" }}>
               <DecisionFeed events={events} connected={connected} />
             </div>
           </div>
@@ -58,6 +56,5 @@ export default function Arena() {
         {/* Market Shock Panel */}
         <MarketShockPanel />
       </div>
-    </LayoutWrapper>
   );
 }

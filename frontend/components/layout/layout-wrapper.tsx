@@ -2,21 +2,18 @@
 
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
-import { usePortfolio } from "@/hooks/use-portfolio";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
 }
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
-  const { portfolio, refetch } = usePortfolio();
-
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar portfolio={portfolio} onCircuitBreakerToggle={refetch} />
-        <main className="flex-1 overflow-y-auto bg-[var(--janus-background)] p-4 pt-0">
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <Topbar />
+        <main style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
           {children}
         </main>
       </div>

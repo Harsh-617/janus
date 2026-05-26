@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { AuditTable } from "@/components/audit/audit-table";
 import { Button } from "@/components/ui/button";
 import { fetchCycles } from "@/lib/api";
@@ -97,7 +96,6 @@ export default function AuditPage() {
   };
 
   return (
-    <LayoutWrapper>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -236,6 +234,5 @@ export default function AuditPage() {
           </div>
         )}
       </div>
-    </LayoutWrapper>
   );
 }
