@@ -1209,3 +1209,33 @@ Reduced panel height. Restored P&L sparkline.
 
 ### Why
 The old custom event input required knowing ticker symbols and typing raw percentages. The NL parser lets a judge type "China invades Taiwan" and see a previewed interpretation in 3 seconds — much better for the demo.
+
+---
+
+## Feature: Real-time Alert Banner
+**Date**: 2026-05-26
+
+### What was built
+- frontend/components/layout/layout-wrapper.tsx
+  - Added alert banner between topbar and main content
+  - Height animates 0px → 48px via CSS transition when triggered
+  - Listens to SSE stream for two event types:
+    - type === "circuit_breaker_activated" → shows CIRCUIT BREAKER banner
+    - type === "cycle_complete" with truthy critical_finding → shows FRAUD banner
+  - Pulsing red dot, truncated message, dismiss button
+  - Auto-dismisses after 10 seconds, clears previous timer on new alert
+
+- backend/api/market_shock.py
+  - Added broadcast_event("circuit_breaker_activated", ...) to the manual 
+    activate endpoint so the banner fires on manual clicks too
+    (previously only fired when the agent cycle tripped it automatically)
+
+- frontend/components/arena/market-shock-panel.tsx
+  - Circuit breaker button now toggles:
+    - OFF state: "CIRCUIT BREAKER" in red → POST /api/circuit-breaker/activate
+    - ON state: "RELEASE" in green → POST /api/circuit-breaker/release
+  - Refetches portfolio state after each click to update button label
+
+### Why
+Judges need immediate visual feedback when something goes wrong. The banner 
+makes high-severity fraud alerts and circuit breaker events unmissable.
