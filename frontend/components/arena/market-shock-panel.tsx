@@ -15,44 +15,6 @@ import {
 import { API_BASE } from "@/lib/constants";
 import type { MarketShockStatus, StreamStatus } from "@/lib/types";
 
-interface ValidationResult {
-  valid: boolean;
-  headline: string;
-  reason: string;
-  suggestions: string[];
-}
-
-function parseEffectsPreview(effects: string): {
-  preview: string;
-  isValid: boolean;
-  hasRangeError: boolean;
-} {
-  if (!effects.trim()) return { preview: "", isValid: true, hasRangeError: false };
-  try {
-    const items: string[] = [];
-    for (const part of effects.split(",")) {
-      const [ticker, delta] = part.trim().split(":");
-      if (!ticker || delta === undefined) throw new Error();
-      const value = parseFloat(delta);
-      if (isNaN(value)) throw new Error();
-      if (value < -0.99 || value > 5.0) {
-        const pct = Math.round(value * 100);
-        const sign = pct >= 0 ? "+" : "";
-        return {
-          preview: `Invalid: ${ticker.trim().toUpperCase()} ${sign}${pct}% exceeds max (-99% to +500%)`,
-          isValid: false,
-          hasRangeError: true,
-        };
-      }
-      const pct = Math.round(value * 100);
-      items.push(`${ticker.trim().toUpperCase()} ${pct >= 0 ? "+" : ""}${pct}%`);
-    }
-    return { preview: items.join(" | "), isValid: true, hasRangeError: false };
-  } catch {
-    return { preview: "Invalid format", isValid: false, hasRangeError: false };
-  }
-}
-
 const PRESET_SCENARIOS = [
   { id: "oil_shock", label: "OIL SURGE" },
   { id: "crypto_crash", label: "CRYPTO CRASH" },
@@ -112,13 +74,6 @@ export function MarketShockPanel() {
   const [shockStatus, setShockStatus] = useState<MarketShockStatus | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
   const [activeScenario, setActiveScenario] = useState<string | null>(null);
-  const [showCustom, setShowCustom] = useState(false);
-  const [customDescription, setCustomDescription] = useState("");
-  const [customEffects, setCustomEffects] = useState("");
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
-
   const [nlInput, setNlInput] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [parsedPreview, setParsedPreview] = useState<{
@@ -235,76 +190,6 @@ export function MarketShockPanel() {
     }
   };
 
-  const handleInjectEvent = async () => {
-    const descLen = customDescription.length;
-    const effectsPreview = parseEffectsPreview(customEffects);
-    if (descLen < 10 || effectsPreview.hasRangeError) return;
-
-    let headline = customDescription;
-
-    if (!validationResult?.valid) {
-      setIsValidating(true);
-      setValidationResult(null);
-      setValidationError(null);
-      try {
-        const res = await fetch(`${API_BASE}/api/market-shock/validate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description: customDescription }),
-        });
-        if (!res.ok) throw new Error(`Validation failed: ${res.status}`);
-        const result: ValidationResult = await res.json();
-        setValidationResult(result);
-        setIsValidating(false);
-        if (!result.valid) return;
-        headline = result.headline || customDescription;
-      } catch (e) {
-        setValidationError(e instanceof Error ? e.message : "Validation failed.");
-        setIsValidating(false);
-        return;
-      }
-    } else {
-      headline = validationResult.headline || customDescription;
-    }
-
-    let parsedEffects: Record<string, number> = {};
-    if (customEffects.trim()) {
-      try {
-        for (const part of customEffects.split(",")) {
-          const [ticker, delta] = part.trim().split(":");
-          if (!ticker || delta === undefined) throw new Error();
-          const value = parseFloat(delta);
-          if (isNaN(value)) throw new Error();
-          parsedEffects[ticker.trim().toUpperCase()] = value;
-        }
-      } catch {
-        parsedEffects = {};
-      }
-    }
-
-    try {
-      setLoading("inject");
-      const res = await fetch(`${API_BASE}/api/market-shock/custom`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: headline, effects: parsedEffects }),
-      });
-      if (!res.ok) throw new Error(`Injection failed: ${res.status}`);
-      setCustomDescription("");
-      setCustomEffects("");
-      setValidationResult(null);
-      setValidationError(null);
-      setShowCustom(false);
-      await fetchStatuses();
-    } catch (e) {
-      setValidationError(e instanceof Error ? e.message : "Injection failed.");
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const effectsPreview = parseEffectsPreview(customEffects);
-  const descLen = customDescription.length;
   const autoOn = !!streamStatus?.running;
 
   const SEP = (
@@ -547,13 +432,13 @@ export function MarketShockPanel() {
       {/* Existing bar */}
       <div
         style={{
-          height: showCustom ? "auto" : 56,
+          height: 56,
           minHeight: 56,
           padding: "0 16px",
           display: "flex",
           alignItems: "center",
           gap: 12,
-          flexWrap: showCustom ? "wrap" : "nowrap",
+          flexWrap: "nowrap",
         }}
       >
         {/* MARKET SHOCK label */}
@@ -605,97 +490,6 @@ export function MarketShockPanel() {
             </BarButton>
           );
         })}
-
-        {SEP}
-
-        {/* Custom toggle + inline form */}
-        <BarButton
-          onClick={() => setShowCustom((v) => !v)}
-          style={{ color: "#4CADCE", borderColor: "#164060" }}
-        >
-          + CUSTOM
-        </BarButton>
-
-        {showCustom && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              flexWrap: "wrap",
-              paddingBottom: showCustom ? 6 : 0,
-            }}
-          >
-            <input
-              type="text"
-              value={customDescription}
-              onChange={(e) => {
-                setCustomDescription(e.target.value);
-                setValidationResult(null);
-                setValidationError(null);
-              }}
-              placeholder="Describe market event..."
-              maxLength={200}
-              style={{
-                background: "#080A0C",
-                border: `1px solid ${validationError ? "#EF4444" : "#30363D"}`,
-                color: "#E2E8F0",
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                borderRadius: 3,
-                padding: "3px 8px",
-                width: 220,
-                outline: "none",
-              }}
-            />
-            <input
-              type="text"
-              value={customEffects}
-              onChange={(e) => setCustomEffects(e.target.value)}
-              placeholder="AAPL:-0.10,GLD:+0.15 (opt)"
-              style={{
-                background: "#080A0C",
-                border: `1px solid ${effectsPreview.hasRangeError ? "#EF4444" : "#30363D"}`,
-                color: "#E2E8F0",
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                borderRadius: 3,
-                padding: "3px 8px",
-                width: 180,
-                outline: "none",
-              }}
-            />
-            <BarButton
-              onClick={handleInjectEvent}
-              disabled={descLen < 10 || isValidating || loading === "inject" || effectsPreview.hasRangeError}
-              style={{ color: "#4CADCE", borderColor: "#164060" }}
-            >
-              {isValidating ? "VALIDATING…" : loading === "inject" ? "INJECTING…" : "INJECT"}
-            </BarButton>
-            {validationError && (
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 9,
-                  color: "#EF4444",
-                }}
-              >
-                {validationError}
-              </span>
-            )}
-            {customEffects.trim() && (
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 9,
-                  color: effectsPreview.isValid ? "#22C55E" : "#EF4444",
-                }}
-              >
-                {effectsPreview.preview}
-              </span>
-            )}
-          </div>
-        )}
 
         {/* Right side: cycle controls */}
         <div

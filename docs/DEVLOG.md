@@ -1187,3 +1187,25 @@ Reduced panel height. Restored P&L sparkline.
 **Date**: 2026-05-25
 **File**: `frontend/components/audit/audit-table.tsx`
 **What was fixed**: Default sort was by cycle_number causing new cycles to appear in wrong position. Fixed to sort by timestamp descending by default with proper Firestore timestamp handling.
+
+---
+
+## Feature: NL Market Event Parser
+**Date**: 2026-05-26
+
+### What was built
+- Backend: `POST /api/market-shock/parse` endpoint in `backend/api/routes/market_shock_parse.py`
+  - Accepts a natural language event string
+  - Calls Groq (llama-3.3-70b-versatile) to map the event to ticker price effects
+  - Returns JSON: `{ effects: { TICKER: decimal }, interpreted_as: string }`
+  - Retries once on JSON parse failure, raises HTTP 500 if both attempts fail
+  - Registered in `main.py` with prefix `/api`
+
+- Frontend: `frontend/components/arena/market-shock-panel.tsx`
+  - Added NL input section above preset scenarios
+  - Parse → preview card showing interpreted tickers and % changes
+  - Inject confirms and fires the market shock
+  - Removed old custom event section (manual ticker:effect input) — NL parser replaces it entirely
+
+### Why
+The old custom event input required knowing ticker symbols and typing raw percentages. The NL parser lets a judge type "China invades Taiwan" and see a previewed interpretation in 3 seconds — much better for the demo.
