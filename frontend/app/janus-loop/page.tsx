@@ -53,6 +53,48 @@ const STAGES = ["Query Phoenix", "Detect Patterns", "Generate Constraints", "Inj
 
 const MONO = "'JetBrains Mono', 'Fira Mono', monospace";
 
+function StepNode({ label, index, isActive }: { label: string; index: number; isActive: boolean }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div
+        style={{
+          padding: "10px 20px",
+          border: `1px solid ${isActive || hovered ? "#C9A84C" : "#1C2128"}`,
+          borderRadius: 4,
+          background: "#080A0C",
+          boxShadow: isActive ? "0 0 8px rgba(201, 168, 76, 0.3)" : "none",
+          transition: "border-color 0.15s, box-shadow 0.15s",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        <div style={{ fontFamily: MONO, fontSize: 9, color: "#2D3748", textTransform: "uppercase" }}>
+          {String(index + 1).padStart(2, "0")}
+        </div>
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: 12,
+            fontWeight: 500,
+            color: hovered ? "#E2E8F0" : "#8B949E",
+            transition: "color 0.15s",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function JanusLoopPage() {
   const [status, setStatus] = useState<LoopStatus | null>(null);
   const [constraints, setConstraints] = useState<Constraint[]>([]);
@@ -158,6 +200,12 @@ export default function JanusLoopPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#080A0C", color: "#E2E8F0", overflow: "hidden" }}>
+      <style>{`
+        @keyframes pulseDot {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(54px); }
+        }
+      `}</style>
 
       {/* ── PAGE HEADER ── */}
       <div style={{ padding: "12px 20px", borderBottom: "1px solid #1C2128", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
@@ -229,22 +277,40 @@ export default function JanusLoopPage() {
       </div>
 
       {/* ── LOOP STATUS ROW ── */}
-      <div style={{ padding: "10px 20px", borderBottom: "1px solid #1C2128", background: "#0D1117", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #1C2128", background: "#0D1117", display: "flex", alignItems: "center", flexShrink: 0, position: "relative" }}>
+        <div style={{ position: "absolute", left: 20 }}>
           <span style={{ fontFamily: MONO, fontSize: 9, color: "#4B5563", textTransform: "uppercase" }}>Last run</span>
           {" "}
           <span style={{ fontFamily: MONO, fontSize: 11, color: "#8B949E" }}>
             {status?.last_run_at ? timeAgo(status.last_run_at) : "Never"}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, flex: 1 }}>
           {STAGES.map((stage, i) => (
-            <div key={stage} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ fontFamily: MONO, fontSize: 10, color: "#4B5563", padding: "3px 8px", border: "1px solid #1C2128", borderRadius: 3, background: "#080A0C", whiteSpace: "nowrap" }}>
-                {stage}
-              </div>
+            <div key={stage} style={{ display: "flex", alignItems: "center" }}>
+              <StepNode label={stage} index={i} isActive={isTriggering} />
               {i < STAGES.length - 1 && (
-                <span style={{ fontFamily: MONO, fontSize: 10, color: "#2D3748" }}>→</span>
+                <div style={{ width: 60, display: "flex", alignItems: "center", position: "relative" }}>
+                  <div style={{ height: 1, flex: 1, background: "#1C2128" }} />
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: isTriggering ? "#22C55E" : "#C9A84C",
+                      position: "absolute",
+                      left: 0,
+                      top: "50%",
+                      marginTop: -3,
+                      animationName: "pulseDot",
+                      animationDuration: "1.5s",
+                      animationTimingFunction: "ease-in-out",
+                      animationDelay: `${i * 0.5}s`,
+                      animationIterationCount: "infinite",
+                    }}
+                  />
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: "#C9A84C" }}>{">"}</span>
+                </div>
               )}
             </div>
           ))}
