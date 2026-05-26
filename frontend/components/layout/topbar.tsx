@@ -30,7 +30,7 @@ const SEP = (
   <div
     style={{
       width: 1,
-      height: 20,
+      height: 24,
       background: "#1C2128",
       flexShrink: 0,
     }}
@@ -48,7 +48,7 @@ function Metric({ label, value }: MetricProps) {
       <span
         style={{
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 9,
+          fontSize: 10,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
           color: "#4B5563",
@@ -57,7 +57,7 @@ function Metric({ label, value }: MetricProps) {
       >
         {label}
       </span>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 1 }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 15, fontWeight: 600, lineHeight: 1 }}>
         {value}
       </span>
     </div>
@@ -108,13 +108,13 @@ export function Topbar() {
   return (
     <header
       style={{
-        height: 44,
+        height: 52,
         background: "#0D1117",
         borderBottom: "1px solid #1C2128",
         display: "flex",
         alignItems: "center",
         padding: "0 16px",
-        gap: 16,
+        gap: 20,
         flexShrink: 0,
       }}
     >
@@ -122,9 +122,9 @@ export function Topbar() {
       <span
         className="cinzel"
         style={{
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: 600,
-          letterSpacing: "0.15em",
+          letterSpacing: "0.18em",
           color: "#C9A84C",
           userSelect: "none",
         }}
@@ -138,8 +138,8 @@ export function Topbar() {
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
         <span
           style={{
-            width: 6,
-            height: 6,
+            width: 7,
+            height: 7,
             borderRadius: "50%",
             background: statusColor,
             flexShrink: 0,
@@ -149,7 +149,7 @@ export function Topbar() {
         <span
           style={{
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
             color: statusColor,
@@ -162,41 +162,43 @@ export function Topbar() {
       {SEP}
 
       {/* Metrics */}
-      <Metric
-        label="PORTFOLIO"
-        value={
-          <span style={{ color: "#E2E8F0" }}>
-            {portfolio ? formatCurrency(portfolio.total_value) : "—"}
-          </span>
-        }
-      />
+      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <Metric
+          label="PORTFOLIO"
+          value={
+            <span style={{ color: "#E2E8F0" }}>
+              {portfolio ? formatCurrency(portfolio.total_value) : "—"}
+            </span>
+          }
+        />
 
-      <Metric
-        label="P&L"
-        value={
-          <span style={{ color: pnlColor }}>
-            {pnl !== null ? formatPct(pnl) : "—"}
-          </span>
-        }
-      />
+        <Metric
+          label="P&L"
+          value={
+            <span style={{ color: pnlColor }}>
+              {pnl !== null ? formatPct(pnl) : "—"}
+            </span>
+          }
+        />
 
-      <Metric
-        label="CYCLE"
-        value={
-          <span style={{ color: "#C9A84C" }}>
-            {portfolio?.cycle_count ?? "—"}
-          </span>
-        }
-      />
+        <Metric
+          label="CYCLE"
+          value={
+            <span style={{ color: "#C9A84C" }}>
+              {portfolio?.cycle_count ?? "—"}
+            </span>
+          }
+        />
 
-      <Metric
-        label="AVG SCORE"
-        value={
-          <span style={{ color: "#C9A84C" }}>
-            {avgScore !== null ? avgScore.toFixed(1) : "—"}
-          </span>
-        }
-      />
+        <Metric
+          label="AVG SCORE"
+          value={
+            <span style={{ color: "#C9A84C" }}>
+              {avgScore !== null ? avgScore.toFixed(1) : "—"}
+            </span>
+          }
+        />
+      </div>
 
       {/* Spacer */}
       <div style={{ flex: 1 }} />
@@ -205,11 +207,11 @@ export function Topbar() {
       <div
         style={{
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
+          fontSize: 11,
           color: "#4B5563",
           border: "1px solid #1C2128",
           borderRadius: 4,
-          padding: "3px 8px",
+          padding: "4px 10px",
           userSelect: "none",
         }}
       >
