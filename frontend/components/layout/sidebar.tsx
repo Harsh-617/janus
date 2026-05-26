@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const NAV_ITEMS = [
   {
@@ -56,7 +57,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/audit",
-    label: "Audit",
+    label: "Audit Log",
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <line x1="3" y1="5" x2="15" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -71,6 +72,7 @@ const LIVE_DOT_ROUTES = new Set(["/", "/agents"]);
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   return (
     <aside
@@ -101,41 +103,83 @@ export function Sidebar() {
       {NAV_ITEMS.map(({ href, label, icon }) => {
         const isActive = pathname === href;
         const showDot = isActive && LIVE_DOT_ROUTES.has(href);
+        const isHovered = hoveredItem === href;
 
         return (
-          <Link
+          <div
             key={href}
-            href={href}
-            title={label}
-            style={{
-              position: "relative",
-              width: 36,
-              height: 36,
-              borderRadius: 6,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textDecoration: "none",
-              color: isActive ? "#C9A84C" : "#4B5563",
-              background: isActive ? "#161B22" : "transparent",
-              border: isActive ? "1px solid #2D2415" : "1px solid transparent",
-            }}
+            style={{ position: "relative" }}
+            onMouseEnter={() => setHoveredItem(href)}
+            onMouseLeave={() => setHoveredItem(null)}
           >
-            {icon}
-            {showDot && (
-              <span
+            <Link
+              href={href}
+              style={{
+                position: "relative",
+                width: 36,
+                height: 36,
+                borderRadius: 6,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+                color: isActive ? "#C9A84C" : "#4B5563",
+                background: isActive ? "#161B22" : "transparent",
+                border: isActive ? "1px solid #2D2415" : "1px solid transparent",
+              }}
+            >
+              {icon}
+              {showDot && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: "#C9A84C",
+                  }}
+                />
+              )}
+            </Link>
+            {isHovered && (
+              <div
                 style={{
                   position: "absolute",
-                  top: 4,
-                  right: 4,
-                  width: 4,
-                  height: 4,
-                  borderRadius: "50%",
-                  background: "#C9A84C",
+                  left: 52,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "#0D1117",
+                  border: "1px solid #1C2128",
+                  borderRadius: 3,
+                  padding: "4px 10px",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                  zIndex: 50,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: "#E2E8F0",
                 }}
-              />
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    left: -4,
+                    top: "50%",
+                    transform: "translateY(-50%) rotate(45deg)",
+                    width: 6,
+                    height: 6,
+                    background: "#0D1117",
+                    borderLeft: "1px solid #1C2128",
+                    borderBottom: "1px solid #1C2128",
+                  }}
+                />
+                {label}
+              </div>
             )}
-          </Link>
+          </div>
         );
       })}
     </aside>
