@@ -67,7 +67,7 @@ export function AgentCard({
         borderRadius: 4,
         display: "flex",
         flexDirection: "column",
-        height: "100%",
+        height: "auto",
       }}
     >
       {/* HEADER ROW */}
@@ -219,73 +219,73 @@ export function AgentCard({
       )}
 
       {/* CONSTRAINTS SECTION */}
-      <div style={{ padding: "10px 14px", flex: 1 }}>
-        <div
+      <div
+        style={{
+          borderTop: "1px solid #1C2128",
+          borderBottom: "1px solid #1C2128",
+          padding: "8px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            marginBottom: activeConstraints.length > 0 ? 8 : 4,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            color: "#4B5563",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
           }}
         >
-          <span
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 9,
-              color: "#4B5563",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-            }}
-          >
-            ACTIVE CONSTRAINTS
-          </span>
-          <span
-            style={{
-              background: "#1C2128",
-              color: "#8B949E",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 10,
-              borderRadius: 3,
-              padding: "1px 6px",
-              lineHeight: 1.5,
-            }}
-          >
-            {activeConstraints.length}
-          </span>
+          ACTIVE CONSTRAINTS
+        </span>
+        <span
+          style={{
+            background: "#1C2128",
+            color: "#8B949E",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            borderRadius: 3,
+            padding: "1px 6px",
+            lineHeight: 1.5,
+          }}
+        >
+          {activeConstraints.length}
+        </span>
+      </div>
+      {activeConstraints.length > 0 ? (
+        <div style={{ maxHeight: 140, overflowY: "auto", padding: "10px 14px" }}>
+          {activeConstraints.map((constraint, i) => (
+            <p
+              key={constraint.constraint_id}
+              style={{
+                margin: 0,
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                color: "#8B949E",
+                paddingBottom: i < activeConstraints.length - 1 ? 8 : 0,
+                borderBottom: i < activeConstraints.length - 1 ? "1px solid #111820" : "none",
+                marginBottom: i < activeConstraints.length - 1 ? 8 : 0,
+              }}
+            >
+              {constraint.rule}
+            </p>
+          ))}
         </div>
-        {activeConstraints.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {activeConstraints.map((constraint) => (
-              <div
-                key={constraint.constraint_id}
-                className="line-clamp-2"
-                style={{
-                  padding: "6px 8px",
-                  background: "#080A0C",
-                  border: "1px solid #1C2128",
-                  borderRadius: 3,
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 11,
-                  color: "#8B949E",
-                }}
-                title={constraint.rule}
-              >
-                {constraint.rule}
-              </div>
-            ))}
-          </div>
-        ) : (
+      ) : (
+        <div style={{ padding: "10px 14px" }}>
           <span
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 10,
+              fontFamily: "Inter, sans-serif",
+              fontSize: 11,
               color: "#4B5563",
             }}
           >
             No active constraints
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* LAST ACTION */}
       {lastDecision && (

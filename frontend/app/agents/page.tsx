@@ -316,6 +316,7 @@ export default function AgentsPage() {
           gridTemplateColumns: "repeat(3, 1fr)",
           gap: 1,
           background: "#1C2128",
+          alignItems: "start",
         }}
       >
         {AGENT_ORDER.map((agentId) => {
