@@ -1239,3 +1239,23 @@ The old custom event input required knowing ticker symbols and typing raw percen
 ### Why
 Judges need immediate visual feedback when something goes wrong. The banner 
 makes high-severity fraud alerts and circuit breaker events unmissable.
+
+---
+
+## Feature: Hallucination Heatmap
+**Date**: 2026-05-26
+
+### What was built
+- frontend/components/agents/hallucination-heatmap.tsx
+  - Full-width 25×2 grid of 50 squares, one per decision cycle
+  - Color coded by judge_hallucination_risk score:
+    - Green (≥7): safe, Amber (≥5): moderate, Red (<5): risk, Gray: no data
+  - Fixed-position tooltip on hover showing cycle number, score, full critical finding
+  - Legend row below grid (SAFE / MODERATE / RISK / NO DATA)
+  - Subtitle: "Each square = one decision cycle. Color shows hallucination risk score from the LLM Judge."
+  - Fetches from /api/cycles?limit=50 using API_BASE pattern
+  - Added to bottom of frontend/app/agents/page.tsx
+
+### Also fixed
+- frontend/app/agents/page.tsx + components/agents/agent-card.tsx
+  - All 5 agent cards now stretch to equal height (alignItems stretch + height 100%)

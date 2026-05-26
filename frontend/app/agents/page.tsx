@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AgentCard } from "@/components/agents/agent-card";
+import HallucinationHeatmap from "@/components/agents/hallucination-heatmap";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { fetchCycles, fetchJanusLoopStatus } from "@/lib/api";
 import { API_BASE, AGENT_COLORS, AGENT_DISPLAY_NAMES } from "@/lib/constants";
@@ -316,7 +317,7 @@ export default function AgentsPage() {
           gridTemplateColumns: "repeat(3, 1fr)",
           gap: 1,
           background: "#1C2128",
-          alignItems: "start",
+          alignItems: "stretch",
         }}
       >
         {AGENT_ORDER.map((agentId) => {
@@ -483,6 +484,8 @@ export default function AgentsPage() {
           </div>
         </div>
       )}
+
+      <HallucinationHeatmap />
     </div>
   );
 }

@@ -29,7 +29,7 @@ const DIMENSION_LABELS = [
   { key: "hallucination_risk", label: "HALLUC", invert: true },
   { key: "compliance", label: "COMPLY" },
   { key: "explainability", label: "EXPLAIN" },
-] as const;
+] satisfies { key: string; label: string; invert?: true }[];
 
 function scoreColor(v: number): string {
   if (v >= 7) return "#22C55E";
@@ -67,7 +67,7 @@ export function AgentCard({
         borderRadius: 4,
         display: "flex",
         flexDirection: "column",
-        height: "auto",
+        height: "100%",
       }}
     >
       {/* HEADER ROW */}
@@ -115,7 +115,7 @@ export function AgentCard({
         }}
       >
         {DIMENSION_LABELS.map(({ key, label, invert }) => {
-          const raw = dimensionScores ? (dimensionScores as Record<string, number>)[key] : null;
+          const raw = dimensionScores ? (dimensionScores as unknown as Record<string, number>)[key] : null;
           const display = raw !== null ? (invert ? 10 - raw : raw) : null;
           const color = display !== null ? scoreColor(display) : "#4B5563";
           const fillPct = display !== null ? (display / 10) * 100 : 0;
