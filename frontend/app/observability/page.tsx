@@ -288,10 +288,10 @@ export default function ObservabilityPage() {
               No cycle data available yet
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={320}>
               <LineChart
                 data={chartData}
-                margin={{ top: 10, right: 10, bottom: 28, left: 0 }}
+                margin={{ top: 8, right: 20, bottom: 8, left: 10 }}
               >
                 <CartesianGrid stroke="#1C2128" strokeDasharray="3 3" />
                 <XAxis
@@ -300,13 +300,6 @@ export default function ObservabilityPage() {
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 10,
                     fill: "#4B5563",
-                  }}
-                  label={{
-                    value: "Cycle (last 20)",
-                    position: "insideBottom",
-                    offset: -12,
-                    fill: "#4B5563",
-                    fontSize: 10,
                   }}
                   axisLine={{ stroke: "#1C2128" }}
                   tickLine={false}
@@ -335,11 +328,9 @@ export default function ObservabilityPage() {
                   cursor={{ stroke: "#1C2128", strokeWidth: 1 }}
                 />
                 <Legend
-                  wrapperStyle={{
-                    paddingTop: 8,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 10,
-                  }}
+                  wrapperStyle={{ paddingBottom: '12px', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: '#4B5563' }}
+                  verticalAlign="top"
+                  align="left"
                   iconType="line"
                 />
                 <Line
