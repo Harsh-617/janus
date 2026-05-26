@@ -1,225 +1,524 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { SSEEvent } from "@/lib/types";
-import { AGENT_DISPLAY_NAMES } from "@/lib/constants";
-import { StatusIndicator } from "@/components/shared/status-indicator";
+import type { SSEEvent, AgentName } from "@/lib/types";
 import { ScoreBadge } from "@/components/shared/score-badge";
-import {
-  Activity,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Zap,
-} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useRef, useEffect } from "react";
 
 interface DecisionFeedProps {
   events: SSEEvent[];
   connected: boolean;
 }
 
-export function DecisionFeed({ events, connected }: DecisionFeedProps) {
-  const getEventIcon = (type: string) => {
-    switch (type) {
-      case "cycle_start":
-        return <Zap className="h-4 w-4 text-[var(--janus-blue)]" />;
-      case "agent_thinking":
-        return <Activity className="h-4 w-4 text-[var(--janus-warning)]" />;
-      case "cycle_complete":
-        return <CheckCircle className="h-4 w-4 text-[var(--janus-success)]" />;
-      case "cycle_error":
-        return <AlertCircle className="h-4 w-4 text-[var(--janus-danger)]" />;
-      case "circuit_breaker_activated":
-        return <AlertTriangle className="h-4 w-4 text-[var(--janus-danger)]" />;
-      case "trade_executed":
-        return <Activity className="h-4 w-4 text-[#C9A84C]" />;
-      default:
-        return <Clock className="h-4 w-4 text-[var(--janus-text-muted)]" />;
-    }
+type BadgeConfig = {
+  background: string;
+  color: string;
+  border: string;
+  label: string;
+};
+
+const AGENT_BADGE: Record<string, BadgeConfig> = {
+  trading_agent: {
+    background: "#0C2340",
+    color: "#4CADCE",
+    border: "1px solid #164060",
+    label: "TRADING",
+  },
+  risk_agent: {
+    background: "#1A1A00",
+    color: "#EAB308",
+    border: "1px solid #333300",
+    label: "RISK",
+  },
+  fraud_agent: {
+    background: "#200A0A",
+    color: "#EF4444",
+    border: "1px solid #400A0A",
+    label: "FRAUD",
+  },
+  regulator_agent: {
+    background: "#0A1A0A",
+    color: "#22C55E",
+    border: "1px solid #0A300A",
+    label: "REGULATOR",
+  },
+  judge_agent: {
+    background: "#1A0D28",
+    color: "#A855F7",
+    border: "1px solid #2D1545",
+    label: "JUDGE",
+  },
+  meta_agent: {
+    background: "#1A1A1A",
+    color: "#8B949E",
+    border: "1px solid #30363D",
+    label: "META",
+  },
+};
+
+function AgentBadge({ agent }: { agent: string }) {
+  const cfg = AGENT_BADGE[agent] ?? {
+    background: "#111820",
+    color: "#8B949E",
+    border: "1px solid #1C2128",
+    label: (agent ?? "unknown").toUpperCase().replace(/_AGENT$/, ""),
   };
+  return (
+    <span
+      style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 11,
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        padding: "3px 8px",
+        borderRadius: 3,
+        background: cfg.background,
+        color: cfg.color,
+        border: cfg.border,
+        flexShrink: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {cfg.label}
+    </span>
+  );
+}
 
-  const formatTimestamp = (timestamp: string) => {
-    try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-    } catch {
-      return "just now";
-    }
-  };
+function ThinkingDots() {
+  return (
+    <span
+      style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 11,
+        color: "#4CADCE",
+        fontStyle: "italic",
+      }}
+    >
+      <span style={{ animation: "dotFade 1.2s 0s infinite" }}>.</span>
+      <span style={{ animation: "dotFade 1.2s 0.3s infinite" }}>.</span>
+      <span style={{ animation: "dotFade 1.2s 0.6s infinite" }}>.</span>
+    </span>
+  );
+}
 
-  const truncateText = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + "...";
-  };
+function formatTimestamp(ts: string): string {
+  try {
+    return formatDistanceToNow(new Date(ts), { addSuffix: true });
+  } catch {
+    return "just now";
+  }
+}
 
-  const renderEventContent = (event: SSEEvent) => {
-    switch (event.type as string) {
-      case "trade_executed": {
-        const d = (event as any).data;
-        return (
-          <div>
-            <div className="text-sm font-medium text-[var(--janus-text-primary)]">
-              {d.direction} {Number(d.quantity).toFixed(1)} {d.ticker} @ ${Number(d.price).toFixed(2)}
-            </div>
-            {d.rationale && (
-              <div className="text-xs text-[var(--janus-text-muted)] mt-1">
-                {truncateText(d.rationale, 80)}
-              </div>
-            )}
-          </div>
-        );
-      }
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : text.slice(0, max) + "…";
+}
 
-      case "cycle_start":
-        return (
-          <div>
-            <div className="text-sm font-medium text-[var(--janus-text-primary)]">
-              Starting cycle #{event.data.cycle_number}
-            </div>
-            {event.data.message && (
-              <div className="text-xs text-[var(--janus-text-muted)] mt-1">
-                {event.data.message}
-              </div>
-            )}
-          </div>
-        );
+function renderContent(event: SSEEvent) {
+  const type = event.type as string;
 
-      case "agent_thinking":
-        return (
-          <div className="flex items-center gap-2">
-            <div className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--janus-warning)] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--janus-warning)]"></span>
-            </div>
-            <span className="text-sm font-semibold text-[var(--janus-text-primary)]">
-              {AGENT_DISPLAY_NAMES[event.data.agent]}
+  if (type === "agent_thinking") {
+    const d = (event as any).data;
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+        <AgentBadge agent={d?.agent ?? ""} />
+        <ThinkingDots />
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            color: "#4CADCE",
+            fontStyle: "italic",
+          }}
+        >
+          analyzing...
+        </span>
+      </div>
+    );
+  }
+
+  if (type === "trade_executed") {
+    const d = (event as any).data;
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
+        <AgentBadge agent="trading_agent" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 15,
+              fontWeight: 500,
+              color: "#E2E8F0",
+            }}
+          >
+            {d.direction} {Number(d.quantity).toFixed(1)} {d.ticker} @{" "}
+            <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              ${Number(d.price).toFixed(2)}
             </span>
-            <span className="text-sm text-[var(--janus-text-muted)]">
-              is analyzing...
-            </span>
           </div>
-        );
+          {d.rationale && (
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 13,
+                color: "#4B5563",
+                marginTop: 3,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {truncate(d.rationale, 80)}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-      case "cycle_complete":
-        return (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <StatusIndicator status={event.data.final_decision} />
-              <ScoreBadge score={event.data.judge_score} size="sm" />
-              <span className="text-xs text-[var(--janus-text-muted)]">
-                {event.data.trades_executed} trade
-                {event.data.trades_executed !== 1 ? "s" : ""}
+  if (type === "cycle_start") {
+    const d = event.data as any;
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            fontWeight: 600,
+            padding: "2px 6px",
+            borderRadius: 3,
+            background: "#0A1A2A",
+            color: "#4CADCE",
+            border: "1px solid #1C3A5A",
+            flexShrink: 0,
+          }}
+        >
+          CYCLE
+        </span>
+        <div>
+          <div
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 15,
+              fontWeight: 500,
+              color: "#E2E8F0",
+            }}
+          >
+            Cycle #{d.cycle_number} started
+          </div>
+          {d.message && (
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 13,
+                color: "#4B5563",
+                marginTop: 3,
+              }}
+            >
+              {truncate(d.message, 80)}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "cycle_complete") {
+    const d = event.data as any;
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
+        <AgentBadge agent="judge_agent" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 15,
+                fontWeight: 500,
+                color: "#E2E8F0",
+              }}
+            >
+              Cycle complete — {d.trades_executed} trade{d.trades_executed !== 1 ? "s" : ""}
+            </span>
+            {d.judge_score != null && <ScoreBadge score={d.judge_score} size="sm" />}
+            {d.learning_event && (
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  padding: "2px 5px",
+                  borderRadius: 3,
+                  background: "#1F1400",
+                  color: "#F59E0B",
+                  border: "1px solid #3A2800",
+                }}
+              >
+                LEARNING
               </span>
-              {event.data.learning_event && (
-                <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                  Learning Event
-                </span>
-              )}
-              {event.data.circuit_breaker && (
-                <span className="text-xs px-2 py-0.5 rounded bg-[var(--janus-danger)]/20 text-[var(--janus-danger)] border border-[var(--janus-danger)]/30">
-                  Circuit Breaker
-                </span>
-              )}
-            </div>
-            {event.data.critical_finding && (
-              <div className="text-xs text-[var(--janus-text-secondary)] mt-2">
-                {truncateText(event.data.critical_finding, 100)}
-              </div>
+            )}
+            {d.circuit_breaker && (
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 8,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  padding: "2px 5px",
+                  borderRadius: 3,
+                  background: "#1F0A0A",
+                  color: "#EF4444",
+                  border: "1px solid #3A0A0A",
+                }}
+              >
+                CB TRIGGERED
+              </span>
             )}
           </div>
-        );
+          {d.critical_finding && (
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 13,
+                color: "#4B5563",
+                marginTop: 3,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {truncate(d.critical_finding, 100)}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-      case "cycle_error":
-        return (
-          <div>
-            <div className="text-sm font-medium text-[var(--janus-danger)]">
-              Cycle Error
-            </div>
-            <div className="text-xs text-[var(--janus-text-secondary)] mt-1">
-              {truncateText(event.data.error, 100)}
-            </div>
+  if (type === "cycle_error") {
+    const d = event.data as any;
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            fontWeight: 600,
+            padding: "2px 6px",
+            borderRadius: 3,
+            background: "#200A0A",
+            color: "#EF4444",
+            border: "1px solid #400A0A",
+            flexShrink: 0,
+          }}
+        >
+          ERROR
+        </span>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 13,
+            color: "#4B5563",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {truncate(d.error ?? "Unknown error", 100)}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "circuit_breaker_activated") {
+    const d = event.data as any;
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            fontWeight: 600,
+            padding: "2px 6px",
+            borderRadius: 3,
+            background: "#200A0A",
+            color: "#EF4444",
+            border: "1px solid #400A0A",
+            flexShrink: 0,
+          }}
+        >
+          CIRCUIT BREAKER
+        </span>
+        <div>
+          <div
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 15,
+              fontWeight: 500,
+              color: "#EF4444",
+            }}
+          >
+            Activated
           </div>
-        );
-
-      case "circuit_breaker_activated":
-        return (
-          <div className="space-y-1">
-            <div className="text-sm font-semibold text-[var(--janus-danger)]">
-              Circuit Breaker Activated
-            </div>
-            <div className="text-xs text-[var(--janus-text-secondary)]">
-              {event.data.reason}
-            </div>
-            <div className="text-xs text-[var(--janus-text-muted)]">
-              Cooldown: {event.data.cooldown_minutes} minutes
-            </div>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 13,
+              color: "#4B5563",
+              marginTop: 2,
+            }}
+          >
+            {d.reason} — cooldown {d.cooldown_minutes}m
           </div>
-        );
+        </div>
+      </div>
+    );
+  }
 
-      case "connected":
-        return (
-          <div className="text-sm text-[var(--janus-success)]">
-            Connected to event stream
-          </div>
-        );
+  if (type === "connected") {
+    return (
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          color: "#22C55E",
+        }}
+      >
+        Connected to event stream
+      </span>
+    );
+  }
 
-      case "ping":
-        return null; // Don't show ping events
+  return null;
+}
 
-      default:
-        return (
-          <div className="text-sm text-[var(--janus-text-muted)]">
-            {event.type}
-          </div>
-        );
-    }
-  };
+export function DecisionFeed({ events, connected }: DecisionFeedProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Filter out ping events and take last 20
-  const displayEvents = events.filter((e) => e.type !== "ping").slice(0, 20);
+  const displayEvents = events.filter((e) => e.type !== "ping").slice(0, 40);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = 0;
+  }, [events.length]);
 
   return (
-    <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide">
-          Decision Feed
-        </h2>
-        <div className="flex items-center gap-2">
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "8px 14px",
+          borderBottom: "1px solid #1C2128",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "#4B5563",
+          }}
+        >
+          DECISION FEED
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div
-            className={cn(
-              "w-2 h-2 rounded-full",
-              connected ? "bg-[var(--janus-success)]" : "bg-[var(--janus-danger)]"
-            )}
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              background: connected ? "#4CADCE" : "#EF4444",
+              flexShrink: 0,
+              animation: connected ? "ping 1.4s cubic-bezier(0,0,0.2,1) infinite" : "none",
+            }}
           />
-          <span className="text-xs text-[var(--janus-text-muted)]">
-            {connected ? "Live" : "Disconnected"}
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              letterSpacing: "0.06em",
+              color: connected ? "#4CADCE" : "#EF4444",
+            }}
+          >
+            {connected ? "LIVE" : "DISCONNECTED"}
           </span>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
+      {/* Feed entries */}
+      <div
+        ref={scrollRef}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
+      >
         {displayEvents.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-[var(--janus-text-muted)] text-sm">
-            No events yet. Waiting for activity...
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              color: "#4B5563",
+              padding: 20,
+              textAlign: "center",
+            }}
+          >
+            No events yet. Waiting for agent activity...
           </div>
         ) : (
           displayEvents.map((event, index) => {
-            const content = renderEventContent(event);
+            const content = renderContent(event);
             if (!content) return null;
 
             return (
               <div
                 key={`${event.type}-${event.timestamp}-${index}`}
-                className="p-3 rounded-lg bg-[var(--janus-background)] border border-[var(--janus-border)] hover:border-[var(--janus-gold)]/30 transition-colors"
+                style={{
+                  borderBottom: "1px solid #111820",
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  minWidth: 0,
+                }}
               >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5">{getEventIcon(event.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    {content}
-                    <div className="text-xs text-[var(--janus-text-muted)] mt-2">
-                      {formatTimestamp(event.timestamp)}
-                    </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {content}
+                  <div
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      color: "#2D3748",
+                      marginTop: 5,
+                    }}
+                  >
+                    {formatTimestamp(event.timestamp)}
                   </div>
                 </div>
               </div>
@@ -227,6 +526,16 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
           })
         )}
       </div>
+
+      <style>{`
+        @keyframes ping {
+          75%, 100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes dotFade {
+          0%, 80%, 100% { opacity: 0; }
+          40% { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -4,57 +4,65 @@ import { AgentStatusBar } from "@/components/arena/agent-status-bar";
 import { PortfolioPanel } from "@/components/arena/portfolio-panel";
 import { DecisionFeed } from "@/components/arena/decision-feed";
 import { MarketShockPanel } from "@/components/arena/market-shock-panel";
-import { JanusDivider } from "@/components/layout/janus-divider";
 import { usePortfolio } from "@/hooks/use-portfolio";
-import { useCycles } from "@/hooks/use-cycles";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 
 export default function Arena() {
   const { portfolio } = usePortfolio();
-  const { cycles } = useCycles();
   const { events, connected, activeAgents, lastCycle } = useAgentStream();
 
   return (
-      <div className="flex flex-col gap-2 p-4">
-        {/* Agent Status Bar */}
-        <div className="mb-2">
-          <AgentStatusBar
-            activeAgents={activeAgents}
-            lastCycle={lastCycle}
-            connected={connected}
-          />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        overflow: "hidden",
+        background: "#080A0C",
+      }}
+    >
+      {/* Agent status bar — 44px, never scrolls */}
+      <AgentStatusBar
+        activeAgents={activeAgents}
+        lastCycle={lastCycle}
+        connected={connected}
+      />
+
+      {/* Middle content area — scrolls */}
+      <div style={{ display: "flex", flex: 1, minHeight: 0, overflowY: "auto" }}>
+        {/* Left column: Portfolio — 300px */}
+        <div
+          style={{
+            width: 300,
+            flexShrink: 0,
+            height: "100%",
+            borderRight: "1px solid #1C2128",
+            overflowY: "auto",
+            overflowX: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <PortfolioPanel portfolio={portfolio} />
         </div>
 
-        {/* Main Layout: Forward Face | Divider | Backward Face */}
-        <div className="flex gap-0 h-[500px]">
-          {/* Left: Portfolio Panel — Forward Face */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <p className="text-[10px] uppercase tracking-widest mb-2 flex-shrink-0" style={{ color: "#4CADCE" }}>
-              ◀ THE FORWARD FACE
-            </p>
-            <div className="flex-1 overflow-y-auto" style={{ background: "linear-gradient(to bottom, rgba(76, 173, 206, 0.03), transparent)" }}>
-              <PortfolioPanel portfolio={portfolio} />
-            </div>
-          </div>
-
-          {/* Janus Divider */}
-          <div className="w-10 flex-shrink-0 h-full">
-            <JanusDivider />
-          </div>
-
-          {/* Right: Decision Feed — Backward Face */}
-          <div className="flex-[2] flex flex-col overflow-hidden">
-            <p className="text-[10px] uppercase tracking-widest mb-2 text-right flex-shrink-0" style={{ color: "#C9A84C" }}>
-              THE BACKWARD FACE ▶
-            </p>
-            <div className="flex-1 overflow-y-auto" style={{ background: "linear-gradient(to bottom, rgba(201, 168, 76, 0.03), transparent)" }}>
-              <DecisionFeed events={events} connected={connected} />
-            </div>
-          </div>
+        {/* Right column: Decision Feed — fills remaining width */}
+        <div
+          style={{
+            flex: 1,
+            height: "100%",
+            overflowY: "auto",
+            overflowX: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <DecisionFeed events={events} connected={connected} />
         </div>
-
-        {/* Market Shock Panel */}
-        <MarketShockPanel />
       </div>
+
+      {/* Bottom bar: Market Shock — 52px, never scrolls */}
+      <MarketShockPanel />
+    </div>
   );
 }

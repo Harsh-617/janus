@@ -1,9 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import type { Portfolio } from "@/lib/types";
 import { API_BASE } from "@/lib/constants";
-import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   XAxis,
@@ -26,15 +24,45 @@ interface PortfolioPanelProps {
   portfolio: Portfolio | null;
 }
 
-const SECTOR_COLORS: Record<string, string> = {
-  Technology: "#4CADCE",
-  Finance: "#C9A84C",
-  Energy: "#E0A052",
-  Healthcare: "#52E0A0",
-  "Consumer Goods": "#9B59B6",
-  Commodities: "#8B6914",
-  Crypto: "#E05252",
-  Bonds: "#4A4845",
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatPercent(value: number): string {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function Sparkline({ positive }: { positive: boolean }) {
+  const stroke = positive ? "#22C55E" : "#EF4444";
+  const points = positive
+    ? "0,12 8,9 16,10 24,6 32,7 40,3"
+    : "0,3 8,6 16,5 24,9 32,8 40,12";
+  return (
+    <svg width={40} height={16} style={{ display: "block" }}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+const ROW_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "12px 12px",
+  borderBottom: "1px solid #111820",
+  cursor: "default",
 };
 
 export function PortfolioPanel({ portfolio }: PortfolioPanelProps) {
@@ -47,186 +75,358 @@ export function PortfolioPanel({ portfolio }: PortfolioPanelProps) {
       .catch(() => {});
   }, []);
 
-  if (!portfolio) {
-    return (
-      <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6 h-full">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-[var(--janus-border)] rounded w-3/4"></div>
-          <div className="h-6 bg-[var(--janus-border)] rounded w-1/2"></div>
-          <div className="space-y-2">
-            <div className="h-4 bg-[var(--janus-border)] rounded"></div>
-            <div className="h-4 bg-[var(--janus-border)] rounded"></div>
-            <div className="h-4 bg-[var(--janus-border)] rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatPercent = (value: number) => {
-    const sign = value >= 0 ? "+" : "";
-    return `${sign}${value.toFixed(2)}%`;
-  };
-
   return (
-    <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-4 h-full flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide">
-        Portfolio
-      </h2>
-
-      {/* Total Value */}
-      <div>
-        <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-0">
-          Total Value
-        </div>
-        <div className="text-3xl font-bold text-[var(--janus-gold)] font-mono">
-          {formatCurrency(portfolio.total_value)}
-        </div>
-      </div>
-
-      {/* P&L */}
-      <div>
-        <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-0">
-          P&L
-        </div>
-        <div className="flex items-center gap-2">
-          {portfolio.pnl_pct >= 0 ? (
-            <TrendingUp className="h-4 w-4 text-[var(--janus-success)]" />
-          ) : (
-            <TrendingDown className="h-4 w-4 text-[var(--janus-danger)]" />
-          )}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        overflow: "hidden",
+      }}
+    >
+      {/* Panel header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "8px 12px",
+          borderBottom: "1px solid #1C2128",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#4B5563",
+          }}
+        >
+          PORTFOLIO
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              background: "#4CADCE",
+              animation: "ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite",
+            }}
+          />
           <span
-            className={cn(
-              "text-xl font-bold font-mono",
-              portfolio.pnl_pct >= 0
-                ? "text-[var(--janus-success)]"
-                : "text-[var(--janus-danger)]"
-            )}
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              color: "#4CADCE",
+              letterSpacing: "0.05em",
+            }}
           >
-            {formatPercent(portfolio.pnl_pct)}
+            LIVE
           </span>
         </div>
       </div>
 
-      {/* Cash Position */}
-      <div>
-        <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-0">
-          Cash
-        </div>
-        <div className="text-lg font-semibold text-[var(--janus-text-primary)] font-mono">
-          {formatCurrency(portfolio.cash)}
-        </div>
-      </div>
-
-      {/* Circuit Breaker Status */}
-      {portfolio.circuit_breaker_active && (
-        <div className="p-2 bg-[var(--janus-danger)]/20 border border-[var(--janus-danger)]/30 rounded-md">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[var(--janus-danger)]" />
-            <span className="text-xs font-semibold text-[var(--janus-danger)] uppercase">
-              Circuit Breaker Active
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Positions List */}
-      <div>
-        <div className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-1">
-          Positions
-        </div>
-        <div className="max-h-[160px] overflow-y-auto scrollbar-hide">
-        <div className="space-y-1">
-          {Object.entries(portfolio.positions).map(([ticker, position]) => {
-            const positionValue = position.shares * position.current_price;
-            const sectorColor = SECTOR_COLORS[position.sector] || "#4CADCE";
-
-            return (
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+        {!portfolio ? (
+          /* Loading skeletons */
+          <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+            {[0, 1, 2, 3].map((i) => (
               <div
-                key={ticker}
-                className="flex items-center justify-between py-1 px-2 rounded bg-[var(--janus-background)] border border-[var(--janus-border)]"
+                key={i}
+                style={{
+                  height: 32,
+                  background: "#1C2128",
+                  borderRadius: 3,
+                  animation: "pulse 1.5s ease-in-out infinite",
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Summary section */}
+            <div style={{ padding: 12, borderBottom: "1px solid #1C2128" }}>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  color: "#4B5563",
+                  marginBottom: 4,
+                }}
               >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: sectorColor }}
-                  />
-                  <div>
-                    <div className="text-xs font-semibold text-[var(--janus-text-primary)]">
-                      {ticker}
-                    </div>
-                    <div className="text-xs text-[var(--janus-text-muted)]">
-                      {position.shares} shares
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-mono text-[var(--janus-blue)]">
-                    {formatCurrency(position.current_price)}
-                  </div>
-                  <div className="text-xs text-[var(--janus-text-muted)] font-mono">
-                    {formatCurrency(positionValue)}
-                  </div>
-                </div>
+                TOTAL VALUE
               </div>
-            );
-          })}
-        </div>
-        </div>
-      </div>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 28,
+                  fontWeight: 700,
+                  color: "#E2E8F0",
+                  lineHeight: 1.2,
+                }}
+              >
+                {formatCurrency(portfolio.total_value)}
+              </div>
 
-      {/* P&L Sparkline */}
-      <div>
-        <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: "#C9A84C" }}>
-          P&L OVER TIME
-        </div>
-        {history.length >= 1 ? (() => {
-          const latestPnl = history[history.length - 1].pnl_pct ?? 0;
-          const lineColor = latestPnl >= 0 ? "#52E0A0" : "#E05252";
-          return (
-            <ResponsiveContainer width="100%" height={60}>
-              <LineChart data={history} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-                <XAxis dataKey="cycle" hide />
-                <YAxis hide />
-                <ReferenceLine y={0} stroke="#555" strokeDasharray="3 3" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#13151A",
-                    border: "1px solid #1E2028",
-                    borderRadius: "6px",
-                    fontSize: "12px",
+              {/* P&L row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                <span style={{ fontSize: 12, color: portfolio.pnl_pct >= 0 ? "#22C55E" : "#EF4444" }}>
+                  {portfolio.pnl_pct >= 0 ? "▲" : "▼"}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: portfolio.pnl_pct >= 0 ? "#22C55E" : "#EF4444",
                   }}
-                  labelStyle={{ color: "#E8E6E0" }}
-                  formatter={(value: number) => {
-                    const sign = value >= 0 ? "+" : "";
-                    return [`${sign}${value.toFixed(2)}%`, "P&L"];
+                >
+                  {formatPercent(portfolio.pnl_pct)}
+                </span>
+              </div>
+
+              {/* Cash row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    color: "#4B5563",
                   }}
-                  labelFormatter={(label) => `Cycle ${label}`}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="pnl_pct"
-                  stroke={lineColor}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          );
-        })() : (
-          <p className="text-xs text-[var(--janus-text-muted)]">Waiting for data...</p>
+                >
+                  CASH
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 14,
+                    color: "#8B949E",
+                  }}
+                >
+                  {formatCurrency(portfolio.cash)}
+                </span>
+              </div>
+
+              {/* Circuit breaker warning */}
+              {portfolio.circuit_breaker_active && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: "4px 8px",
+                    background: "rgba(239,68,68,0.1)",
+                    border: "1px solid rgba(239,68,68,0.3)",
+                    borderRadius: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span style={{ color: "#EF4444", fontSize: 10 }}>⚠</span>
+                  <span
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "#EF4444",
+                    }}
+                  >
+                    CIRCUIT BREAKER ACTIVE
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Positions */}
+            {Object.keys(portfolio.positions).length === 0 ? (
+              <div
+                style={{
+                  padding: 20,
+                  textAlign: "center",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  color: "#4B5563",
+                }}
+              >
+                Waiting for portfolio data...
+              </div>
+            ) : (
+              Object.entries(portfolio.positions).map(([ticker, position]) => {
+                const positionValue = position.shares * position.current_price;
+                const pnlPct = position.avg_cost
+                  ? ((position.current_price - position.avg_cost) / position.avg_cost) * 100
+                  : 0;
+                const positive = pnlPct >= 0;
+
+                return (
+                  <div
+                    key={ticker}
+                    style={{
+                      ...ROW_STYLE,
+                      transition: "background 0.1s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "#0D1117")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    {/* Left: ticker + shares */}
+                    <div style={{ width: 64, flexShrink: 0 }}>
+                      <div
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 15,
+                          fontWeight: 600,
+                          color: "#4CADCE",
+                        }}
+                      >
+                        {ticker}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 11,
+                          color: "#4B5563",
+                          marginTop: 2,
+                        }}
+                      >
+                        {position.shares} sh
+                      </div>
+                    </div>
+
+                    {/* Middle: current price */}
+                    <div
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 14,
+                        color: "#E2E8F0",
+                        flex: 1,
+                        textAlign: "center",
+                      }}
+                    >
+                      {formatCurrency(position.current_price)}
+                    </div>
+
+                    {/* Right: total value + P&L */}
+                    <div style={{ textAlign: "right", marginRight: 8 }}>
+                      <div
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 14,
+                          color: "#8B949E",
+                        }}
+                      >
+                        {formatCurrency(positionValue)}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 12,
+                          color: positive ? "#22C55E" : "#EF4444",
+                          marginTop: 2,
+                        }}
+                      >
+                        {formatPercent(pnlPct)}
+                      </div>
+                    </div>
+
+                    {/* Sparkline */}
+                    <Sparkline positive={positive} />
+                  </div>
+                );
+              })
+            )}
+
+            {/* P&L chart */}
+            <div style={{ borderTop: "1px solid #1C2128", padding: 12 }}>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  color: "#C9A84C",
+                  marginBottom: 8,
+                }}
+              >
+                P&L OVER TIME
+              </div>
+              {history.length >= 1 ? (() => {
+                const latestPnl = history[history.length - 1].pnl_pct ?? 0;
+                const lineColor = latestPnl >= 0 ? "#22C55E" : "#EF4444";
+                return (
+                  <ResponsiveContainer width="100%" height={60}>
+                    <LineChart
+                      data={history}
+                      margin={{ top: 4, right: 4, bottom: 4, left: 4 }}
+                    >
+                      <XAxis dataKey="cycle" hide />
+                      <YAxis hide />
+                      <ReferenceLine y={0} stroke="#1C2128" strokeDasharray="3 3" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#0D1117",
+                          border: "1px solid #1C2128",
+                          borderRadius: 3,
+                          fontSize: 10,
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                        labelStyle={{ color: "#4B5563" }}
+                        formatter={(value) => {
+                          const v = typeof value === "number" ? value : 0;
+                          const sign = v >= 0 ? "+" : "";
+                          return [`${sign}${v.toFixed(2)}%`, "P&L"];
+                        }}
+                        labelFormatter={(label) => `Cycle ${label}`}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="pnl_pct"
+                        stroke={lineColor}
+                        strokeWidth={1.5}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                );
+              })() : (
+                <p
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    color: "#4B5563",
+                    margin: 0,
+                  }}
+                >
+                  Waiting for data...
+                </p>
+              )}
+            </div>
+          </>
         )}
       </div>
+
+      <style>{`
+        @keyframes ping {
+          75%, 100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
     </div>
   );
 }

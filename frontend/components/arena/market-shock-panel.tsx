@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
   applyPresetMarketShock,
   clearMarketShock,
@@ -15,49 +13,7 @@ import {
   fetchStreamStatus,
 } from "@/lib/api";
 import { API_BASE } from "@/lib/constants";
-import {
-  Zap,
-  TrendingDown,
-  DollarSign,
-  Building,
-  AlertTriangle,
-  Power,
-  PowerOff,
-  Play,
-  Pause,
-  X,
-  Loader2,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
 import type { MarketShockStatus, StreamStatus } from "@/lib/types";
-
-const PRESET_SCENARIOS = [
-  {
-    id: "oil_shock",
-    name: "Oil Shock",
-    description: "Energy prices surge 40%, market volatility spikes",
-    icon: Zap,
-  },
-  {
-    id: "crypto_crash",
-    name: "Crypto Crash",
-    description: "Bitcoin drops 60%, crypto positions collapse",
-    icon: TrendingDown,
-  },
-  {
-    id: "fed_rate_hike",
-    name: "Fed Rate Hike",
-    description: "Emergency rate increase, bonds rally, tech sells off",
-    icon: DollarSign,
-  },
-  {
-    id: "bank_run",
-    name: "Bank Run",
-    description: "Financial sector panic, flight to safety",
-    icon: Building,
-  },
-];
 
 interface ValidationResult {
   valid: boolean;
@@ -66,7 +22,11 @@ interface ValidationResult {
   suggestions: string[];
 }
 
-function parseEffectsPreview(effects: string): { preview: string; isValid: boolean; hasRangeError: boolean } {
+function parseEffectsPreview(effects: string): {
+  preview: string;
+  isValid: boolean;
+  hasRangeError: boolean;
+} {
   if (!effects.trim()) return { preview: "", isValid: true, hasRangeError: false };
   try {
     const items: string[] = [];
@@ -79,7 +39,7 @@ function parseEffectsPreview(effects: string): { preview: string; isValid: boole
         const pct = Math.round(value * 100);
         const sign = pct >= 0 ? "+" : "";
         return {
-          preview: `Invalid: ${ticker.trim().toUpperCase()} ${sign}${pct}% exceeds maximum range (-99% to +500%)`,
+          preview: `Invalid: ${ticker.trim().toUpperCase()} ${sign}${pct}% exceeds max (-99% to +500%)`,
           isValid: false,
           hasRangeError: true,
         };
@@ -87,10 +47,64 @@ function parseEffectsPreview(effects: string): { preview: string; isValid: boole
       const pct = Math.round(value * 100);
       items.push(`${ticker.trim().toUpperCase()} ${pct >= 0 ? "+" : ""}${pct}%`);
     }
-    return { preview: `Will affect: ${items.join(" | ")}`, isValid: true, hasRangeError: false };
+    return { preview: items.join(" | "), isValid: true, hasRangeError: false };
   } catch {
     return { preview: "Invalid format", isValid: false, hasRangeError: false };
   }
+}
+
+const PRESET_SCENARIOS = [
+  { id: "oil_shock", label: "OIL SURGE" },
+  { id: "crypto_crash", label: "CRYPTO CRASH" },
+  { id: "fed_rate_hike", label: "FED HIKE" },
+  { id: "bank_run", label: "BANK RUN" },
+];
+
+const BTN: React.CSSProperties = {
+  padding: "5px 14px",
+  border: "1px solid #1C2128",
+  borderRadius: 3,
+  background: "transparent",
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: 11,
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+  color: "#8B949E",
+  cursor: "pointer",
+  transition: "background 0.1s, color 0.1s, border-color 0.1s",
+  whiteSpace: "nowrap" as const,
+};
+
+function BarButton({
+  children,
+  onClick,
+  disabled,
+  style,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  style?: React.CSSProperties;
+  onMouseEnter?: React.MouseEventHandler<HTMLButtonElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLButtonElement>;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...BTN,
+        opacity: disabled ? 0.45 : 1,
+        ...style,
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {children}
+    </button>
+  );
 }
 
 export function MarketShockPanel() {
@@ -98,13 +112,12 @@ export function MarketShockPanel() {
   const [shockStatus, setShockStatus] = useState<MarketShockStatus | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
   const [activeScenario, setActiveScenario] = useState<string | null>(null);
-  const [activatedAt, setActivatedAt] = useState<Date | null>(null);
+  const [showCustom, setShowCustom] = useState(false);
   const [customDescription, setCustomDescription] = useState("");
   const [customEffects, setCustomEffects] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [injectMessage, setInjectMessage] = useState<string | null>(null);
 
   const fetchStatuses = async () => {
     try {
@@ -114,9 +127,7 @@ export function MarketShockPanel() {
       ]);
       setShockStatus(shock);
       setStreamStatus(stream);
-    } catch (error) {
-      console.error("Failed to fetch statuses:", error);
-    }
+    } catch {}
   };
 
   useEffect(() => {
@@ -130,25 +141,9 @@ export function MarketShockPanel() {
     try {
       setLoading(scenarioId);
       await applyPresetMarketShock(scenarioId);
-      setActivatedAt(new Date());
       await fetchStatuses();
-    } catch (error) {
-      console.error("Failed to apply market shock:", error);
+    } catch {
       setActiveScenario(null);
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const handleClearShock = async () => {
-    try {
-      setLoading("clear");
-      await clearMarketShock();
-      setActiveScenario(null);
-      setActivatedAt(null);
-      await fetchStatuses();
-    } catch (error) {
-      console.error("Failed to clear market shock:", error);
     } finally {
       setLoading(null);
     }
@@ -163,9 +158,8 @@ export function MarketShockPanel() {
         await releaseCircuitBreaker();
       }
       await fetchStatuses();
-    } catch (error) {
-      console.error("Failed to toggle circuit breaker:", error);
-    } finally {
+    } catch {}
+    finally {
       setLoading(null);
     }
   };
@@ -174,9 +168,8 @@ export function MarketShockPanel() {
     try {
       setLoading("run_cycle");
       await runCycleOnce();
-    } catch (error) {
-      console.error("Failed to run cycle:", error);
-    } finally {
+    } catch {}
+    finally {
       setTimeout(() => setLoading(null), 2000);
     }
   };
@@ -190,20 +183,15 @@ export function MarketShockPanel() {
         await startStream();
       }
       await fetchStatuses();
-    } catch (error) {
-      console.error("Failed to toggle stream:", error);
-    } finally {
+    } catch {}
+    finally {
       setLoading(null);
     }
   };
 
-  const handleDescriptionChange = (value: string) => {
-    setCustomDescription(value);
-    setValidationResult(null);
-    setValidationError(null);
-  };
-
   const handleInjectEvent = async () => {
+    const descLen = customDescription.length;
+    const effectsPreview = parseEffectsPreview(customEffects);
     if (descLen < 10 || effectsPreview.hasRangeError) return;
 
     let headline = customDescription;
@@ -225,7 +213,7 @@ export function MarketShockPanel() {
         if (!result.valid) return;
         headline = result.headline || customDescription;
       } catch (e) {
-        setValidationError(e instanceof Error ? e.message : "Validation request failed.");
+        setValidationError(e instanceof Error ? e.message : "Validation failed.");
         setIsValidating(false);
         return;
       }
@@ -233,7 +221,7 @@ export function MarketShockPanel() {
       headline = validationResult.headline || customDescription;
     }
 
-    let parsedEffects: { [ticker: string]: number } = {};
+    let parsedEffects: Record<string, number> = {};
     if (customEffects.trim()) {
       try {
         for (const part of customEffects.split(",")) {
@@ -260,8 +248,7 @@ export function MarketShockPanel() {
       setCustomEffects("");
       setValidationResult(null);
       setValidationError(null);
-      setInjectMessage("Event injected — agents will react in next cycle");
-      setTimeout(() => setInjectMessage(null), 5000);
+      setShowCustom(false);
       await fetchStatuses();
     } catch (e) {
       setValidationError(e instanceof Error ? e.message : "Injection failed.");
@@ -272,300 +259,257 @@ export function MarketShockPanel() {
 
   const effectsPreview = parseEffectsPreview(customEffects);
   const descLen = customDescription.length;
+  const autoOn = !!streamStatus?.running;
+
+  const SEP = (
+    <div style={{ width: 1, height: 20, background: "#1C2128", flexShrink: 0 }} />
+  );
 
   return (
-    <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-6">
-      <h2 className="text-sm font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide mb-6">
-        Market Controls
-      </h2>
+    <div
+      style={{
+        background: "#0D1117",
+        borderTop: "1px solid #1C2128",
+        height: showCustom ? "auto" : 56,
+        minHeight: 56,
+        padding: "0 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        flexShrink: 0,
+        flexWrap: showCustom ? "wrap" : "nowrap",
+      }}
+    >
+      {/* MARKET SHOCK label */}
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          color: "#4B5563",
+          flexShrink: 0,
+        }}
+      >
+        MARKET SHOCK
+      </span>
 
-      {/* Active Shock Alert */}
-      {shockStatus?.active && (
-        <div className="mb-6 p-4 bg-[var(--janus-warning)]/20 border border-[var(--janus-warning)]/30 rounded-lg">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-[var(--janus-warning)] mt-0.5" />
-              <div>
-                <div className="text-sm font-semibold text-[var(--janus-warning)] mb-1">
-                  Market Shock Active: {shockStatus.scenario_name}
-                </div>
-                <div className="text-xs text-[var(--janus-text-secondary)]">
-                  Activated at{" "}
-                  {shockStatus.activated_at
-                    ? new Date(shockStatus.activated_at).toLocaleTimeString()
-                    : activatedAt
-                    ? activatedAt.toLocaleTimeString()
-                    : "unknown"}
-                </div>
-              </div>
-            </div>
-            <Button
-              onClick={handleClearShock}
-              disabled={loading === "clear"}
-              size="sm"
-              variant="outline"
-              className="border-[var(--janus-warning)] text-[var(--janus-warning)] hover:bg-[var(--janus-warning)]/10"
+      {SEP}
+
+      {/* Preset buttons */}
+      {PRESET_SCENARIOS.map((s) => {
+        const isActive = activeScenario === s.id;
+        return (
+          <BarButton
+            key={s.id}
+            onClick={() => handlePresetShock(s.id)}
+            disabled={!!loading}
+            style={
+              isActive
+                ? { borderColor: "#C9A84C", color: "#C9A84C" }
+                : undefined
+            }
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.background = "#161B22";
+                e.currentTarget.style.color = "#E2E8F0";
+                e.currentTarget.style.borderColor = "#30363D";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "#8B949E";
+                e.currentTarget.style.borderColor = "#1C2128";
+              }
+            }}
+          >
+            {loading === s.id ? "…" : s.label}
+          </BarButton>
+        );
+      })}
+
+      {SEP}
+
+      {/* Custom toggle + inline form */}
+      <BarButton
+        onClick={() => setShowCustom((v) => !v)}
+        style={{ color: "#4CADCE", borderColor: "#164060" }}
+      >
+        + CUSTOM
+      </BarButton>
+
+      {showCustom && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexWrap: "wrap",
+            paddingBottom: showCustom ? 6 : 0,
+          }}
+        >
+          <input
+            type="text"
+            value={customDescription}
+            onChange={(e) => {
+              setCustomDescription(e.target.value);
+              setValidationResult(null);
+              setValidationError(null);
+            }}
+            placeholder="Describe market event..."
+            maxLength={200}
+            style={{
+              background: "#080A0C",
+              border: `1px solid ${validationError ? "#EF4444" : "#30363D"}`,
+              color: "#E2E8F0",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              borderRadius: 3,
+              padding: "3px 8px",
+              width: 220,
+              outline: "none",
+            }}
+          />
+          <input
+            type="text"
+            value={customEffects}
+            onChange={(e) => setCustomEffects(e.target.value)}
+            placeholder="AAPL:-0.10,GLD:+0.15 (opt)"
+            style={{
+              background: "#080A0C",
+              border: `1px solid ${effectsPreview.hasRangeError ? "#EF4444" : "#30363D"}`,
+              color: "#E2E8F0",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              borderRadius: 3,
+              padding: "3px 8px",
+              width: 180,
+              outline: "none",
+            }}
+          />
+          <BarButton
+            onClick={handleInjectEvent}
+            disabled={descLen < 10 || isValidating || loading === "inject" || effectsPreview.hasRangeError}
+            style={{ color: "#4CADCE", borderColor: "#164060" }}
+          >
+            {isValidating ? "VALIDATING…" : loading === "inject" ? "INJECTING…" : "INJECT"}
+          </BarButton>
+          {validationError && (
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                color: "#EF4444",
+              }}
             >
-              {loading === "clear" ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <X className="h-4 w-4 mr-2" />
-                  Clear
-                </>
-              )}
-            </Button>
-          </div>
+              {validationError}
+            </span>
+          )}
+          {customEffects.trim() && (
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                color: effectsPreview.isValid ? "#22C55E" : "#EF4444",
+              }}
+            >
+              {effectsPreview.preview}
+            </span>
+          )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Preset Scenarios */}
-        <div>
-          <h3 className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-3">
-            Preset Scenarios
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {PRESET_SCENARIOS.map((scenario) => {
-              const Icon = scenario.icon;
-              const isLoading = loading === scenario.id;
-              const isActive = activeScenario === scenario.id;
+      {/* Right side: cycle controls */}
+      <div
+        style={{
+          marginLeft: "auto",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            color: "#4B5563",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          CYCLE CONTROLS
+        </span>
 
-              return (
-                <Button
-                  key={scenario.id}
-                  onClick={() => handlePresetShock(scenario.id)}
-                  disabled={!!loading}
-                  variant="outline"
-                  className={cn(
-                    "h-auto flex-col items-start p-3 border-[var(--janus-border)] hover:border-[var(--janus-warning)] hover:bg-[var(--janus-warning)]/10",
-                    isLoading && "opacity-50",
-                    isActive && "border-[#C9A84C] bg-[#C9A84C]/10"
-                  )}
-                >
-                  <div className="flex items-center gap-2 mb-2 w-full">
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-[var(--janus-warning)]" />
-                    ) : (
-                      <Icon className="h-4 w-4 text-[var(--janus-warning)]" />
-                    )}
-                    <span className="text-xs font-semibold text-[var(--janus-text-primary)]">
-                      {scenario.name}
-                    </span>
-                    {isActive && (
-                      <span className="ml-auto text-[10px] font-semibold text-[#C9A84C]">
-                        ✓ Active
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-[var(--janus-text-muted)] text-left">
-                    {scenario.description}
-                  </p>
-                </Button>
-              );
-            })}
-          </div>
-        </div>
+        <BarButton
+          onClick={handleRunCycle}
+          disabled={!!loading}
+          style={{ color: "#4CADCE", borderColor: "#164060" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#0C2340";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          {loading === "run_cycle" ? "RUNNING…" : "RUN CYCLE"}
+        </BarButton>
 
-        {/* System Controls */}
-        <div className="space-y-4">
-          {/* Circuit Breaker */}
-          <div>
-            <h3 className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-3">
-              Circuit Breaker
-            </h3>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => handleCircuitBreaker(true)}
-                disabled={!!loading}
-                variant="outline"
-                className="flex-1 border-[var(--janus-danger)] text-[var(--janus-danger)] hover:bg-[var(--janus-danger)]/10"
-              >
-                {loading === "activate_cb" ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <PowerOff className="h-4 w-4 mr-2" />
-                )}
-                Activate
-              </Button>
-              <Button
-                onClick={() => handleCircuitBreaker(false)}
-                disabled={!!loading}
-                variant="outline"
-                className="flex-1 border-[var(--janus-success)] text-[var(--janus-success)] hover:bg-[var(--janus-success)]/10"
-              >
-                {loading === "release_cb" ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Power className="h-4 w-4 mr-2" />
-                )}
-                Release
-              </Button>
-            </div>
-          </div>
+        <BarButton
+          onClick={handleToggleStream}
+          disabled={loading === "toggle_stream"}
+          style={
+            autoOn
+              ? { color: "#22C55E", borderColor: "#0A3A0A" }
+              : { color: "#8B949E", borderColor: "#1C2128" }
+          }
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = autoOn ? "#051A05" : "#161B22";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          {loading === "toggle_stream" ? "…" : autoOn ? "AUTO ON" : "AUTO"}
+        </BarButton>
 
-          {/* Cycle Controls */}
-          <div>
-            <h3 className="text-xs text-[var(--janus-text-muted)] uppercase tracking-wide mb-3">
-              Cycle Controls
-            </h3>
-            <div className="space-y-2">
-              <Button
-                onClick={handleRunCycle}
-                disabled={!!loading}
-                className="w-full bg-[var(--janus-blue)] hover:bg-[var(--janus-blue)]/80 text-white"
-              >
-                {loading === "run_cycle" ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Play className="h-4 w-4 mr-2" />
-                )}
-                Run Single Cycle
-              </Button>
-              <Button
-                onClick={handleToggleStream}
-                disabled={!!loading}
-                variant="outline"
-                className={cn(
-                  "w-full",
-                  streamStatus?.running
-                    ? "border-[var(--janus-warning)] text-[var(--janus-warning)] hover:bg-[var(--janus-warning)]/10"
-                    : "border-[var(--janus-success)] text-[var(--janus-success)] hover:bg-[var(--janus-success)]/10"
-                )}
-              >
-                {loading === "toggle_stream" ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : streamStatus?.running ? (
-                  <Pause className="h-4 w-4 mr-2" />
-                ) : (
-                  <Play className="h-4 w-4 mr-2" />
-                )}
-                {streamStatus?.running ? "Stop Auto-Cycle" : "Start Auto-Cycle"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+        {SEP}
 
-      {/* Divider */}
-      <div className="my-6 border-t border-[#C9A84C]/30" />
+        <BarButton
+          onClick={() => handleCircuitBreaker(true)}
+          disabled={!!loading}
+          style={{ color: "#EF4444", borderColor: "#3A0A0A" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#1F0A0A";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          {loading === "activate_cb" ? "…" : "CIRCUIT BREAKER"}
+        </BarButton>
 
-      {/* Custom Event */}
-      <div>
-        <h3 className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wide mb-3">
-          Custom Event
-        </h3>
-        <div className="space-y-3">
-          {/* Description input with char count */}
-          <div>
-            <input
-              type="text"
-              value={customDescription}
-              onChange={(e) => handleDescriptionChange(e.target.value)}
-              maxLength={200}
-              placeholder="Describe a market event..."
-              className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
-            />
-            <p className={cn(
-              "text-[10px] mt-1 text-right",
-              descLen > 180 ? "text-[var(--janus-danger)]" : "text-[var(--janus-text-muted)]"
-            )}>
-              {descLen}/200
-            </p>
-          </div>
-
-          {/* Effects input with live preview */}
-          <div>
-            <input
-              type="text"
-              value={customEffects}
-              onChange={(e) => setCustomEffects(e.target.value)}
-              placeholder="e.g. AAPL:-0.10,GLD:+0.15 (optional)"
-              className="w-full rounded-md px-3 py-2 text-sm bg-[#13151A] text-[var(--janus-text-primary)] placeholder:text-[var(--janus-text-muted)] border border-[var(--janus-border)] outline-none focus:border-[#C9A84C] transition-colors"
-            />
-            {customEffects.trim() && (
-              <p className={cn(
-                "text-[10px] mt-1",
-                effectsPreview.isValid ? "text-[var(--janus-success)]" : "text-[var(--janus-danger)]"
-              )}>
-                {effectsPreview.preview}
-              </p>
-            )}
-          </div>
-
-          {/* Validation result */}
-          {validationResult && validationResult.valid && (
-            <div className="rounded-md p-3 bg-[var(--janus-success)]/10 border border-[var(--janus-success)]/30">
-              <div className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-[var(--janus-success)] mt-0.5 shrink-0" />
-                <div className="text-xs text-[var(--janus-success)]">
-                  <span className="font-semibold">Your event: </span>
-                  &ldquo;{validationResult.headline}&rdquo;
-                </div>
-              </div>
-              {validationResult.reason && (
-                <p className="text-[10px] text-[var(--janus-text-muted)] mt-1 ml-6">
-                  {validationResult.reason}
-                </p>
-              )}
-            </div>
-          )}
-
-          {validationResult && !validationResult.valid && (
-            <div className="rounded-md p-3 bg-[var(--janus-danger)]/10 border border-[var(--janus-danger)]/30">
-              <div className="flex items-start gap-2">
-                <XCircle className="h-4 w-4 text-[var(--janus-danger)] mt-0.5 shrink-0" />
-                <p className="text-xs text-[var(--janus-danger)]">{validationResult.reason}</p>
-              </div>
-              {validationResult.suggestions && validationResult.suggestions.length > 0 && (
-                <div className="mt-2 ml-6 flex flex-col gap-1">
-                  {validationResult.suggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setCustomDescription(s);
-                        setValidationResult({ valid: true, headline: s, reason: "", suggestions: [] });
-                        setValidationError(null);
-                      }}
-                      className="text-left text-[10px] text-[var(--janus-text-secondary)] bg-[var(--janus-border)]/30 hover:bg-[var(--janus-border)]/60 rounded px-2 py-1 transition-colors"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {validationError && (
-            <p className="text-xs text-[var(--janus-danger)]">{validationError}</p>
-          )}
-
-          {/* Inject button */}
-          <Button
-            onClick={handleInjectEvent}
-            disabled={descLen < 10 || isValidating || loading === "inject" || effectsPreview.hasRangeError}
-            className="w-full bg-[#C9A84C] hover:bg-[#C9A84C]/80 text-[#13151A] font-semibold disabled:opacity-50"
+        {shockStatus?.active && (
+          <BarButton
+            onClick={async () => {
+              setLoading("clear");
+              try {
+                await clearMarketShock();
+                setActiveScenario(null);
+                await fetchStatuses();
+              } catch {}
+              finally {
+                setLoading(null);
+              }
+            }}
+            disabled={loading === "clear"}
+            style={{ color: "#F59E0B", borderColor: "#3A2800" }}
           >
-            {isValidating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Validating...
-              </>
-            ) : loading === "inject" ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Injecting...
-              </>
-            ) : (
-              "Inject Event"
-            )}
-          </Button>
-
-          {injectMessage && (
-            <p className="text-xs text-[var(--janus-success)]">{injectMessage}</p>
-          )}
-        </div>
+            {loading === "clear" ? "…" : "CLEAR SHOCK"}
+          </BarButton>
+        )}
       </div>
     </div>
   );

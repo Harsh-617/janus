@@ -1,9 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { AGENT_DISPLAY_NAMES, AGENT_COLORS } from "@/lib/constants";
-import { LiveIndicator } from "@/components/shared/live-indicator";
-import { ScoreBadge } from "@/components/shared/score-badge";
 import type { AgentName, CycleCompleteEvent } from "@/lib/types";
 
 interface AgentStatusBarProps {
@@ -20,89 +16,153 @@ const AGENT_ORDER: AgentName[] = [
   "judge_agent",
 ];
 
+const SHORT_NAMES: Record<AgentName, string> = {
+  trading_agent: "Trading",
+  risk_agent: "Risk",
+  fraud_agent: "Fraud",
+  regulator_agent: "Regulator",
+  judge_agent: "Judge",
+  meta_agent: "Meta",
+};
+
+function getDotColor(isActive: boolean): string {
+  if (isActive) return "#22C55E";
+  return "#4CADCE";
+}
+
 export function AgentStatusBar({
   activeAgents,
-  lastCycle,
   connected,
 }: AgentStatusBarProps) {
-  const getAgentStatus = (agent: AgentName): string => {
-    if (activeAgents[agent]) {
-      return "Analyzing...";
-    }
-    return "Idle";
-  };
-
-  const getAgentScore = (agent: AgentName): number | null => {
-    if (!lastCycle) return null;
-    
-    // Map agent names to judge score fields
-    const scoreMap: Record<string, number | undefined> = {
-      judge_agent: lastCycle.judge_score,
-    };
-    
-    return scoreMap[agent] ?? null;
-  };
-
   return (
-    <div className="bg-[var(--janus-surface)] border border-[var(--janus-border)] rounded-lg p-2">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xs font-semibold text-[var(--janus-text-primary)] uppercase tracking-wide">
-          Agent Status
-        </h2>
-        <LiveIndicator active={connected} label={connected ? "Connected" : "Disconnected"} />
-      </div>
+    <div
+      style={{
+        background: "#0D1117",
+        borderBottom: "1px solid #1C2128",
+        height: 48,
+        padding: "0 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        flexShrink: 0,
+      }}
+    >
+      {/* Left label */}
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          fontWeight: 600,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color: "#4B5563",
+        }}
+      >
+        AGENTS
+      </span>
 
-      <div className="grid grid-cols-5 gap-2">
-        {AGENT_ORDER.map((agent) => {
-          const isActive = activeAgents[agent];
-          const status = getAgentStatus(agent);
-          const score = getAgentScore(agent);
-          const color = AGENT_COLORS[agent];
+      {/* Vertical separator */}
+      <div style={{ width: 1, height: 20, background: "#1C2128", flexShrink: 0 }} />
 
-          return (
-            <div
-              key={agent}
-              className={cn(
-                "flex items-center gap-2 py-2 px-3 rounded-md border transition-all",
-                isActive
-                  ? "border-[var(--janus-blue)] bg-[var(--janus-blue)]/10"
-                  : "border-[var(--janus-border)] bg-[var(--janus-background)]"
-              )}
-            >
-              <div className="flex-shrink-0 relative">
+      {/* Agent items */}
+      {AGENT_ORDER.map((agent, idx) => {
+        const isActive = !!activeAgents[agent];
+        const dotColor = getDotColor(isActive);
+
+        return (
+          <div key={agent} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {/* Status dot */}
+              <div style={{ position: "relative", width: 6, height: 6, flexShrink: 0 }}>
                 <div
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: color }}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: dotColor,
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                  }}
                 />
                 {isActive && (
-                  <div className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--janus-blue)] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--janus-blue)]"></span>
-                  </div>
+                  <div
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "#22C55E",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite",
+                      opacity: 0.6,
+                    }}
+                  />
                 )}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-[var(--janus-text-primary)] truncate">
-                  {AGENT_DISPLAY_NAMES[agent]}
-                </div>
-                <div
-                  className={cn(
-                    "text-xs",
-                    isActive
-                      ? "text-[var(--janus-blue)]"
-                      : "text-[var(--janus-text-muted)]"
-                  )}
-                >
-                  {status}
-                </div>
-              </div>
+              {/* Agent name */}
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#E2E8F0",
+                }}
+              >
+                {SHORT_NAMES[agent]}
+              </span>
 
-              {score !== null && <ScoreBadge score={score} size="sm" />}
+              {/* Status text */}
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 12,
+                  color: isActive ? "#4CADCE" : "#4B5563",
+                }}
+              >
+                {isActive ? "analyzing..." : "idle"}
+              </span>
             </div>
-          );
-        })}
+
+            {/* Separator between items (not after last) */}
+            {idx < AGENT_ORDER.length - 1 && (
+              <div style={{ width: 1, height: 20, background: "#1C2128", flexShrink: 0 }} />
+            )}
+          </div>
+        );
+      })}
+
+      {/* Right side: connection status */}
+      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+        <div
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: connected ? "#22C55E" : "#EF4444",
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            color: connected ? "#22C55E" : "#EF4444",
+          }}
+        >
+          {connected ? "CONNECTED" : "DISCONNECTED"}
+        </span>
       </div>
+
+      <style>{`
+        @keyframes ping {
+          75%, 100% { transform: scale(2.5); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

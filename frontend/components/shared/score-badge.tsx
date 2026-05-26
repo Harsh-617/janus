@@ -30,8 +30,8 @@ export function ScoreBadge({ score, size = "md" }: ScoreBadgeProps) {
 
   const sizeStyle =
     size === "sm"
-      ? { fontSize: 10, padding: "2px 6px" }
-      : { fontSize: 13, padding: "3px 10px" };
+      ? { fontSize: 12, padding: "3px 8px" }
+      : { fontSize: 15, padding: "4px 12px" };
 
   return (
     <span
