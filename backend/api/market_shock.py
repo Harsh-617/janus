@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from services.cycle_scheduler import set_market_shock, get_scheduler_status
+from services.cycle_scheduler import set_market_shock, get_scheduler_status, broadcast_event
 from db.firestore_client import save_portfolio, get_portfolio
 from config import settings
 from datetime import datetime, timezone
@@ -167,6 +167,11 @@ async def activate_circuit_breaker():
         await save_portfolio(settings.FIRESTORE_PORTFOLIO_ID, portfolio)
     from services.cycle_scheduler import stop_scheduler
     stop_scheduler()
+    await broadcast_event("circuit_breaker_activated", {
+        "cycle_id": "manual",
+        "reason": "Manual circuit breaker activation from dashboard",
+        "cooldown_minutes": 15
+    })
     logging.warning("[CircuitBreaker] Manually activated")
     return {"status": "circuit_breaker_active", "message": "Trading halted"}
 

@@ -5,8 +5,6 @@ import {
   applyPresetMarketShock,
   clearMarketShock,
   fetchMarketShockStatus,
-  activateCircuitBreaker,
-  releaseCircuitBreaker,
   runCycleOnce,
   startStream,
   stopStream,
@@ -83,6 +81,7 @@ export function MarketShockPanel() {
   const [parseError, setParseError] = useState<string | null>(null);
   const [nlFocused, setNlFocused] = useState(false);
   const [parseHover, setParseHover] = useState(false);
+  const [circuitBreakerActive, setCircuitBreakerActive] = useState(false);
 
   const fetchStatuses = async () => {
     try {
@@ -92,6 +91,13 @@ export function MarketShockPanel() {
       ]);
       setShockStatus(shock);
       setStreamStatus(stream);
+    } catch {}
+    try {
+      const portfolioRes = await fetch(`${API_BASE}/api/portfolio`);
+      if (portfolioRes.ok) {
+        const portfolio = await portfolioRes.json();
+        setCircuitBreakerActive(!!portfolio.circuit_breaker_active);
+      }
     } catch {}
   };
 
@@ -153,11 +159,9 @@ export function MarketShockPanel() {
   const handleCircuitBreaker = async (activate: boolean) => {
     try {
       setLoading(activate ? "activate_cb" : "release_cb");
-      if (activate) {
-        await activateCircuitBreaker();
-      } else {
-        await releaseCircuitBreaker();
-      }
+      await fetch(`${API_BASE}/api/circuit-breaker/${activate ? "activate" : "release"}`, {
+        method: "POST",
+      });
       await fetchStatuses();
     } catch {}
     finally {
@@ -548,17 +552,21 @@ export function MarketShockPanel() {
           {SEP}
 
           <BarButton
-            onClick={() => handleCircuitBreaker(true)}
+            onClick={() => handleCircuitBreaker(!circuitBreakerActive)}
             disabled={!!loading}
-            style={{ color: "#EF4444", borderColor: "#3A0A0A" }}
+            style={
+              circuitBreakerActive
+                ? { color: "#3FB950", borderColor: "#3FB950", background: "#0A1A0A" }
+                : { color: "#EF4444", borderColor: "#EF4444" }
+            }
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#1F0A0A";
+              e.currentTarget.style.background = circuitBreakerActive ? "#0D2A0D" : "#1F0A0A";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.background = circuitBreakerActive ? "#0A1A0A" : "transparent";
             }}
           >
-            {loading === "activate_cb" ? "…" : "CIRCUIT BREAKER"}
+            {loading === "activate_cb" || loading === "release_cb" ? "…" : circuitBreakerActive ? "RELEASE" : "CIRCUIT BREAKER"}
           </BarButton>
 
           {shockStatus?.active && (
