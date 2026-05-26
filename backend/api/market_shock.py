@@ -172,6 +172,7 @@ async def activate_circuit_breaker():
         "reason": "Manual circuit breaker activation from dashboard",
         "cooldown_minutes": 15
     })
+    print("SSE: circuit_breaker_activated broadcast sent")
     logging.warning("[CircuitBreaker] Manually activated")
     return {"status": "circuit_breaker_active", "message": "Trading halted"}
 
