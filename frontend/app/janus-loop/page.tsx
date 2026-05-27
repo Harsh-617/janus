@@ -103,6 +103,13 @@ export default function JanusLoopPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderForm, setBuilderForm] = useState({ target_agent: "", condition: "", rule: "", rationale: "" });
+  const [builderLoading, setBuilderLoading] = useState(false);
+  const [builderSuccess, setBuilderSuccess] = useState(false);
+  const [builderError, setBuilderError] = useState<string | null>(null);
+  const [validationResult, setValidationResult] = useState<{ is_valid: boolean; reason: string; suggestions: Array<{ condition: string; rule: string; rationale: string }> } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   const triggerBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -149,6 +156,53 @@ export default function JanusLoopPage() {
       clearInterval(poll);
     };
   }, []);
+
+  async function handleValidateAndInject() {
+    if (!builderForm.condition || !builderForm.rule || !builderForm.rationale) {
+      setBuilderError("All fields are required.");
+      return;
+    }
+    setIsValidating(true);
+    setValidationResult(null);
+    setBuilderError(null);
+    try {
+      const res = await fetch(`${BASE_URL}/api/constraints/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(builderForm),
+      });
+      const result = await res.json();
+      setValidationResult(result);
+      if (result.is_valid) {
+        await handleInjectConstraint();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setIsValidating(false);
+  }
+
+  async function handleInjectConstraint() {
+    setBuilderLoading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/constraints`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...builderForm,
+          target_agent: builderForm.target_agent || "trading_agent",
+        }),
+      });
+      if (!res.ok) throw new Error(`POST /api/constraints failed: ${res.status}`);
+      setBuilderSuccess(true);
+      setBuilderForm({ target_agent: "", condition: "", rule: "", rationale: "" });
+      await fetchAll();
+      setTimeout(() => setBuilderSuccess(false), 2000);
+    } catch (e) {
+      console.error(e);
+    }
+    setBuilderLoading(false);
+  }
 
   async function handleTrigger() {
     if (isTriggering) return;
@@ -405,6 +459,138 @@ export default function JanusLoopPage() {
               );
             })
           )}
+
+          {/* ── BUILD CONSTRAINT ── */}
+          <div id="build-constraint-section" style={{ padding: "0 14px" }}>
+            <div
+              onClick={() => {
+                const opening = !builderOpen;
+                setBuilderOpen(opening);
+                if (opening) setTimeout(() => {
+                  const el = document.getElementById("build-constraint-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 50);
+              }}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: "1px solid #1C2128", cursor: "pointer" }}
+            >
+              <span style={{ fontFamily: MONO, fontSize: 11, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                BUILD CONSTRAINT
+              </span>
+              <span style={{ fontSize: 12, color: "#4B5563" }}>{builderOpen ? "▾" : "▸"}</span>
+            </div>
+
+            {builderOpen && (
+              <div style={{ paddingBottom: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div>
+                  <div style={{ fontFamily: MONO, fontSize: 10, color: "#8B949E", textTransform: "uppercase", marginBottom: 3 }}>TARGET AGENT</div>
+                  <select
+                    value={builderForm.target_agent || "trading_agent"}
+                    onChange={(e) => setBuilderForm({ ...builderForm, target_agent: e.target.value })}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#C9A84C"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "#1C2128"; }}
+                    style={{ background: "#080A0C", border: "1px solid #1C2128", color: "#E6EDF3", fontFamily: MONO, fontSize: 12, padding: "6px 10px", borderRadius: 3, width: "100%" }}
+                  >
+                    <option value="trading_agent">Trading Agent</option>
+                    <option value="risk_agent">Risk Agent</option>
+                    <option value="fraud_agent">Fraud Intelligence Agent</option>
+                    <option value="regulator_agent">Regulator Agent</option>
+                    <option value="llm_judge">LLM Judge</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: MONO, fontSize: 10, color: "#8B949E", textTransform: "uppercase", marginBottom: 3 }}>CONDITION</div>
+                  <input
+                    type="text"
+                    value={builderForm.condition}
+                    onChange={(e) => { setBuilderError(null); setValidationResult(null); setBuilderForm({ ...builderForm, condition: e.target.value }); }}
+                    placeholder="e.g. when proposed trade exceeds 30% of portfolio"
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#C9A84C"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "#1C2128"; }}
+                    style={{ background: "#080A0C", border: "1px solid #1C2128", color: "#E6EDF3", fontFamily: MONO, fontSize: 12, padding: "6px 10px", borderRadius: 3, width: "100%", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: MONO, fontSize: 10, color: "#8B949E", textTransform: "uppercase", marginBottom: 3 }}>RULE</div>
+                  <input
+                    type="text"
+                    value={builderForm.rule}
+                    onChange={(e) => { setBuilderError(null); setValidationResult(null); setBuilderForm({ ...builderForm, rule: e.target.value }); }}
+                    placeholder="e.g. reduce position size by 50%"
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#C9A84C"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "#1C2128"; }}
+                    style={{ background: "#080A0C", border: "1px solid #1C2128", color: "#E6EDF3", fontFamily: MONO, fontSize: 12, padding: "6px 10px", borderRadius: 3, width: "100%", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontFamily: MONO, fontSize: 10, color: "#8B949E", textTransform: "uppercase", marginBottom: 3 }}>RATIONALE</div>
+                  <textarea
+                    rows={2}
+                    value={builderForm.rationale}
+                    onChange={(e) => { setBuilderError(null); setValidationResult(null); setBuilderForm({ ...builderForm, rationale: e.target.value }); }}
+                    placeholder="e.g. historical data shows aggressive sizing increases risk"
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#C9A84C"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "#1C2128"; }}
+                    style={{ background: "#080A0C", border: "1px solid #1C2128", color: "#E6EDF3", fontFamily: MONO, fontSize: 12, padding: "6px 10px", borderRadius: 3, width: "100%", resize: "vertical", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <button
+                  onClick={handleValidateAndInject}
+                  disabled={isValidating || builderLoading}
+                  onMouseEnter={(e) => { if (!isValidating && !builderLoading) (e.currentTarget as HTMLButtonElement).style.background = "#1F1800"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#130F00"; }}
+                  style={{ background: "#130F00", border: "1px solid #C9A84C", color: "#C9A84C", fontFamily: MONO, fontSize: 11, textTransform: "uppercase", padding: "7px 16px", borderRadius: 3, cursor: (isValidating || builderLoading) ? "not-allowed" : "pointer", width: "fit-content", opacity: (isValidating || builderLoading) ? 0.6 : 1 }}
+                >
+                  {isValidating ? "VALIDATING..." : "INJECT CONSTRAINT"}
+                </button>
+
+                {validationResult && !validationResult.is_valid && (
+                  <div style={{ background: "#1F0A0A", border: "1px solid #EF4444", borderRadius: 3, padding: 10, marginTop: 8 }}>
+                    <div style={{ fontFamily: MONO, fontSize: 11, color: "#EF4444" }}>
+                      {"⚠ TOO VAGUE "}
+                      <span style={{ color: "#FCA5A5" }}>{validationResult.reason}</span>
+                    </div>
+                    <div style={{ fontFamily: MONO, fontSize: 10, color: "#8B949E", marginTop: 8 }}>
+                      SUGGESTED ALTERNATIVES:
+                    </div>
+                    {validationResult.suggestions.map((s, i) => (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setBuilderForm({ ...builderForm, condition: s.condition, rule: s.rule, rationale: s.rationale });
+                          setValidationResult(null);
+                        }}
+                        style={{ background: "#0D1117", border: "1px solid #1C2128", borderRadius: 3, padding: 8, marginTop: 4, cursor: "pointer" }}
+                      >
+                        <div style={{ fontFamily: MONO, fontSize: 10 }}>
+                          <span style={{ color: "#8B949E" }}>{"IF: "}</span>
+                          <span style={{ color: "#E6EDF3" }}>{s.condition}</span>
+                        </div>
+                        <div style={{ fontFamily: MONO, fontSize: 10, marginTop: 2 }}>
+                          <span style={{ color: "#8B949E" }}>{"THEN: "}</span>
+                          <span style={{ color: "#E6EDF3" }}>{s.rule}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {builderSuccess && (
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: "#3FB950" }}>
+                    ✓ CONSTRAINT INJECTED — ACTIVE ON NEXT CYCLE
+                  </span>
+                )}
+                {builderError && (
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: "#EF4444" }}>
+                    {builderError}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* RIGHT COLUMN */}

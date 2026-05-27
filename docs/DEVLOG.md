@@ -1259,3 +1259,27 @@ makes high-severity fraud alerts and circuit breaker events unmissable.
 ### Also fixed
 - frontend/app/agents/page.tsx + components/agents/agent-card.tsx
   - All 5 agent cards now stretch to equal height (alignItems stretch + height 100%)
+
+---
+
+## Feature: Constraint Builder UI
+**Date**: 2026-05-27
+
+### What was built
+- backend/api/routes/constraint_validate.py
+  - POST /api/constraints/validate — calls Groq to evaluate if a constraint
+    is specific enough to affect agent behavior
+  - Returns { is_valid, reason, suggestions: [{condition, rule, rationale}] }
+  - Fails open (is_valid: true) on parse error
+
+- backend/api/routes/constraints.py
+  - Added POST /api/constraints — creates a new constraint in Firestore
+  - Generates constraint_id, sets status ACTIVE, expires_after_cycles 50
+
+- frontend/app/janus-loop/page.tsx
+  - Collapsible BUILD CONSTRAINT section at bottom of constraints list
+  - Auto-scrolls into view when opened
+  - Fields: target agent dropdown, condition, rule, rationale
+  - AI validation before inject — vague constraints show 3 suggested
+    alternatives with click-to-fill behavior
+  - On success: constraint appears immediately in the list above

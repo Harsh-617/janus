@@ -95,6 +95,12 @@ try:
 except ImportError:
     logger.warning("api.routes.market_shock_parse router not found — skipping")
 
+try:
+    from api.routes.constraint_validate import router as constraint_validate_router
+    app.include_router(constraint_validate_router, prefix="/api", tags=["constraints"])
+except ImportError:
+    logger.warning("api.routes.constraint_validate router not found — skipping")
+
 
 @app.get("/health")
 async def health():
