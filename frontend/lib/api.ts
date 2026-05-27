@@ -40,7 +40,7 @@ export async function fetchTrades(limit: number = 50): Promise<Trade[]> {
 export async function fetchCycles(limit: number = 20): Promise<DecisionCycle[]> {
   const res = await fetch(`${API_BASE}/api/cycles?limit=${limit}`);
   if (!res.ok) throw new Error(`Cycles fetch failed: ${res.status}`);
-  return res.json();
+  return res.json().then((d) => d.cycles);
 }
 
 export function fetchAgents(): Promise<unknown[]> {
