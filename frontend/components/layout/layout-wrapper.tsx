@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
+import AgentChatDrawer from "./agent-chat-drawer";
 import { API_BASE } from "@/lib/constants";
 
 interface LayoutWrapperProps {
@@ -127,6 +128,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
           {children}
         </main>
       </div>
+      <AgentChatDrawer />
     </div>
   );
 }

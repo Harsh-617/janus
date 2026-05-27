@@ -1283,3 +1283,32 @@ makes high-severity fraud alerts and circuit breaker events unmissable.
   - AI validation before inject — vague constraints show 3 suggested
     alternatives with click-to-fill behavior
   - On success: constraint appears immediately in the list above
+
+---
+
+## Feature: Agent Chat Drawer
+**Date**: 2026-05-27
+
+### What was built
+- backend/api/routes/chat.py
+  - POST /api/chat — accepts { message, history }
+  - Fetches live context from Firestore: portfolio state, last 10 cycles, 
+    active constraints
+  - Builds a system prompt with real data injected
+  - Calls Groq (llama-3.3-70b-versatile) with full conversation history
+  - Restricted to only answer questions about the Janus system
+  - Returns { response: string }
+
+- frontend/components/layout/agent-chat-drawer.tsx
+  - Floating chat popup (320×400px) anchored bottom-left
+  - Toggle button styled to match sidebar nav icons
+  - Markdown rendering via react-markdown (bold in gold, lists, code blocks)
+  - Auto-scrolls to latest message
+  - Enter to send, CLEAR button resets session
+  - "JANUS IS THINKING..." loading indicator
+  - Restricted responses — off-topic questions are rejected
+
+### Why
+Makes the entire system queryable in natural language. Judges can ask 
+"why did the system hold in cycle 47?" or "which constraint improved 
+safety the most?" and get answers grounded in real Firestore data.
