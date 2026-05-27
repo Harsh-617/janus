@@ -66,9 +66,10 @@ async def regulator_agent_node(state: JanusState) -> dict:
 
     cycle_id = state["cycle_id"]
 
+    audit_trail_id = f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{str(uuid.uuid4())[:8]}"
+
     with trace_agent_call("regulator_agent", cycle_id) as span:
         try:
-            audit_trail_id = f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{str(uuid.uuid4())[:8]}"
 
             risk_report = state.get("risk_report", {})
             fraud_alerts = state.get("fraud_alerts", [])
@@ -166,7 +167,7 @@ Make your final regulatory decision.
                     "circuit_breaker_activated": False,
                     "cooldown_minutes": 0,
                     "reason": f"Regulator error — defaulting to HOLD: {str(e)}",
-                    "audit_trail_id": f"audit_error_{cycle_id}",
+                    "audit_trail_id": audit_trail_id,
                     "resume_conditions": [],
                     "trades_to_execute": [],
                     "compliance_score": 0.0,

@@ -193,7 +193,6 @@ Score this complete decision cycle across all 5 dimensions.
             return {"judge_scores": fallback}
         except Exception as e:
             logging.error(f"[Judge Agent] Error: {e}")
-            span.record_exception(e)
             fallback = {
                 "cycle_id": cycle_id,
                 "overall_score": 5.0,

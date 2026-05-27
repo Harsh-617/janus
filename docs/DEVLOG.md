@@ -1345,3 +1345,40 @@ safety the most?" and get answers grounded in real Firestore data.
    - fetchConstraints: 15s TTL  
    - fetchJanusLoopHistory: 30s TTL
    - fetchPortfolio, fetchCycles, fetchTrades remain uncached (real-time)
+
+---
+
+## Full Codebase Audit & Bug Fixes
+**Date**: 2026-05-27
+
+### Audit results: 18 HIGH, 27 MEDIUM, 6 LOW issues found and fixed
+
+### HIGH fixes
+- stream.py: Replaced singleton SSE queue with broadcast pattern (_subscribers list)
+  so all connected clients receive every event
+- gemini_client.py: Added asyncio.Lock() for thread-safe key rotation state
+- constraint_validate.py: Fail-safe now returns is_valid:false instead of true
+  on JSON parse error
+- news.py + cycle_scheduler.py: Wrapped synchronous requests.get() in 
+  asyncio.to_thread() to stop blocking the event loop
+- market-shock-panel.tsx: Fixed wrong endpoint /api/market-shock → 
+  /api/market-shock/custom for NL injection
+- api.ts: Fixed 4 fetch functions returning envelope objects instead of arrays
+  (fetchTrades, fetchConstraints, fetchMarketShockScenarios, fetchJanusLoopHistory)
+- layout-wrapper.tsx: Added SSE onerror reconnection logic (3s retry)
+- regulator_agent.py: Fixed NameError — audit_trail_id declared before try block
+
+### MEDIUM fixes
+- janus-loop/page.tsx: Error feedback in catch blocks, setTimeout memory leak fixed
+- audit/page.tsx: Error state shown to user, loadingMore leak fixed
+- layout-wrapper.tsx: Null-safe parsed.reason with fallback string
+- agent-chat-drawer.tsx: res.ok check before res.json()
+- hallucination-heatmap.tsx: AbortController on fetch to prevent stale state updates
+
+### LOW fixes
+- fraud_agent.py, judge_agent.py, risk_agent.py, trading_agent.py: 
+  Removed span.record_exception from outer except where span may be unbound
+- meta_agent.py: datetime.utcnow() → datetime.now(timezone.utc)
+- market_shock.py: Removed debug print() statement
+- memory_service.py: Silent except pass → logger.warning with error message
+- execution.py: Hardcoded "janus_main" → settings.FIRESTORE_PORTFOLIO_ID

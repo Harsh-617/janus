@@ -112,6 +112,7 @@ export default function JanusLoopPage() {
   const [isValidating, setIsValidating] = useState(false);
 
   const triggerBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const successTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   async function fetchStatus(): Promise<LoopStatus> {
     const res = await fetch(`${BASE_URL}/api/janus-loop/status`);
@@ -154,6 +155,7 @@ export default function JanusLoopPage() {
     return () => {
       cancelled = true;
       clearInterval(poll);
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
     };
   }, []);
 
@@ -178,6 +180,7 @@ export default function JanusLoopPage() {
       }
     } catch (e) {
       console.error(e);
+      setBuilderError("Something went wrong. Please try again.");
     }
     setIsValidating(false);
   }
@@ -197,9 +200,10 @@ export default function JanusLoopPage() {
       setBuilderSuccess(true);
       setBuilderForm({ target_agent: "", condition: "", rule: "", rationale: "" });
       await fetchAll();
-      setTimeout(() => setBuilderSuccess(false), 2000);
+      successTimerRef.current = setTimeout(() => setBuilderSuccess(false), 2000);
     } catch (e) {
       console.error(e);
+      setBuilderError("Something went wrong. Please try again.");
     }
     setBuilderLoading(false);
   }

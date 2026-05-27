@@ -17,36 +17,49 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   } | null>(null);
   const [bannerVisible, setBannerVisible] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    const eventSource = new EventSource(`${API_BASE}/api/stream`);
+    function connect() {
+      const eventSource = new EventSource(`${API_BASE}/api/stream`);
+      eventSourceRef.current = eventSource;
 
-    eventSource.onmessage = (e) => {
-      try {
-        const parsed = JSON.parse(e.data);
+      eventSource.onmessage = (e) => {
+        try {
+          const parsed = JSON.parse(e.data);
 
-        if (parsed.type === "circuit_breaker_activated") {
-          if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-          setAlertBanner({ type: "CIRCUIT_BREAKER", message: parsed.reason });
-          setBannerVisible(true);
-          dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
+          if (parsed.type === "circuit_breaker_activated") {
+            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+            setAlertBanner({ type: "CIRCUIT_BREAKER", message: parsed.reason ?? "Circuit breaker activated" });
+            setBannerVisible(true);
+            dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
+          }
+
+          if (parsed.type === "cycle_complete" && parsed.critical_finding) {
+            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+            setAlertBanner({ type: "FRAUD", message: parsed.critical_finding });
+            setBannerVisible(true);
+            dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
+          }
+
+          window.dispatchEvent(new CustomEvent('janus-sse', { detail: parsed }));
+        } catch {
+          // ignore parse errors
         }
+      };
 
-        if (parsed.type === "cycle_complete" && parsed.critical_finding) {
-          if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-          setAlertBanner({ type: "FRAUD", message: parsed.critical_finding });
-          setBannerVisible(true);
-          dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
-        }
+      eventSource.onerror = () => {
+        eventSource.close();
+        setTimeout(() => {
+          connect();
+        }, 3000);
+      };
+    }
 
-        window.dispatchEvent(new CustomEvent('janus-sse', { detail: parsed }));
-      } catch {
-        // ignore parse errors
-      }
-    };
+    connect();
 
     return () => {
-      eventSource.close();
+      eventSourceRef.current?.close();
       if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     };
   }, []);

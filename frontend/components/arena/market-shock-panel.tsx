@@ -79,6 +79,7 @@ export function MarketShockPanel() {
     interpreted_as: string;
   } | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [injectError, setInjectError] = useState<string | null>(null);
   const [nlFocused, setNlFocused] = useState(false);
   const [parseHover, setParseHover] = useState(false);
   const [circuitBreakerActive, setCircuitBreakerActive] = useState(false);
@@ -129,8 +130,9 @@ export function MarketShockPanel() {
 
   const handleInjectNL = async () => {
     if (!parsedPreview) return;
+    setInjectError(null);
     try {
-      await fetch(`${API_BASE}/api/market-shock`, {
+      const res = await fetch(`${API_BASE}/api/market-shock/custom`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -138,9 +140,12 @@ export function MarketShockPanel() {
           description: parsedPreview.interpreted_as,
         }),
       });
-    } catch {}
-    setNlInput("");
-    setParsedPreview(null);
+      if (!res.ok) throw new Error(`Inject failed: ${res.status}`);
+      setNlInput("");
+      setParsedPreview(null);
+    } catch (err) {
+      setInjectError(err instanceof Error ? err.message : "Failed to inject event.");
+    }
   };
 
   const handlePresetShock = async (scenarioId: string) => {
@@ -412,7 +417,7 @@ export function MarketShockPanel() {
                 INJECT EVENT
               </button>
               <button
-                onClick={() => setParsedPreview(null)}
+                onClick={() => { setParsedPreview(null); setInjectError(null); }}
                 style={{
                   background: "transparent",
                   border: "1px solid #30363D",
@@ -429,6 +434,18 @@ export function MarketShockPanel() {
                 DISMISS
               </button>
             </div>
+            {injectError && (
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  color: "#F85149",
+                  marginTop: 6,
+                }}
+              >
+                {injectError}
+              </div>
+            )}
           </div>
         )}
       </div>

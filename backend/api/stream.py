@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from services.cycle_scheduler import (
-    broadcast_event, _event_queue, start_scheduler, stop_scheduler,
+    broadcast_event, subscribe, unsubscribe, start_scheduler, stop_scheduler,
     run_single_cycle, get_scheduler_status, set_market_shock
 )
 from config import settings
@@ -18,20 +18,21 @@ async def event_stream():
     Frontend connects here and receives real-time cycle events.
     """
     async def generate() -> AsyncGenerator[str, None]:
-        # Send initial connection event
-        yield f"data: {json.dumps({'type': 'connected', 'message': 'Janus stream connected'})}\n\n"
+        q = subscribe()
+        try:
+            yield f"data: {json.dumps({'type': 'connected', 'message': 'Janus stream connected'})}\n\n"
 
-        while True:
-            try:
-                # Wait for next event with timeout (send keepalive if none)
-                event = await asyncio.wait_for(_event_queue.get(), timeout=15.0)
-                yield f"data: {json.dumps(event)}\n\n"
-            except asyncio.TimeoutError:
-                # Keepalive ping
-                yield f"data: {json.dumps({'type': 'ping'})}\n\n"
-            except Exception as e:
-                logging.error(f"[SSE] Stream error: {e}")
-                break
+            while True:
+                try:
+                    event = await asyncio.wait_for(q.get(), timeout=15.0)
+                    yield f"data: {json.dumps(event)}\n\n"
+                except asyncio.TimeoutError:
+                    yield f"data: {json.dumps({'type': 'ping'})}\n\n"
+                except Exception as e:
+                    logging.error(f"[SSE] Stream error: {e}")
+                    break
+        finally:
+            unsubscribe(q)
 
     return StreamingResponse(
         generate(),

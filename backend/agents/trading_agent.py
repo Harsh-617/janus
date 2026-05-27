@@ -112,7 +112,6 @@ Analyze the above and propose your trades for this cycle.
             }
         except Exception as e:
             logging.error(f"[Trading Agent] Error: {e}")
-            span.record_exception(e)
             return {
                 "trading_proposal": [],
                 "trading_thesis": f"Error: {str(e)}",

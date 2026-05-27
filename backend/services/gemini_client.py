@@ -27,6 +27,7 @@ from config import settings
 _clients: list[tuple[str, groq.AsyncGroq]] | None = None
 _current_index: int = 0
 _exhausted_keys: set[str] = set()
+_lock = asyncio.Lock()
 
 
 def get_clients() -> list[tuple[str, groq.AsyncGroq]]:
@@ -54,20 +55,21 @@ async def generate(
     last_error: Exception | None = None
 
     while True:
-        available = [
-            (i, k, c)
-            for i, (k, c) in enumerate(all_clients)
-            if k not in _exhausted_keys
-        ]
-        if not available:
-            msg = "All Groq keys exhausted for today — waiting for reset"
-            logging.warning(f"[LLMClient] {msg}")
-            if last_error is not None:
-                raise last_error
-            raise RuntimeError(msg)
+        async with _lock:
+            available = [
+                (i, k, c)
+                for i, (k, c) in enumerate(all_clients)
+                if k not in _exhausted_keys
+            ]
+            if not available:
+                msg = "All Groq keys exhausted for today — waiting for reset"
+                logging.warning(f"[LLMClient] {msg}")
+                if last_error is not None:
+                    raise last_error
+                raise RuntimeError(msg)
 
-        pos = _current_index % len(available)
-        orig_idx, key, client = available[pos]
+            pos = _current_index % len(available)
+            orig_idx, key, client = available[pos]
 
         try:
             response = await client.chat.completions.create(
@@ -79,18 +81,21 @@ async def generate(
                     {"role": "user", "content": user_message},
                 ],
             )
-            _current_index = pos + 1
+            async with _lock:
+                _current_index = pos + 1
             return response.choices[0].message.content
         except groq.RateLimitError as e:
             last_error = e
             err_msg = str(e).lower()
             if "per day" in err_msg or "tokens per day" in err_msg or "tpd" in err_msg:
-                logging.warning(
-                    f"[LLMClient] Key {orig_idx} marked as daily-exhausted — removing from pool"
-                )
-                _exhausted_keys.add(key)
+                async with _lock:
+                    logging.warning(
+                        f"[LLMClient] Key {orig_idx} marked as daily-exhausted — removing from pool"
+                    )
+                    _exhausted_keys.add(key)
             elif "per minute" in err_msg or "tpm" in err_msg:
                 await asyncio.sleep(60)
-                _current_index = pos + 1
+                async with _lock:
+                    _current_index = pos + 1
             else:
                 raise

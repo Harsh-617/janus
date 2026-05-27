@@ -135,7 +135,6 @@ supports the proposed trades.
             }
         except Exception as e:
             logging.error(f"[Fraud Agent] Error: {e}")
-            span.record_exception(e)
             return {
                 "fraud_alerts": [],
                 "fraud_investigation_open": False,

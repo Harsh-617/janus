@@ -1,6 +1,8 @@
 import logging
 from db.firestore_client import get_agent_memory, save_agent_memory
 
+logger = logging.getLogger(__name__)
+
 AGENT_IDS = [
     "trading_agent",
     "risk_agent",
@@ -77,5 +79,5 @@ async def update_agent_memories(
             await save_agent_memory(agent_id, memory)
             logging.debug(f"[MemoryService] Updated memory for {agent_id} (v{memory['memory_version']})")
 
-        except Exception:
-            logging.exception(f"[MemoryService] Failed to update memory for {agent_id}")
+        except Exception as e:
+            logger.warning(f"Memory retrieval failed for agent: {e}")

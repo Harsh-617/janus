@@ -155,7 +155,7 @@ the underperforming dimensions. Do not duplicate existing constraints.
                 constraints_generated.append(constraint_record)
 
             constraint_ids = [c["constraint_id"] for c in constraints_generated]
-            loop_run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            loop_run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             scores_before = await get_scores_from_cycles(recent_cycles)
             experiment_id = await create_constraint_experiment(
                 constraint_ids=constraint_ids,

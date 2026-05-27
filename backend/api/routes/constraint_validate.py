@@ -53,4 +53,4 @@ async def validate_constraint(body: ConstraintValidateRequest):
         return json.loads(raw.strip())
     except (json.JSONDecodeError, ValueError) as exc:
         logger.warning("Failed to parse constraint validation response: %s", exc)
-        return {"is_valid": True}
+        return {"is_valid": False, "reason": "Validation service unavailable. Please try again.", "suggestions": []}

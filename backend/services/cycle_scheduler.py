@@ -14,30 +14,47 @@ from db.firestore_client import get_portfolio, get_active_constraints, db, COL_C
 from tools.market_data import get_live_market_data
 from tools.news import get_market_news
 
-# Global event queue — SSE clients subscribe to this
-_event_queue: asyncio.Queue = asyncio.Queue(maxsize=500)
+# Per-client subscriber queues — one Queue per connected SSE client
+_subscribers: list[asyncio.Queue] = []
 
 # Global state
 _scheduler_running: bool = False
 _current_cycle_number: int = 0
 _market_shock: dict = {"active": False, "description": "", "effects": {}}
 
+
+def subscribe() -> asyncio.Queue:
+    """Create a new subscriber queue and register it for broadcasts."""
+    q: asyncio.Queue = asyncio.Queue(maxsize=500)
+    _subscribers.append(q)
+    return q
+
+
+def unsubscribe(q: asyncio.Queue) -> None:
+    """Remove a subscriber queue (called on SSE client disconnect)."""
+    try:
+        _subscribers.remove(q)
+    except ValueError:
+        pass
+
+
 async def broadcast_event(event_type: str, data: dict) -> None:
-    """Put an event on the queue for all SSE subscribers."""
+    """Broadcast an event to all connected SSE subscribers."""
     event = {
         "type": event_type,
         "data": data,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
-    try:
-        _event_queue.put_nowait(event)
-    except asyncio.QueueFull:
-        # Drop oldest event to make room
+    for q in list(_subscribers):
         try:
-            _event_queue.get_nowait()
-            _event_queue.put_nowait(event)
-        except Exception:
-            pass
+            q.put_nowait(event)
+        except asyncio.QueueFull:
+            # Drop oldest event to make room
+            try:
+                q.get_nowait()
+                q.put_nowait(event)
+            except Exception:
+                pass
 
 # LEGACY: replaced by get_live_market_data()
 async def get_mock_market_data() -> tuple[dict, list]:
@@ -149,7 +166,7 @@ async def run_single_cycle() -> dict:
         # "Gold prices rise as dollar weakens",
         # "Energy stocks outperform as oil demand forecasts improve",
         # "Bond yields stabilize after recent volatility",
-        news_headlines = get_market_news(tickers=list(market_prices.keys()))
+        news_headlines = await get_market_news(tickers=list(market_prices.keys()))
         if _market_shock["active"] and _market_shock.get("description"):
             news_headlines.insert(0, f"BREAKING: {_market_shock['description']}")
         active_constraints = await get_active_constraints()

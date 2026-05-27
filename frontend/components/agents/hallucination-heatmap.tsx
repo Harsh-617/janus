@@ -76,7 +76,8 @@ export default function HallucinationHeatmap({ cycles: cyclesProp }: Hallucinati
 
   useEffect(() => {
     if (cyclesProp !== undefined) return;
-    fetch(`${API_BASE}/api/cycles?limit=50`)
+    const controller = new AbortController();
+    fetch(`${API_BASE}/api/cycles?limit=50`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch");
         return res.json();
@@ -86,10 +87,12 @@ export default function HallucinationHeatmap({ cycles: cyclesProp }: Hallucinati
         setLoading(false);
       })
       .catch((err) => {
+        if (err.name === "AbortError") return;
         console.error('Heatmap fetch error:', err);
         setError(true);
         setLoading(false);
       });
+    return () => controller.abort();
   }, [cyclesProp]);
 
   const cells: (Cycle | undefined)[] = Array.from({ length: 50 }, (_, i) => cycles[i]);

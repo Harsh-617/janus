@@ -34,7 +34,7 @@ export async function fetchPortfolio(): Promise<Portfolio> {
 export async function fetchTrades(limit: number = 50): Promise<Trade[]> {
   const res = await fetch(`${API_BASE}/api/trades?limit=${limit}`);
   if (!res.ok) throw new Error(`Trades fetch failed: ${res.status}`);
-  return res.json();
+  return res.json().then((d) => d.trades);
 }
 
 export async function fetchCycles(limit: number = 20): Promise<DecisionCycle[]> {
@@ -56,7 +56,7 @@ export function fetchConstraints(): Promise<BehavioralConstraint[]> {
   return cached("constraints", 15_000, () =>
     fetch(`${API_BASE}/api/constraints`).then((r) => {
       if (!r.ok) throw new Error(`Constraints fetch failed: ${r.status}`);
-      return r.json();
+      return r.json().then((d) => d.constraints);
     })
   );
 }
@@ -101,7 +101,7 @@ export function fetchJanusLoopHistory(limit: number = 20): Promise<JanusLoopHist
   return cached("janus-loop-history", 30_000, () =>
     fetch(`${API_BASE}/api/janus-loop/history?limit=${limit}`).then((r) => {
       if (!r.ok) throw new Error(`Janus loop history fetch failed: ${r.status}`);
-      return r.json();
+      return r.json().then((d) => d.constraints);
     })
   );
 }
@@ -120,7 +120,7 @@ export async function fetchMarketShockScenarios(): Promise<
   const res = await fetch(`${API_BASE}/api/market-shock/scenarios`);
   if (!res.ok)
     throw new Error(`Market shock scenarios fetch failed: ${res.status}`);
-  return res.json();
+  return res.json().then((d) => d.scenarios);
 }
 
 export async function applyPresetMarketShock(

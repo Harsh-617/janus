@@ -45,6 +45,7 @@ export default function AgentChatDrawer() {
           history: historyBeforeNewMessage,
         }),
       });
+      if (!res.ok) throw new Error("API error");
       const data = await res.json();
       setMessages((prev) => [
         ...prev,

@@ -141,7 +141,6 @@ Evaluate the risk of these proposed trades and issue your decision.
             }
         except Exception as e:
             logging.error(f"[Risk Agent] Error: {e}")
-            span.record_exception(e)
             return {
                 "risk_report": {
                     "decision": "VETO",

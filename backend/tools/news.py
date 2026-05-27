@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import requests
 
@@ -14,7 +15,7 @@ _FALLBACK_HEADLINES = [
 _exhausted_av_keys: set[str] = set()
 
 
-def get_market_news(tickers: list[str] = None, limit: int = 5) -> list[str]:
+async def get_market_news(tickers: list[str] = None, limit: int = 5) -> list[str]:
     """
     Fetches recent market news headlines from Alpha Vantage.
     Returns a list of headline strings.
@@ -38,7 +39,8 @@ def get_market_news(tickers: list[str] = None, limit: int = 5) -> list[str]:
             if tickers:
                 params["tickers"] = ",".join(tickers)
 
-            response = requests.get(
+            response = await asyncio.to_thread(
+                requests.get,
                 "https://www.alphavantage.co/query",
                 params=params,
                 timeout=10,

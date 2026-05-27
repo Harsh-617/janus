@@ -549,6 +549,7 @@ const TABLE_COLS = [
 export default function AuditPage() {
   const [cycles, setCycles] = useState<DecisionCycle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [limit, setLimit] = useState(50);
   const [loadingMore, setLoadingMore] = useState(false);
   const limitRef = useRef(limit);
@@ -582,9 +583,12 @@ export default function AuditPage() {
         (a, b) => getTimestamp(b) - getTimestamp(a)
       );
       setCycles(sorted);
+      setFetchError(false);
       if (newLimit) setLimit(newLimit);
     } catch (error) {
       console.error("Failed to fetch cycles:", error);
+      setFetchError(true);
+      setLoadingMore(false);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -811,6 +815,20 @@ export default function AuditPage() {
 
         <RefreshButton onClick={() => fetchData()} />
       </div>
+
+      {/* Fetch error */}
+      {fetchError && (
+        <div
+          style={{
+            padding: "6px 20px",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            color: "#EF4444",
+          }}
+        >
+          FAILED TO LOAD — RETRYING...
+        </div>
+      )}
 
       {/* Table */}
       {loading ? (
