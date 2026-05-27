@@ -485,7 +485,7 @@ export default function AgentsPage() {
         </div>
       )}
 
-      <HallucinationHeatmap />
+      <HallucinationHeatmap cycles={cycles} />
     </div>
   );
 }

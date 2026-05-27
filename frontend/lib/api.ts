@@ -12,6 +12,19 @@ import type {
   HealthStatus,
 } from "./types";
 
+const cache = new Map<string, { data: unknown; timestamp: number }>();
+
+function cached<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
+  const entry = cache.get(key);
+  if (entry && Date.now() - entry.timestamp < ttlMs) {
+    return Promise.resolve(entry.data as T);
+  }
+  return fetcher().then((data) => {
+    cache.set(key, { data, timestamp: Date.now() });
+    return data;
+  });
+}
+
 export async function fetchPortfolio(): Promise<Portfolio> {
   const res = await fetch(`${API_BASE}/api/portfolio`);
   if (!res.ok) throw new Error(`Portfolio fetch failed: ${res.status}`);
@@ -30,10 +43,22 @@ export async function fetchCycles(limit: number = 20): Promise<DecisionCycle[]> 
   return res.json();
 }
 
-export async function fetchConstraints(): Promise<BehavioralConstraint[]> {
-  const res = await fetch(`${API_BASE}/api/constraints`);
-  if (!res.ok) throw new Error(`Constraints fetch failed: ${res.status}`);
-  return res.json();
+export function fetchAgents(): Promise<unknown[]> {
+  return cached("agents", 10_000, () =>
+    fetch(`${API_BASE}/api/agents`).then((r) => {
+      if (!r.ok) throw new Error(`Agents fetch failed: ${r.status}`);
+      return r.json();
+    })
+  );
+}
+
+export function fetchConstraints(): Promise<BehavioralConstraint[]> {
+  return cached("constraints", 15_000, () =>
+    fetch(`${API_BASE}/api/constraints`).then((r) => {
+      if (!r.ok) throw new Error(`Constraints fetch failed: ${r.status}`);
+      return r.json();
+    })
+  );
 }
 
 export async function fetchStreamStatus(): Promise<StreamStatus> {
@@ -72,12 +97,13 @@ export async function fetchJanusLoopStatus(): Promise<JanusLoopStatus> {
   return res.json();
 }
 
-export async function fetchJanusLoopHistory(
-  limit: number = 20
-): Promise<JanusLoopHistory[]> {
-  const res = await fetch(`${API_BASE}/api/janus-loop/history?limit=${limit}`);
-  if (!res.ok) throw new Error(`Janus loop history fetch failed: ${res.status}`);
-  return res.json();
+export function fetchJanusLoopHistory(limit: number = 20): Promise<JanusLoopHistory[]> {
+  return cached("janus-loop-history", 30_000, () =>
+    fetch(`${API_BASE}/api/janus-loop/history?limit=${limit}`).then((r) => {
+      if (!r.ok) throw new Error(`Janus loop history fetch failed: ${r.status}`);
+      return r.json();
+    })
+  );
 }
 
 export async function triggerJanusLoop(): Promise<{ message: string }> {

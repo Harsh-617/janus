@@ -38,6 +38,8 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
           setBannerVisible(true);
           dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
         }
+
+        window.dispatchEvent(new CustomEvent('janus-sse', { detail: parsed }));
       } catch {
         // ignore parse errors
       }

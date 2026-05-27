@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect, useMemo } from "react";
+import { Fragment, useState, useEffect, useRef, useMemo } from "react";
 import { fetchCycles } from "@/lib/api";
 import type { DecisionCycle } from "@/lib/types";
 import { StatusIndicator } from "@/components/shared/status-indicator";
@@ -551,6 +551,8 @@ export default function AuditPage() {
   const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState(50);
   const [loadingMore, setLoadingMore] = useState(false);
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -574,7 +576,7 @@ export default function AuditPage() {
       } else {
         setLoading(true);
       }
-      const raw = await fetchCycles(newLimit || limit);
+      const raw = await fetchCycles(newLimit ?? limitRef.current);
       const rawCycles = Array.isArray(raw) ? raw : (raw as any).cycles || [];
       const sorted = [...rawCycles].sort(
         (a, b) => getTimestamp(b) - getTimestamp(a)
@@ -593,11 +595,7 @@ export default function AuditPage() {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [limit]);
-
-  useEffect(() => {
-    fetchData(cycleLimit);
-  }, [cycleLimit]);
+  }, []);
 
   const filteredCycles = useMemo(() => {
     if (!Array.isArray(cycles)) return [];
@@ -761,9 +759,12 @@ export default function AuditPage() {
 
         <select
           value={cycleLimit}
-          onChange={(e) =>
-            setCycleLimit(Number(e.target.value) as 10 | 20 | 50 | 100)
-          }
+          onChange={(e) => {
+            const newLimit = Number(e.target.value) as 10 | 20 | 50 | 100;
+            setCycleLimit(newLimit);
+            setLimit(newLimit);
+            fetchData(newLimit);
+          }}
           style={{
             background: "#080A0C",
             border: "1px solid #1C2128",

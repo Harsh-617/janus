@@ -2,13 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { API_BASE } from "@/lib/constants";
+import type { DecisionCycle } from "@/lib/types";
 
-interface Cycle {
-  cycle_id: string;
-  cycle_number: number;
-  judge_hallucination_risk: number;
-  critical_finding?: string;
-}
+type Cycle = Pick<DecisionCycle, "cycle_id" | "cycle_number" | "judge_hallucination_risk" | "critical_finding">;
 
 function getSquareStyle(score: number | undefined): {
   background: string;
@@ -54,12 +50,18 @@ function Square({
   );
 }
 
-export default function HallucinationHeatmap() {
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [loading, setLoading] = useState(true);
+interface HallucinationHeatmapProps {
+  cycles?: DecisionCycle[];
+}
+
+export default function HallucinationHeatmap({ cycles: cyclesProp }: HallucinationHeatmapProps) {
+  const [fetchedCycles, setFetchedCycles] = useState<Cycle[]>([]);
+  const [loading, setLoading] = useState(cyclesProp === undefined);
   const [error, setError] = useState(false);
   const [hoveredCycle, setHoveredCycle] = useState<Cycle | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+
+  const cycles: Cycle[] = cyclesProp ?? fetchedCycles;
 
   const handleEnter = (e: React.MouseEvent<HTMLDivElement>, cycle: Cycle) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -73,14 +75,14 @@ export default function HallucinationHeatmap() {
   };
 
   useEffect(() => {
+    if (cyclesProp !== undefined) return;
     fetch(`${API_BASE}/api/cycles?limit=50`)
       .then((res) => {
-        console.log('Heatmap response status:', res.status);
         if (!res.ok) throw new Error("Failed to fetch");
         return res.json();
       })
       .then((data) => {
-        setCycles(data.cycles);
+        setFetchedCycles(data.cycles);
         setLoading(false);
       })
       .catch((err) => {
@@ -88,7 +90,7 @@ export default function HallucinationHeatmap() {
         setError(true);
         setLoading(false);
       });
-  }, []);
+  }, [cyclesProp]);
 
   const cells: (Cycle | undefined)[] = Array.from({ length: 50 }, (_, i) => cycles[i]);
 

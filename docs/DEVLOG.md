@@ -1312,3 +1312,36 @@ makes high-severity fraud alerts and circuit breaker events unmissable.
 Makes the entire system queryable in natural language. Judges can ask 
 "why did the system hold in cycle 47?" or "which constraint improved 
 safety the most?" and get answers grounded in real Firestore data.
+
+---
+
+## Performance Optimizations
+**Date**: 2026-05-27
+
+### Problems fixed
+1. Duplicate SSE connection on Arena page
+   - layout-wrapper.tsx and use-agent-stream.ts both opened /api/stream
+   - Fixed: layout-wrapper is now the single SSE connection app-wide
+   - All consumers receive events via window CustomEvent 'janus-sse' bus
+   - Result: 1 SSE connection instead of 2 on the Arena page
+
+2. Duplicate /api/cycles fetch on Agents page
+   - agents/page.tsx and HallucinationHeatmap both fetched /api/cycles?limit=50
+   - Fixed: page passes cycles as a prop to HallucinationHeatmap
+   - Heatmap skips internal fetch when prop is provided
+   - Result: 1 fetch instead of 2 on the Agents page
+
+3. Duplicate /api/cycles fetch on Audit page
+   - Two useEffects both fired fetchData() on mount
+   - cycleLimit change triggered a cascade of 2 fetches
+   - Fixed: single useEffect with limitRef to avoid stale closures
+   - onChange calls fetchData directly, no effect dependency cascade
+   - Result: 1 fetch on mount, 1 fetch on limit change
+
+4. Client-side caching in api.ts
+   - All API calls were uncached — every render hit the network
+   - Added in-memory cache utility with TTL
+   - fetchAgents: 10s TTL
+   - fetchConstraints: 15s TTL  
+   - fetchJanusLoopHistory: 30s TTL
+   - fetchPortfolio, fetchCycles, fetchTrades remain uncached (real-time)
