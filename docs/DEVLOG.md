@@ -1,3 +1,17 @@
+## Fix: Alpha Vantage fallback cache on full key exhaustion
+**Date**: 2026-05-28
+**File**: `backend/tools/news.py`
+**What was fixed**: With 4 Alpha Vantage keys rotating at 25 req/day each and a 60-second cycle interval, all keys exhaust in under 2 hours. Previously the Trading Agent received an empty news list (`[]`), silently degrading its reasoning quality with no context to act on.
+
+**Changes**:
+- Expanded `_FALLBACK_HEADLINES` to 10 generic but realistic financial headlines (was 5).
+- Added module-level `_all_keys_exhausted: bool` and `_exhaustion_reset_time: datetime | None`.
+- At the top of every `get_market_news()` call: if exhaustion flag is set and cooldown has not expired, return `FALLBACK_HEADLINES` immediately (skips all API calls). If cooldown has expired, reset the flag and retry normally.
+- When all available keys fail with a daily-limit `"Information"` response or an exception in the same call attempt, set the exhaustion flag with a 12-hour reset time and log: "All Alpha Vantage keys exhausted. Using fallback headlines for next 12 hours."
+- Any path that previously returned `[]` (no feed, all keys gone, all exceptions) now returns `FALLBACK_HEADLINES` instead — the Trading Agent always receives non-empty news context.
+
+---
+
 ## 2026-05-28
 
 ## Fix: agent_thinking SSE events fired simultaneously instead of sequentially
