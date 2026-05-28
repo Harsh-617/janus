@@ -74,6 +74,13 @@ async def judge_agent_node(state: JanusState) -> dict:
 
     cycle_id = state["cycle_id"]
 
+    from services.cycle_scheduler import broadcast_event
+    await broadcast_event("agent_thinking", {
+        "agent": "judge_agent",
+        "status": "thinking",
+        "cycle_id": state.get("cycle_id", "unknown"),
+    })
+
     with trace_agent_call("judge_agent", cycle_id) as span:
         try:
             regulator_decision = state.get("regulator_decision", {})
@@ -173,10 +180,20 @@ Score this complete decision cycle across all 5 dimensions.
             else:
                 logging.info(f"[Judge] Cycle {cycle_id}: Score {overall}/10")
 
+            await broadcast_event("agent_done", {
+                "agent": "judge_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {"judge_scores": judge_scores}
 
         except json.JSONDecodeError as e:
             logging.error(f"[Judge Agent] JSON parse error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "judge_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             fallback = {
                 "cycle_id": cycle_id,
                 "overall_score": 5.0,
@@ -193,6 +210,11 @@ Score this complete decision cycle across all 5 dimensions.
             return {"judge_scores": fallback}
         except Exception as e:
             logging.error(f"[Judge Agent] Error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "judge_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             fallback = {
                 "cycle_id": cycle_id,
                 "overall_score": 5.0,

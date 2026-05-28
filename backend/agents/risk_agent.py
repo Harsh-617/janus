@@ -58,8 +58,20 @@ async def risk_agent_node(state: JanusState) -> dict:
 
     cycle_id = state["cycle_id"]
 
+    from services.cycle_scheduler import broadcast_event
+    await broadcast_event("agent_thinking", {
+        "agent": "risk_agent",
+        "status": "thinking",
+        "cycle_id": state.get("cycle_id", "unknown"),
+    })
+
     if not state.get("trading_proposal"):
         logging.info(f"[Risk Agent] Cycle {cycle_id}: No trades to evaluate")
+        await broadcast_event("agent_done", {
+            "agent": "risk_agent",
+            "status": "done",
+            "cycle_id": state.get("cycle_id", "unknown"),
+        })
         return {
             "risk_report": {
                 "decision": "APPROVE",
@@ -114,6 +126,11 @@ Evaluate the risk of these proposed trades and issue your decision.
                 f"{risk_report.get('proposed_var', 0):.3f}"
             )
 
+            await broadcast_event("agent_done", {
+                "agent": "risk_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "risk_report": {
                     "decision": decision,
@@ -128,6 +145,11 @@ Evaluate the risk of these proposed trades and issue your decision.
 
         except json.JSONDecodeError as e:
             logging.error(f"[Risk Agent] JSON parse error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "risk_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "risk_report": {
                     "decision": "VETO",
@@ -141,6 +163,11 @@ Evaluate the risk of these proposed trades and issue your decision.
             }
         except Exception as e:
             logging.error(f"[Risk Agent] Error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "risk_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "risk_report": {
                     "decision": "VETO",

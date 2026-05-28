@@ -49,6 +49,13 @@ async def trading_agent_node(state: JanusState) -> dict:
 
     cycle_id = state["cycle_id"]
 
+    from services.cycle_scheduler import broadcast_event
+    await broadcast_event("agent_thinking", {
+        "agent": "trading_agent",
+        "status": "thinking",
+        "cycle_id": state.get("cycle_id", "unknown"),
+    })
+
     with trace_agent_call("trading_agent", cycle_id) as span:
         try:
             portfolio = state["portfolio"]
@@ -97,6 +104,11 @@ Analyze the above and propose your trades for this cycle.
                 f"— {len(parsed.get('trades', []))} trades proposed"
             )
 
+            await broadcast_event("agent_done", {
+                "agent": "trading_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "trading_proposal": parsed.get("trades", []),
                 "trading_thesis": parsed.get("thesis", ""),
@@ -105,6 +117,11 @@ Analyze the above and propose your trades for this cycle.
 
         except json.JSONDecodeError as e:
             logging.error(f"[Trading Agent] JSON parse error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "trading_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "trading_proposal": [],
                 "trading_thesis": "Error: could not parse trading agent output",
@@ -112,6 +129,11 @@ Analyze the above and propose your trades for this cycle.
             }
         except Exception as e:
             logging.error(f"[Trading Agent] Error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "trading_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "trading_proposal": [],
                 "trading_thesis": f"Error: {str(e)}",

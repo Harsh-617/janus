@@ -66,6 +66,13 @@ async def regulator_agent_node(state: JanusState) -> dict:
 
     cycle_id = state["cycle_id"]
 
+    from services.cycle_scheduler import broadcast_event
+    await broadcast_event("agent_thinking", {
+        "agent": "regulator_agent",
+        "status": "thinking",
+        "cycle_id": state.get("cycle_id", "unknown"),
+    })
+
     audit_trail_id = f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{str(uuid.uuid4())[:8]}"
 
     with trace_agent_call("regulator_agent", cycle_id) as span:
@@ -127,6 +134,11 @@ Make your final regulatory decision.
             else:
                 logging.info(f"[Regulator Agent] Cycle {cycle_id}: {final_decision}")
 
+            await broadcast_event("agent_done", {
+                "agent": "regulator_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "regulator_decision": {
                     "final_decision": final_decision,
@@ -144,6 +156,11 @@ Make your final regulatory decision.
 
         except json.JSONDecodeError as e:
             logging.error(f"[Regulator Agent] JSON parse error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "regulator_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "regulator_decision": {
                     "final_decision": "HOLD",
@@ -161,6 +178,11 @@ Make your final regulatory decision.
         except Exception as e:
             logging.error(f"[Regulator Agent] Error: {e}")
             span.record_exception(e)
+            await broadcast_event("agent_done", {
+                "agent": "regulator_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "regulator_decision": {
                     "final_decision": "HOLD",

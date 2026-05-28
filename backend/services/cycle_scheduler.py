@@ -173,14 +173,6 @@ async def run_single_cycle() -> dict:
         constraint_rules = [c.get("rule", "") for c in active_constraints if c.get("rule")]
         await _increment_and_expire_constraints()
 
-        # Broadcast agent start events
-        for agent in ["trading_agent", "risk_agent", "fraud_agent",
-                      "regulator_agent", "judge_agent"]:
-            await broadcast_event("agent_thinking", {
-                "agent": agent,
-                "cycle_id": cycle_id,
-            })
-
         # Run the full LangGraph pipeline
         final_state = await run_decision_cycle(
             cycle_id=cycle_id,

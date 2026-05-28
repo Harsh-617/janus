@@ -1,5 +1,18 @@
 ## 2026-05-28
 
+## Fix: agent_thinking SSE events fired simultaneously instead of sequentially
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/services/cycle_scheduler.py` — removed bulk pre-pipeline broadcast of all 5 agent_thinking events
+- `backend/agents/trading_agent.py` — added agent_thinking at node entry, agent_done before each return
+- `backend/agents/risk_agent.py` — same
+- `backend/agents/fraud_agent.py` — same
+- `backend/agents/regulator_agent.py` — same
+- `backend/agents/judge_agent.py` — same
+**What was fixed**: `run_single_cycle()` was broadcasting `agent_thinking` for all 5 agents in a loop before the LangGraph pipeline even started, causing the UI to show every agent as "thinking" simultaneously. Each agent node now emits its own `agent_thinking` event at the start of its function and an `agent_done` event after the LLM call returns (before the state update is returned), so the UI reflects the true sequential execution order. `broadcast_event` is imported via a deferred in-function import in each agent file to avoid a circular import (`cycle_scheduler` → `janus_graph` → `agents/*` → `cycle_scheduler`).
+
+---
+
 ## Fix: Circuit breaker does not pause the scheduler loop
 **Date**: 2026-05-28
 **Files modified**:

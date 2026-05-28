@@ -65,6 +65,13 @@ async def fraud_agent_node(state: JanusState) -> dict:
 
     cycle_id = state["cycle_id"]
 
+    from services.cycle_scheduler import broadcast_event
+    await broadcast_event("agent_thinking", {
+        "agent": "fraud_agent",
+        "status": "thinking",
+        "cycle_id": state.get("cycle_id", "unknown"),
+    })
+
     with trace_agent_call("fraud_agent", cycle_id) as span:
         try:
             recent_trades = await get_trades(limit=20)
@@ -122,6 +129,11 @@ supports the proposed trades.
             else:
                 logging.info(f"[Fraud Agent] Cycle {cycle_id}: CLEAR")
 
+            await broadcast_event("agent_done", {
+                "agent": "fraud_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "fraud_alerts": alerts,
                 "fraud_investigation_open": investigation_open,
@@ -129,12 +141,22 @@ supports the proposed trades.
 
         except json.JSONDecodeError as e:
             logging.error(f"[Fraud Agent] JSON parse error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "fraud_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "fraud_alerts": [],
                 "fraud_investigation_open": False,
             }
         except Exception as e:
             logging.error(f"[Fraud Agent] Error: {e}")
+            await broadcast_event("agent_done", {
+                "agent": "fraud_agent",
+                "status": "done",
+                "cycle_id": state.get("cycle_id", "unknown"),
+            })
             return {
                 "fraud_alerts": [],
                 "fraud_investigation_open": False,
