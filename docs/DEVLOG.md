@@ -1,3 +1,17 @@
+## Fix: Phoenix experiments always showed empty scores_after
+**Date**: 2026-05-28
+**File**: `backend/agents/meta_agent.py`
+**What was fixed**: `create_constraint_experiment` was always called with `scores_after={}`, so every Phoenix experiment permanently displayed before-scores but no after-scores, making the improvement comparison the demo relies on invisible.
+
+**Changes**:
+- Added `get_post_constraint_scores(constraint_ids)` — queries the Firestore `cycles` collection for the 10 most recent cycles, reads each constraint's `generated_at` from Firestore to find the earliest timestamp, filters to only cycles whose `timestamp` is strictly after that point, returns `{}` if fewer than 3 post-constraint cycles exist (not enough data), otherwise returns averaged dimension scores (`correctness`, `safety`, `hallucination_risk`, `compliance`, `explainability`, `overall`).
+- `run_janus_loop` now calls `get_post_constraint_scores(constraint_ids)` after generating constraints and BEFORE creating the Phoenix experiment, passing the result as `scores_after`.
+- On experiment creation, a mirror document is written to the Firestore `experiments` collection with `scores_after_populated: bool(scores_after)` so the backfill mechanism can find it on subsequent runs.
+- At the very start of every `run_janus_loop` invocation, the function queries Firestore for `experiments` where `scores_after_populated == False`, re-derives constraint IDs by querying the `constraints` collection for matching `phoenix_experiment_id`, calls `get_post_constraint_scores`, and if 3+ post-constraint cycles now exist updates the Firestore experiment document and sets `scores_after_populated: True`. This means the improvement data appears automatically once enough cycles have run after constraint injection.
+- Imports added: `db` from `firestore_client`, `firestore` from `google.cloud`, `FieldFilter` from `google.cloud.firestore_v1.base_query`.
+
+---
+
 ## Fix: Phoenix annotations linked to wrong span — use real OTel span ID
 **Date**: 2026-05-28
 **Files modified**:

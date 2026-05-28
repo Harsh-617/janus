@@ -1,5 +1,7 @@
 from config import settings
-from db.firestore_client import get_cycles, save_constraint, get_active_constraints, update_constraint
+from db.firestore_client import get_cycles, save_constraint, get_active_constraints, update_constraint, db
+from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from services.gemini_client import generate
 from services.phoenix_service import get_scores_from_cycles, create_constraint_experiment
 from services.phoenix_mcp_client import get_recent_traces, list_available_tools
@@ -54,6 +56,58 @@ Generate between 1 and 3 constraints. Quality over quantity.
 """
 
 
+async def get_post_constraint_scores(constraint_ids: list[str]) -> dict:
+    """
+    Queries recent cycles that occurred AFTER the earliest constraint was generated
+    and returns averaged dimension scores. Returns {} if fewer than 3 post-constraint
+    cycles exist (not enough data to draw conclusions).
+    """
+    if not constraint_ids:
+        return {}
+
+    def _get_generated_ats():
+        results = []
+        for cid in constraint_ids:
+            doc = db.collection("constraints").document(cid).get()
+            if doc.exists:
+                ts = (doc.to_dict() or {}).get("generated_at")
+                if ts:
+                    results.append(ts)
+        return results
+
+    generated_ats = await asyncio.to_thread(_get_generated_ats)
+    if not generated_ats:
+        return {}
+
+    earliest_generated_at = min(generated_ats)
+
+    def _get_recent_cycles():
+        docs = (
+            db.collection("cycles")
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .limit(10)
+            .stream()
+        )
+        return [doc.to_dict() for doc in docs]
+
+    recent_cycles = await asyncio.to_thread(_get_recent_cycles)
+    post_cycles = [c for c in recent_cycles if c.get("timestamp", "") > earliest_generated_at]
+
+    if len(post_cycles) < 3:
+        return {}
+
+    dims = ["correctness", "safety", "hallucination_risk", "compliance", "explainability"]
+    result = {}
+    for dim in dims:
+        scores = [float(c[f"judge_{dim}"]) for c in post_cycles if c.get(f"judge_{dim}") is not None]
+        result[dim] = round(sum(scores) / len(scores), 2) if scores else 0.0
+
+    overall = [float(c["judge_overall_score"]) for c in post_cycles if c.get("judge_overall_score") is not None]
+    result["overall"] = round(sum(overall) / len(overall), 2) if overall else 0.0
+
+    return result
+
+
 async def run_janus_loop() -> dict:
     """
     Run the Janus Loop self-correction engine.
@@ -61,6 +115,49 @@ async def run_janus_loop() -> dict:
     Returns a summary of what was generated.
     """
     logging.info("[Janus Loop] Starting self-correction run")
+
+    # Backfill any experiments created before enough post-constraint cycles existed
+    try:
+        def _get_unpopulated_experiments():
+            return [
+                doc.to_dict()
+                for doc in db.collection("experiments")
+                .where(filter=FieldFilter("scores_after_populated", "==", False))
+                .stream()
+            ]
+
+        unpopulated_experiments = await asyncio.to_thread(_get_unpopulated_experiments)
+        for exp in unpopulated_experiments:
+            exp_id = exp.get("experiment_id")
+            if not exp_id:
+                continue
+
+            def _get_exp_constraints(eid=exp_id):
+                return [
+                    c.to_dict()
+                    for c in db.collection("constraints")
+                    .where(filter=FieldFilter("phoenix_experiment_id", "==", eid))
+                    .stream()
+                ]
+
+            exp_constraints = await asyncio.to_thread(_get_exp_constraints)
+            exp_cids = [c.get("constraint_id") for c in exp_constraints if c.get("constraint_id")]
+
+            if not exp_cids:
+                continue
+
+            backfill_scores = await get_post_constraint_scores(exp_cids)
+            if backfill_scores:
+                def _update_exp(eid=exp_id, scores=backfill_scores):
+                    db.collection("experiments").document(eid).update({
+                        "scores_after": scores,
+                        "scores_after_populated": True,
+                    })
+
+                await asyncio.to_thread(_update_exp)
+                logging.info(f"[Janus Loop] Updated experiment {exp_id} with post-constraint scores")
+    except Exception as e:
+        logging.warning(f"[Janus Loop] Experiment backfill check failed: {e}")
 
     tools = await list_available_tools()
     if tools:
@@ -157,13 +254,26 @@ the underperforming dimensions. Do not duplicate existing constraints.
             constraint_ids = [c["constraint_id"] for c in constraints_generated]
             loop_run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             scores_before = await get_scores_from_cycles(recent_cycles)
+            scores_after = await get_post_constraint_scores(constraint_ids)
             experiment_id = await create_constraint_experiment(
                 constraint_ids=constraint_ids,
                 scores_before=scores_before,
-                scores_after={},
+                scores_after=scores_after,
                 loop_run_id=loop_run_id,
             )
             if experiment_id:
+                exp_doc = {
+                    "experiment_id": experiment_id,
+                    "loop_run_id": loop_run_id,
+                    "constraint_ids": constraint_ids,
+                    "scores_before": scores_before,
+                    "scores_after": scores_after,
+                    "scores_after_populated": bool(scores_after),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                def _write_exp_doc(eid=experiment_id, doc=exp_doc):
+                    db.collection("experiments").document(eid).set(doc)
+                await asyncio.to_thread(_write_exp_doc)
                 for cid in constraint_ids:
                     await update_constraint(cid, {"phoenix_experiment_id": experiment_id})
                 logging.info(f"[Janus Loop] Phoenix experiment {experiment_id} linked to {len(constraint_ids)} constraints")
