@@ -98,6 +98,7 @@ class JanusState(TypedDict):
 
     # Phoenix trace references
     phoenix_trace_id: str
+    phoenix_span_id: str  # real OTel span ID (16-char hex) for annotation linking
     cycle_span: Any  # holds the root span reference
 
     # Flow control
@@ -131,6 +132,7 @@ def create_initial_state(
         trades_executed=[],
         execution_errors=[],
         phoenix_trace_id="",
+        phoenix_span_id="",
         cycle_span=None,
         pipeline_halted=False,
         halt_reason="",

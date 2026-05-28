@@ -61,3 +61,12 @@ def record_cycle_start(cycle_id: str) -> Any:
 
 
 tracer = get_tracer()
+
+
+def get_current_span_id_hex() -> str:
+    """Return the active OTel span ID as a 16-char lowercase hex string, or '' if unavailable."""
+    span = trace.get_current_span()
+    ctx = span.get_span_context()
+    if ctx and ctx.span_id:
+        return format(ctx.span_id, '016x')
+    return ""

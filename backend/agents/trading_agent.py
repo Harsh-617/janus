@@ -1,6 +1,6 @@
 from config import settings
 from graph.state import JanusState, TradeProposal
-from observability.tracing import trace_agent_call
+from observability.tracing import trace_agent_call, get_current_span_id_hex
 from db.firestore_client import get_active_constraints
 import json
 import logging
@@ -57,6 +57,7 @@ async def trading_agent_node(state: JanusState) -> dict:
     })
 
     with trace_agent_call("trading_agent", cycle_id) as span:
+        span_id_hex = get_current_span_id_hex()
         try:
             portfolio = state["portfolio"]
             prices = state["market_prices"]
@@ -113,6 +114,7 @@ Analyze the above and propose your trades for this cycle.
                 "trading_proposal": parsed.get("trades", []),
                 "trading_thesis": parsed.get("thesis", ""),
                 "trading_confidence": parsed.get("confidence", 0.0),
+                "phoenix_span_id": span_id_hex,
             }
 
         except json.JSONDecodeError as e:

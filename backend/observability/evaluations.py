@@ -18,7 +18,11 @@ async def post_cycle_evaluations(state: JanusState) -> bool:
         return False
 
     cycle_id = state.get("cycle_id", "unknown")
-    trace_id = state.get("phoenix_trace_id", cycle_id)
+    span_id = state.get("phoenix_span_id") or state.get("phoenix_trace_id", "")
+    if not span_id:
+        span_id = cycle_id
+
+    logging.info(f"Posting evaluations for span_id={span_id} cycle={cycle_id}")
 
     dimensions = [
         ("correctness", judge_scores.get("correctness", 5)),
@@ -36,7 +40,7 @@ async def post_cycle_evaluations(state: JanusState) -> bool:
         for name, score in dimensions:
             normalized = score / 10.0
             annotations.append({
-                "span_id": trace_id,
+                "span_id": span_id,
                 "name": name,
                 "annotator_kind": "LLM",
                 "result": {

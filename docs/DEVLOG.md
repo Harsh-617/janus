@@ -1,3 +1,14 @@
+## Fix: Phoenix annotations linked to wrong span — use real OTel span ID
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/observability/tracing.py` — added `get_current_span_id_hex()` helper
+- `backend/graph/state.py` — added `phoenix_span_id: str` field to `JanusState` and `create_initial_state`
+- `backend/agents/trading_agent.py` — captures `span_id_hex` from the active OTel span and writes it into state as `phoenix_span_id`
+- `backend/observability/evaluations.py` — reads `phoenix_span_id` from state for every annotation's `span_id` field; `cycle_id` is kept in metadata only
+**What was fixed**: `post_cycle_evaluations` was setting `"span_id": trace_id` where `trace_id` fell back to `cycle_id` (a string like `"cycle_20260519_abc12345"`). Phoenix requires a real OpenTelemetry span ID — a 16-character lowercase hex string — for annotations to link to their trace. The fix captures the actual OTel span ID (`format(span.get_span_context().span_id, '016x')`) inside the `trading_agent` node (where the cycle's first span is active), stores it in `JanusState.phoenix_span_id`, and uses it exclusively in the annotation `span_id` field. Judge scores now correctly link to their decision traces in Phoenix.
+
+---
+
 ## Fix: Alpha Vantage fallback cache on full key exhaustion
 **Date**: 2026-05-28
 **File**: `backend/tools/news.py`
