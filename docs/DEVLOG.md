@@ -1,3 +1,14 @@
+## 2026-05-28
+
+## Fix: Circuit breaker does not pause the scheduler loop
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/services/cycle_scheduler.py` — circuit breaker check at top of scheduler loop
+- `backend/graph/execution.py` — write `circuit_breaker_resume_at` when activating circuit breaker
+**What was fixed**: The `start_scheduler()` while-loop ran unconditionally — it never checked Firestore before starting a new cycle, so a Regulator-activated circuit breaker had no effect on scheduling. Fix adds a check at the top of each loop iteration: reads the portfolio document; if `circuit_breaker_active` is True and `circuit_breaker_resume_at` has not yet passed, logs "Circuit breaker active — cycle skipped" and sleeps 30 s before rechecking; if the resume timestamp has passed, automatically clears `circuit_breaker_active` in Firestore, logs "Circuit breaker auto-released — resuming cycles", and proceeds normally. The `circuit_breaker_resume_at` UTC timestamp (now + `cooldown_minutes`) is now written to Firestore by `execute_cycle_results()` whenever the Regulator activates the circuit breaker.
+
+---
+
 ## 2026-05-26
 **[Dev A]** Step 1: Full design system foundation rewrite. globals.css with design tokens, layout shell, sidebar, topbar, shared components (ScoreBadge, StatusIndicator, LiveIndicator). Design system: #080A0C bg, JetBrains Mono for data, Inter for body, gold/blue two-face color split.
 

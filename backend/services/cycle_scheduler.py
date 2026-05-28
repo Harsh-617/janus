@@ -10,7 +10,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from config import settings
 from graph.janus_graph import run_decision_cycle
 from graph.execution import execute_cycle_results
-from db.firestore_client import get_portfolio, get_active_constraints, db, COL_CONSTRAINTS
+from db.firestore_client import get_portfolio, get_active_constraints, db, COL_CONSTRAINTS, COL_PORTFOLIOS
 from tools.market_data import get_live_market_data
 from tools.news import get_market_news
 
@@ -242,6 +242,26 @@ async def start_scheduler() -> None:
 
     while _scheduler_running:
         try:
+            portfolio_doc = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
+            if portfolio_doc and portfolio_doc.get("circuit_breaker_active"):
+                resume_at_str = portfolio_doc.get("circuit_breaker_resume_at")
+                now_utc = datetime.now(timezone.utc)
+                released = False
+                if resume_at_str:
+                    resume_at = datetime.fromisoformat(resume_at_str)
+                    if now_utc >= resume_at:
+                        def _clear():
+                            db.collection(COL_PORTFOLIOS).document(
+                                settings.FIRESTORE_PORTFOLIO_ID
+                            ).update({"circuit_breaker_active": False})
+                        await asyncio.to_thread(_clear)
+                        logging.info("[Scheduler] Circuit breaker auto-released — resuming cycles")
+                        released = True
+                if not released:
+                    logging.info("[Scheduler] Circuit breaker active — cycle skipped")
+                    await asyncio.sleep(30)
+                    continue
+
             await run_single_cycle()
         except Exception as e:
             logging.error(f"[Scheduler] Unhandled error: {e}")

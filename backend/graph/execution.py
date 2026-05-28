@@ -6,7 +6,7 @@ from db.firestore_client import (
 from config import settings
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 def get_state_value(state, key, default=None):
@@ -153,9 +153,12 @@ async def execute_cycle_results(state: JanusState) -> dict:
     portfolio = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
     if portfolio:
         portfolio["cycle_count"] = portfolio.get("cycle_count", 0) + 1
-        portfolio["circuit_breaker_active"] = regulator_decision.get(
-            "circuit_breaker_activated", False
-        )
+        cb_activated = regulator_decision.get("circuit_breaker_activated", False)
+        portfolio["circuit_breaker_active"] = cb_activated
+        if cb_activated:
+            cooldown_minutes = regulator_decision.get("cooldown_minutes", 15)
+            resume_at = datetime.now(timezone.utc) + timedelta(minutes=cooldown_minutes)
+            portfolio["circuit_breaker_resume_at"] = resume_at.isoformat()
         if final_decision == "EXECUTE" and trades_executed:
             portfolio["trade_count"] = portfolio.get("trade_count", 0) + len(trades_executed)
         await save_portfolio(settings.FIRESTORE_PORTFOLIO_ID, portfolio)
