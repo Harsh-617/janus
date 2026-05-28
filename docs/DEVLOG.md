@@ -1,3 +1,18 @@
+## Fix: Fraud Agent wash trading and concentration checks moved to Python
+**Date**: 2026-05-28
+**File**: `backend/agents/fraud_agent.py`
+**What was fixed**: The Fraud Agent's system prompt asked the LLM to detect wash trading and unusual concentration — both are pure arithmetic operations that LLMs routinely get wrong (hallucinated counts, wrong percentages, missed cases). These checks have been moved to Python and run before the LLM call.
+
+**Changes**:
+- Added `detect_wash_trading(trade_history)` — examines the last 5 trades; if the same ticker appears in both BUY and SELL actions, emits a `WASH_TRADING` / `HIGH` alert. Uses set intersection, no LLM involved.
+- Added `detect_concentration(trade_history, total_portfolio_value)` — examines the last 20 trades; if any single ticker represents more than 30% of trades by count, emits a `CONCENTRATION` / `MEDIUM` alert with the exact percentage.
+- `fraud_agent_node` now calls both functions before the LLM call, extracting `total_portfolio_value` from `state["portfolio"]["total_value"]` (defaults to 1,000,000 if missing).
+- Pre-computed alerts are injected into the LLM user message under a `PRE-COMPUTED FRAUD SIGNALS` header. The LLM is instructed to focus exclusively on `REASONING_INCONSISTENCY` detection and to treat the Python signals as already confirmed.
+- After the LLM responds, its alerts are merged with the programmatic alerts. Deduplication: LLM alerts whose `type` already appears in the programmatic set (including `UNUSUAL_CONCENTRATION` as equivalent to `CONCENTRATION`) are dropped. Final list = `programmatic_alerts + filtered_llm_alerts`.
+- `status`, `investigation_open`, and the log line now reflect the merged alert list. Any HIGH-severity alert (from either source) forces `investigation_open = True`.
+
+---
+
 ## Fix: Risk Agent VaR now computed in Python, not by the LLM
 **Date**: 2026-05-28
 **File**: `backend/agents/risk_agent.py`

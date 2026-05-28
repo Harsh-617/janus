@@ -60,6 +60,54 @@ If status is CLEAR, alerts is an empty array and investigation_open is false.
 """
 
 
+def detect_wash_trading(trade_history: list) -> list:
+    """
+    Detects wash trading: same ticker bought AND sold within
+    the last 5 trades.
+    Returns list of alert dicts.
+    """
+    alerts = []
+    recent = trade_history[-5:] if len(trade_history) >= 5 else trade_history
+    tickers_bought = {t["ticker"] for t in recent if t.get("action") == "BUY"}
+    tickers_sold = {t["ticker"] for t in recent if t.get("action") == "SELL"}
+    wash_tickers = tickers_bought & tickers_sold
+    for ticker in wash_tickers:
+        alerts.append({
+            "type": "WASH_TRADING",
+            "severity": "HIGH",
+            "description": f"{ticker} was both bought and sold in the last 5 trades — potential wash trading pattern.",
+            "recommendation": "Escalate to Regulator. Halt trading in this ticker."
+        })
+    return alerts
+
+
+def detect_concentration(trade_history: list, total_portfolio_value: float) -> list:
+    """
+    Detects unusual concentration: single ticker > 30% of all
+    trades by count in last 20 trades.
+    Returns list of alert dicts.
+    """
+    alerts = []
+    if not trade_history:
+        return alerts
+    recent = trade_history[-20:]
+    ticker_counts = {}
+    for t in recent:
+        ticker = t.get("ticker", "UNKNOWN")
+        ticker_counts[ticker] = ticker_counts.get(ticker, 0) + 1
+    total = len(recent)
+    for ticker, count in ticker_counts.items():
+        pct = count / total
+        if pct > 0.30:
+            alerts.append({
+                "type": "CONCENTRATION",
+                "severity": "MEDIUM",
+                "description": f"{ticker} appears in {count}/{total} recent trades ({pct*100:.0f}%) — unusual concentration.",
+                "recommendation": "Review trading pattern for potential manipulation."
+            })
+    return alerts
+
+
 async def fraud_agent_node(state: JanusState) -> dict:
     """LangGraph node function for the Fraud Intelligence Agent."""
 
@@ -75,6 +123,10 @@ async def fraud_agent_node(state: JanusState) -> dict:
     with trace_agent_call("fraud_agent", cycle_id) as span:
         try:
             recent_trades = await get_trades(limit=20)
+
+            total_portfolio_value = state.get("portfolio", {}).get("total_value", 1000000)
+            programmatic_alerts = detect_wash_trading(recent_trades)
+            programmatic_alerts += detect_concentration(recent_trades, total_portfolio_value)
 
             user_message = f"""
 CURRENT CYCLE TRADE PROPOSAL:
@@ -93,9 +145,13 @@ RECENT TRADE HISTORY (last 20 trades for pattern analysis):
 MARKET SHOCK ACTIVE: {state["market_shock_active"]}
 {f"SHOCK DESCRIPTION: {state['market_shock_description']}" if state["market_shock_active"] else ""}
 
-Investigate this cycle for fraud patterns and reasoning inconsistencies.
-Pay special attention to whether the Trading Agent's thesis logically
-supports the proposed trades.
+PRE-COMPUTED FRAUD SIGNALS (Python-detected, factual):
+{json.dumps(programmatic_alerts, indent=2) if programmatic_alerts else "None detected"}
+
+Your task: Focus ONLY on reasoning inconsistency detection.
+Check if the Trading Agent's stated thesis matches its proposed
+actions. The above signals are already confirmed — do not
+re-analyze them, just include them in your output as-is.
 """
             raw_output = await generate(
                 system_prompt=FRAUD_AGENT_PROMPT,
@@ -110,9 +166,18 @@ supports the proposed trades.
 
             parsed = json.loads(clean)
 
-            status = parsed.get("status", "CLEAR")
-            alerts = parsed.get("alerts", [])
-            investigation_open = parsed.get("investigation_open", False)
+            # Merge: programmatic alerts take precedence; deduplicate LLM alerts by type.
+            # CONCENTRATION and UNUSUAL_CONCENTRATION are treated as the same category.
+            prog_types = {a["type"] for a in programmatic_alerts}
+            if "CONCENTRATION" in prog_types:
+                prog_types.add("UNUSUAL_CONCENTRATION")
+            llm_alerts = [a for a in parsed.get("alerts", []) if a.get("type") not in prog_types]
+            alerts = programmatic_alerts + llm_alerts
+
+            status = "ALERT" if alerts else "CLEAR"
+            investigation_open = parsed.get("investigation_open", False) or any(
+                a.get("severity") == "HIGH" for a in alerts
+            )
 
             high_severity = [a for a in alerts if a.get("severity") == "HIGH"]
 
