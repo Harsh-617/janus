@@ -1,3 +1,12 @@
+## Data-Driven Hallucination Detection
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/services/hallucination_detector.py` — new file, 3 Python-based checks: beta mismatch, correlation direction, concentration mismatch
+- `backend/agents/fraud_agent.py` — integrated HallucinationDetector, flags added to alerts with type HALLUCINATION_DETECTED
+**What changed**: Replaced circular LLM-asks-LLM inconsistency detection with falsifiable Python checks using real yfinance data. Beta check uses yfinance info["beta"]. Correlation check uses 90-day Pearson correlation via pandas. Concentration check computes post-trade position weights against Firestore portfolio state. All checks are try/except wrapped with silent fallback.
+
+---
+
 ## Fix: Fraud Agent wash trading and concentration checks moved to Python
 **Date**: 2026-05-28
 **File**: `backend/agents/fraud_agent.py`

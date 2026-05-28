@@ -7,6 +7,9 @@ from db.firestore_client import get_trades
 from graph.state import JanusState
 from observability.tracing import trace_agent_call
 from services.gemini_client import generate
+from services.hallucination_detector import HallucinationDetector
+
+_hallucination_detector = HallucinationDetector()
 
 FRAUD_AGENT_PROMPT = """You are the Fraud Intelligence Agent for Janus — a financial crimes \
 investigator. Your job is to detect suspicious patterns and reasoning \
@@ -173,6 +176,21 @@ re-analyze them, just include them in your output as-is.
                 prog_types.add("UNUSUAL_CONCENTRATION")
             llm_alerts = [a for a in parsed.get("alerts", []) if a.get("type") not in prog_types]
             alerts = programmatic_alerts + llm_alerts
+
+            # Data-driven hallucination checks (beta, correlation, concentration)
+            hallucination_flags = await _hallucination_detector.check(
+                reasoning=state["trading_thesis"],
+                proposed_trades=state.get("trading_proposal", {}).get("trades", []),
+                portfolio=state.get("portfolio", {}),
+            )
+            for flag in hallucination_flags:
+                alerts.append({
+                    "type": "HALLUCINATION_DETECTED",
+                    "severity": "HIGH",
+                    "description": flag.get("flag", str(flag)),
+                    "recommendation": "Escalate to Regulator. Flag trace for Phoenix review.",
+                    "detail": flag,
+                })
 
             status = "ALERT" if alerts else "CLEAR"
             investigation_open = parsed.get("investigation_open", False) or any(
