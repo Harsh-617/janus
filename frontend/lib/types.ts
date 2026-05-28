@@ -246,6 +246,31 @@ export interface PortfolioSide {
   history: PortfolioHistory[];
 }
 
+export interface ConflictResolution {
+  recommendation: "PREFER_NEWER" | "PREFER_STRICTER" | "SUSPEND_BOTH" | "MANUAL_REVIEW";
+  reasoning: string;
+  action: string;
+}
+
+export interface ConstraintConflict {
+  conflict_id: string;
+  constraint_a_id: string;
+  constraint_a_rule: string;
+  constraint_b_id: string;
+  constraint_b_rule: string;
+  conflict_type: "DIRECTIONAL_OPPOSITION" | "CONDITION_OVERLAP" | "NUMERIC_CONTRADICTION";
+  description: string;
+  severity: "HIGH" | "MEDIUM" | "LOW";
+  detected_at: string;
+  resolved: boolean;
+  resolution: ConflictResolution | null;
+}
+
+export interface ConflictsResponse {
+  conflicts: ConstraintConflict[];
+  total: number;
+}
+
 export interface PortfolioComparison {
   janus: PortfolioSide;
   baseline: PortfolioSide;

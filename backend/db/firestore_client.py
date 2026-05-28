@@ -13,6 +13,7 @@ COL_PORTFOLIOS = "portfolios"
 COL_TRADES = "trades"
 COL_BASELINE_TRADES = "baseline_trades"
 COL_CONSTRAINTS = "constraints"
+COL_CONSTRAINT_CONFLICTS = "constraint_conflicts"
 COL_AGENT_MEMORY = "agent_memory"
 COL_CYCLES = "cycles"
 COL_HISTORY = "history"
@@ -140,6 +141,41 @@ async def save_baseline_trade(trade_id: str, data: dict) -> None:
         db.collection(COL_BASELINE_TRADES).document(trade_id).set(data, merge=True)
 
     await asyncio.to_thread(_set)
+
+
+async def save_conflict(conflict_id: str, data: dict) -> None:
+    def _set():
+        db.collection(COL_CONSTRAINT_CONFLICTS).document(conflict_id).set(
+            {**data, "resolved": False}, merge=True
+        )
+
+    await asyncio.to_thread(_set)
+
+
+async def update_conflict_resolution(conflict_id: str, resolution: dict) -> None:
+    def _update():
+        try:
+            db.collection(COL_CONSTRAINT_CONFLICTS).document(conflict_id).update(
+                {"resolution": resolution}
+            )
+        except Exception as e:
+            logging.warning(f"Failed to update conflict resolution {conflict_id}: {e}")
+
+    await asyncio.to_thread(_update)
+
+
+async def get_unresolved_conflicts(limit: int = 20) -> list[dict]:
+    def _get():
+        docs = (
+            db.collection(COL_CONSTRAINT_CONFLICTS)
+            .where(filter=FieldFilter("resolved", "==", False))
+            .order_by("detected_at", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .stream()
+        )
+        return [doc.to_dict() for doc in docs]
+
+    return await asyncio.to_thread(_get)
 
 
 async def save_portfolio_history_snapshot(

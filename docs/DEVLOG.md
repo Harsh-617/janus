@@ -1,3 +1,17 @@
+## Constraint Conflict Detection
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/services/constraint_conflict_detector.py` — new file, ConstraintConflictDetector with 4 checks (directional opposition, condition overlap, numeric contradiction, cash floor) and adjudicate() for automated resolution recommendations
+- `backend/agents/meta_agent.py` — conflict detection runs before each new constraint is saved, conflicts stored in Firestore, logged to Phoenix
+- `backend/db/firestore_client.py` — save_conflict and update_conflict_resolution helpers added
+- `backend/api/routes/constraints.py` — GET /api/constraints/conflicts and POST /api/constraints/conflicts/{id}/resolve endpoints added
+- `frontend/lib/types.ts` — ConstraintConflict, ConflictResolution types
+- `frontend/lib/api.ts` — fetchConstraintConflicts, resolveConflict added
+- `frontend/app/janus-loop/page.tsx` — conflict panel added, red/gold severity tinting, accept/suspend/dismiss actions
+**What changed**: When the Janus Loop generates a new constraint, it now checks all active constraints for conflicts using keyword matching. Conflicts stored in Firestore, surfaced in the Janus Loop page with severity tinting and one-click resolution. Regulator adjudication logic recommends resolution automatically.
+
+---
+
 ## Demo Mode
 **Date**: 2026-05-28
 **Files modified**:

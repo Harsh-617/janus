@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Constraint } from "@/lib/types";
+import type { Constraint, ConstraintConflict } from "@/lib/types";
 import ImprovementCurveChart from "@/components/janus-loop/improvement-curve-chart";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -111,6 +111,7 @@ export default function JanusLoopPage() {
   const [builderError, setBuilderError] = useState<string | null>(null);
   const [validationResult, setValidationResult] = useState<{ is_valid: boolean; reason: string; suggestions: Array<{ condition: string; rule: string; rationale: string }> } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [conflicts, setConflicts] = useState<ConstraintConflict[]>([]);
 
   const triggerBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const successTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -128,10 +129,35 @@ export default function JanusLoopPage() {
     return data.constraints ?? [];
   }
 
+  async function fetchConflicts(): Promise<ConstraintConflict[]> {
+    const res = await fetch(`${BASE_URL}/api/constraints/conflicts`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.conflicts ?? [];
+  }
+
   async function fetchAll() {
-    const [s, c] = await Promise.all([fetchStatus(), fetchHistory()]);
+    const [s, c, cf] = await Promise.all([fetchStatus(), fetchHistory(), fetchConflicts()]);
     setStatus(s);
     setConstraints(c);
+    setConflicts(cf);
+  }
+
+  async function handleResolveConflict(
+    conflictId: string,
+    action: "ACCEPT_RECOMMENDATION" | "SUSPEND_A" | "SUSPEND_B" | "SUSPEND_BOTH" | "DISMISS"
+  ) {
+    try {
+      const res = await fetch(`${BASE_URL}/api/constraints/conflicts/${conflictId}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) return;
+      setConflicts((prev) => prev.filter((c) => c.conflict_id !== conflictId));
+    } catch {
+      // silent
+    }
   }
 
   useEffect(() => {
@@ -153,9 +179,18 @@ export default function JanusLoopPage() {
         // silent — don't disrupt the UI on poll failure
       }
     }, 10_000);
+    const conflictPoll = setInterval(async () => {
+      try {
+        const cf = await fetchConflicts();
+        if (!cancelled) setConflicts(cf);
+      } catch {
+        // silent
+      }
+    }, 30_000);
     return () => {
       cancelled = true;
       clearInterval(poll);
+      clearInterval(conflictPoll);
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
     };
   }, []);
@@ -380,6 +415,115 @@ export default function JanusLoopPage() {
           ))}
         </div>
       </div>
+
+      {/* ── CONSTRAINT CONFLICTS ── */}
+      {conflicts.length > 0 && (
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #1C2128", flexShrink: 0 }}>
+          <div style={{ fontFamily: "'Cinzel', 'Trajan Pro', serif", fontSize: 11, color: "#C9A84C", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>
+            CONSTRAINT CONFLICTS
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {conflicts.map((conflict) => {
+              const isHigh = conflict.severity === "HIGH";
+              return (
+                <div
+                  key={conflict.conflict_id}
+                  style={{
+                    background: isHigh ? "#1F0A0A" : "#13151A",
+                    border: `1px solid ${isHigh ? "rgba(224,82,82,0.4)" : "rgba(201,168,76,0.4)"}`,
+                    borderRadius: 4,
+                    padding: 16,
+                  }}
+                >
+                  {/* Row 1: severity badge + conflict type */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <span style={{
+                      fontFamily: MONO, fontSize: 9, borderRadius: 3, padding: "2px 7px",
+                      textTransform: "uppercase", letterSpacing: "0.06em",
+                      ...(isHigh
+                        ? { background: "#3A0A0A", color: "#EF4444", border: "1px solid rgba(239,68,68,0.5)" }
+                        : conflict.severity === "MEDIUM"
+                          ? { background: "#1F1800", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.5)" }
+                          : { background: "#1A1A1A", color: "#6B7280", border: "1px solid #2A2A2A" }
+                      ),
+                    }}>
+                      {conflict.severity}
+                    </span>
+                    <span style={{ fontFamily: MONO, fontSize: 10, color: "#8B949E", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      {conflict.conflict_type.replace(/_/g, " ")}
+                    </span>
+                  </div>
+
+                  {/* Description */}
+                  <div style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "#C9D1D9", marginBottom: 10, lineHeight: 1.5 }}>
+                    {conflict.description}
+                  </div>
+
+                  {/* Constraint pills */}
+                  <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                    <div style={{ background: "#080A0C", border: "1px solid #1C2128", borderRadius: 3, padding: "5px 10px", flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: MONO, fontSize: 8, color: "#4B5563", textTransform: "uppercase", marginBottom: 2 }}>
+                        #{conflict.constraint_a_id.slice(-8)}
+                      </div>
+                      <div style={{ fontFamily: MONO, fontSize: 11, color: "#E2E8F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {conflict.constraint_a_rule || "—"}
+                      </div>
+                    </div>
+                    <div style={{ background: "#080A0C", border: "1px solid #1C2128", borderRadius: 3, padding: "5px 10px", flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: MONO, fontSize: 8, color: "#4B5563", textTransform: "uppercase", marginBottom: 2 }}>
+                        #{conflict.constraint_b_id.slice(-8)}
+                      </div>
+                      <div style={{ fontFamily: MONO, fontSize: 11, color: "#E2E8F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {conflict.constraint_b_rule || "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recommendation box */}
+                  {conflict.resolution && (
+                    <div style={{ background: "#0D1117", border: "1px solid #1C2128", borderRadius: 3, padding: "8px 12px", marginBottom: 10 }}>
+                      <div style={{ fontFamily: MONO, fontSize: 9, color: "#4B5563", textTransform: "uppercase", marginBottom: 4 }}>
+                        RECOMMENDATION: {conflict.resolution.recommendation}
+                      </div>
+                      <div style={{ fontFamily: "Inter, sans-serif", fontSize: 11, color: "#8B949E", lineHeight: 1.5 }}>
+                        {conflict.resolution.reasoning}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => handleResolveConflict(conflict.conflict_id, "ACCEPT_RECOMMENDATION")}
+                      style={{ fontFamily: MONO, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", padding: "5px 12px", borderRadius: 3, border: "1px solid #1A4A1A", background: "#0A1F0A", color: "#22C55E", cursor: "pointer" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#0F2F0F"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#0A1F0A"; }}
+                    >
+                      ACCEPT
+                    </button>
+                    <button
+                      onClick={() => handleResolveConflict(conflict.conflict_id, "SUSPEND_BOTH")}
+                      style={{ fontFamily: MONO, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", padding: "5px 12px", borderRadius: 3, border: "1px solid rgba(239,68,68,0.4)", background: "#1F0A0A", color: "#EF4444", cursor: "pointer" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2F0F0F"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#1F0A0A"; }}
+                    >
+                      SUSPEND BOTH
+                    </button>
+                    <button
+                      onClick={() => handleResolveConflict(conflict.conflict_id, "DISMISS")}
+                      style={{ fontFamily: MONO, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", padding: "5px 12px", borderRadius: 3, border: "1px solid #2A2A2A", background: "#1A1A1A", color: "#6B7280", cursor: "pointer" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#222222"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#1A1A1A"; }}
+                    >
+                      DISMISS
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── MAIN CONTENT ── */}
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>

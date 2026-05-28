@@ -1,5 +1,9 @@
 from config import settings
-from db.firestore_client import get_cycles, save_constraint, get_active_constraints, update_constraint, db
+from db.firestore_client import (
+    get_cycles, save_constraint, get_active_constraints, update_constraint, db,
+    save_conflict, update_conflict_resolution,
+)
+from services.constraint_conflict_detector import ConstraintConflictDetector
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from services.gemini_client import generate
@@ -229,6 +233,7 @@ the underperforming dimensions. Do not duplicate existing constraints.
             parsed = json.loads(clean)
 
             constraints_generated = []
+            detector = ConstraintConflictDetector()
             for c in parsed.get("constraints", []):
                 constraint_id = f"constraint_{str(uuid.uuid4())[:8]}"
                 constraint_record = {
@@ -248,6 +253,26 @@ the underperforming dimensions. Do not duplicate existing constraints.
                     },
                     "expires_after_cycles": 50,
                 }
+
+                conflicts = detector.detect(constraint_record, active_constraints)
+                for conflict in conflicts:
+                    await save_conflict(conflict["conflict_id"], conflict)
+                    constraint_a = next(
+                        (ac for ac in active_constraints
+                         if ac.get("constraint_id") == conflict["constraint_a_id"]),
+                        None,
+                    )
+                    if constraint_a:
+                        resolution = detector.adjudicate(conflict, constraint_a, constraint_record)
+                        await update_conflict_resolution(conflict["conflict_id"], resolution)
+                    span.set_attribute("constraint_conflict_detected", True)
+                    span.set_attribute("conflict_type", conflict["conflict_type"])
+                    span.set_attribute("conflict_severity", conflict["severity"])
+                    logging.info(
+                        f"[Janus Loop] Conflict detected: {conflict['conflict_id']} "
+                        f"({conflict['conflict_type']}, {conflict['severity']})"
+                    )
+
                 await save_constraint(constraint_id, constraint_record)
                 constraints_generated.append(constraint_record)
 

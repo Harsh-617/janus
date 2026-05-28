@@ -13,6 +13,7 @@ import type {
   ScoresOverTimeResponse,
   PortfolioComparison,
   CycleExplainResponse,
+  ConstraintConflict,
 } from "./types";
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -212,5 +213,24 @@ export async function fetchPortfolioComparison(): Promise<PortfolioComparison> {
 export async function fetchCycleExplain(cycleId: string): Promise<CycleExplainResponse> {
   const res = await fetch(`${API_BASE}/api/cycles/${cycleId}/explain`);
   if (!res.ok) throw new Error(`Cycle explain fetch failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchConstraintConflicts(): Promise<ConstraintConflict[]> {
+  const res = await fetch(`${API_BASE}/api/constraints/conflicts`);
+  if (!res.ok) throw new Error(`Conflicts fetch failed: ${res.status}`);
+  return res.json().then((d) => d.conflicts);
+}
+
+export async function resolveConflict(
+  conflictId: string,
+  action: "ACCEPT_RECOMMENDATION" | "SUSPEND_A" | "SUSPEND_B" | "SUSPEND_BOTH" | "DISMISS"
+): Promise<{ status: string; action_taken: string }> {
+  const res = await fetch(`${API_BASE}/api/constraints/conflicts/${conflictId}/resolve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+  if (!res.ok) throw new Error(`Resolve conflict failed: ${res.status}`);
   return res.json();
 }
