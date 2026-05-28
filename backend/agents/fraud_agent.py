@@ -81,14 +81,14 @@ CURRENT CYCLE TRADE PROPOSAL:
 {json.dumps(state["trading_proposal"], indent=2)}
 
 TRADING THESIS (check for reasoning inconsistencies):
-{state["trading_thesis"]}
+{state["trading_thesis"][:500]}
 
 TRADING CONFIDENCE: {state["trading_confidence"]}
 
 RISK AGENT DECISION: {json.dumps(state.get("risk_report", {}), indent=2)}
 
 RECENT TRADE HISTORY (last 20 trades for pattern analysis):
-{json.dumps(recent_trades[:20], indent=2)}
+{json.dumps(recent_trades[-20:], indent=2)}
 
 MARKET SHOCK ACTIVE: {state["market_shock_active"]}
 {f"SHOCK DESCRIPTION: {state['market_shock_description']}" if state["market_shock_active"] else ""}
@@ -100,6 +100,7 @@ supports the proposed trades.
             raw_output = await generate(
                 system_prompt=FRAUD_AGENT_PROMPT,
                 user_message=user_message,
+                model=settings.GEMINI_MODEL_JUDGE,
                 temperature=0.2,
             )
 

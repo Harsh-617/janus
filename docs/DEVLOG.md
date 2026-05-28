@@ -1,3 +1,52 @@
+## Fix: Fraud Agent switched to judge model to resolve 413 TPM limit errors
+**Date**: 2026-05-28
+**File**: `backend/agents/fraud_agent.py`
+**What was fixed**: The Fraud Agent's LLM call was using `settings.GEMINI_MODEL_FAST` (`llama-3.1-8b-instant`), which has a 6000 TPM per-request limit. The agent's prompt consistently exceeds ~7000+ tokens due to the full trade history, risk report, and trading thesis context it assembles each cycle, causing a 413 error on every single cycle. Fixed by passing `model=settings.GEMINI_MODEL_JUDGE` (`llama-3.3-70b-versatile`) explicitly to the `generate()` call. This model has a much higher TPM limit and can handle the Fraud Agent's larger context without errors. No other logic changed.
+
+---
+
+## Fix: NameError trace_id in evaluations.py + Fraud Agent 413 payload too large
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/observability/evaluations.py` — fixed NameError on `trace_id`
+- `backend/agents/fraud_agent.py` — trimmed input context to stay under 6000 TPM
+
+**What was fixed**:
+
+1. `post_cycle_evaluations` built the overall annotation with `"span_id": trace_id` but `trace_id` was never defined in that scope — the correct variable is `span_id` (resolved on line 21 from `phoenix_span_id` / `phoenix_trace_id` / `cycle_id`). Every call hit a `NameError` inside the `except Exception` handler, which silently swallowed it and logged "Failed to post evaluations: name 'trace_id' is not defined". Fixed by replacing `trace_id` with `span_id` on the overall annotation.
+
+2. The Fraud Agent was sending ~7082 tokens to `llama-3.1-8b-instant` (6000 TPM limit), triggering a 413 on every cycle. Root cause: `state["trading_thesis"]` is the full LLM output from the Trading Agent and can exceed 1000+ tokens alone. Fixed by truncating the trading thesis to 500 characters before building the user message (`[:500]`) and switching the trade history slice from `[:20]` (first 20) to `[-20:]` (most recent 20). No logic, scoring, or output schema changed.
+
+---
+
+## Fix: UnboundLocalError — settings scoping bug in execute_cycle_results
+**Date**: 2026-05-28
+**File**: `backend/graph/execution.py`
+**What was fixed**: Every HOLD cycle crashed with `UnboundLocalError: cannot access local variable 'settings' where it is not associated with a value`, caught and logged by `run_single_cycle()` in `cycle_scheduler.py`. The root cause was two redundant in-function imports (`from config import settings`) inside `execute_cycle_results()` — one at line 87 inside an `if final_decision == "EXECUTE" and trades_executed:` block, and another at line 188. Python's scoping rules mark `settings` as a local variable for the entire function whenever it sees an assignment (including imports) anywhere in the function body. When a HOLD cycle skips the `if` block, the line-87 assignment never executes, so `settings` is unbound when referenced at line 153 (`get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)`).
+
+**Changes**:
+- Removed the in-function `from config import settings` at the old line 87 (inside the EXECUTE-only block).
+- Removed the in-function `from config import settings` at the old line 188 (after the observability calls).
+- The module-level `from config import settings` at line 6 is sufficient for all uses in the function; no other logic changed.
+- `cycle_scheduler.py` was audited and confirmed clean — module-level import already in place, no local `settings` assignments.
+
+---
+
+## Fix: Phoenix MCP client rewritten to use SSE transport
+**Date**: 2026-05-28
+**File**: `backend/services/phoenix_mcp_client.py`
+**What was fixed**: The original client used raw `httpx` POST requests to `{PHOENIX_BASE_URL}/mcp` with hand-rolled JSON-RPC payloads. Phoenix exposes its MCP server over SSE transport (not plain HTTP POST), so every call silently failed with a connection or protocol error and returned empty lists. Trace and evaluation queries in the Meta Agent were returning `[]` on every run.
+
+**Changes**:
+- Removed `httpx` dependency entirely from this module.
+- Added `_call_phoenix_mcp_tool(tool_name, arguments)` — shared helper that opens an SSE connection via `mcp.client.sse.sse_client`, creates a `ClientSession`, calls `session.initialize()`, then calls `session.call_tool()` and JSON-decodes the first content item.
+- `get_recent_traces` and `get_evaluations_for_traces` now delegate to `_call_phoenix_mcp_tool`.
+- `list_available_tools` opens its own SSE session and calls `session.list_tools()`.
+- Added `verify_mcp_connection()` — calls `list_available_tools()` and logs success/failure; returns `bool`.
+- `main.py` lifespan now calls `await verify_mcp_connection()` at startup so MCP reachability is logged immediately on boot.
+
+---
+
 ## Fix: Phoenix experiments always showed empty scores_after
 **Date**: 2026-05-28
 **File**: `backend/agents/meta_agent.py`

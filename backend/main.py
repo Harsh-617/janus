@@ -17,6 +17,8 @@ async def lifespan(app: FastAPI):
     logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
     setup_tracing()
     await initialize_portfolio()
+    from services.phoenix_mcp_client import verify_mcp_connection
+    await verify_mcp_connection()
     import asyncio
     from services.cycle_scheduler import start_scheduler
     asyncio.create_task(start_scheduler())

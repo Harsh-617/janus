@@ -84,7 +84,6 @@ async def execute_cycle_results(state: JanusState) -> dict:
     # After saving individual trades, apply them to portfolio positions
     if final_decision == "EXECUTE" and trades_executed:
         from services.portfolio_service import apply_trade_to_portfolio
-        from config import settings
 
         # Get current prices from state
         current_prices = state.get("market_prices", {})
@@ -185,7 +184,6 @@ async def execute_cycle_results(state: JanusState) -> dict:
 
     # At the end of execute_cycle_results, always update prices
     from services.portfolio_service import update_portfolio_prices
-    from config import settings
 
     current_prices = state.get("market_prices", {})
     if current_prices:

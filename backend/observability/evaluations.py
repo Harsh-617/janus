@@ -58,7 +58,7 @@ async def post_cycle_evaluations(state: JanusState) -> bool:
         # Add overall
         overall_normalized = judge_scores.get("overall_score", 5.0) / 10.0
         annotations.append({
-            "span_id": trace_id,
+            "span_id": span_id,
             "name": "overall",
             "annotator_kind": "LLM",
             "result": {
