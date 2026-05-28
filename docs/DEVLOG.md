@@ -1,3 +1,18 @@
+## Fix: Risk Agent VaR now computed in Python, not by the LLM
+**Date**: 2026-05-28
+**File**: `backend/agents/risk_agent.py`
+**What was fixed**: The Risk Agent's system prompt asked the LLM to estimate Value at Risk using hardcoded volatility values. LLMs hallucinate numerical results; every cycle logged `[Risk Agent] VETO — VaR 0.000 → 0.000`, meaning the LLM was returning placeholder zeros instead of real VaR values.
+
+**Changes**:
+- Added `VOLATILITY_MAP` dict with per-ticker daily volatility estimates (AAPL 2.2%, GLD 1.0%, BTC-USD 5.5%, TLT 1.2%, XOM 1.8%, KRE 2.5%, AMZN 2.4%, ETH-USD 6.0%, DEFAULT 2.0%).
+- Added `compute_portfolio_var(positions, cash, total_value, proposed_trades) -> dict` — pure Python parametric VaR. Computes weighted-average portfolio volatility for current positions and applies proposed trade adjustments to compute post-trade VaR. Returns `current_var`, `proposed_var`, `var_change` (all 1-day 95% confidence level via × 1.645 z-score).
+- `risk_agent_node` now calls `compute_portfolio_var` before the LLM call, extracting `positions`, `cash`, and `total_value` from `state["portfolio"]`.
+- Pre-computed numbers are injected into the user message under a `PRE-COMPUTED RISK METRICS` header. The system prompt was updated to say "use provided numbers — do not recalculate VaR yourself."
+- Span attributes (`risk.current_var`, `risk.proposed_var`) and the log line now use the Python-computed values instead of the LLM-returned values.
+- The state update now includes `computed_var` key containing the full `{current_var, proposed_var, var_change}` dict.
+
+---
+
 ## Fix: Hard router imports — removed try/except ImportError swallowing
 **Date**: 2026-05-28
 **File**: `backend/main.py`
