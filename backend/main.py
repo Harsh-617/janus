@@ -8,6 +8,17 @@ from fastapi.responses import JSONResponse
 from config import settings
 from observability.tracing import setup_tracing
 from db.firestore_client import initialize_portfolio
+from api.portfolio import router as portfolio_router
+from api.trades import router as trades_router
+from api.cycles import router as cycles_router
+from api.stream import router as stream_router
+from api.market_shock import router as market_shock_router
+from api.janus_loop import router as janus_loop_router
+from api.agents import router as agents_router
+from api.routes.constraints import router as constraints_router
+from api.routes.market_shock_parse import router as market_shock_parse_router
+from api.routes.constraint_validate import router as constraint_validate_router
+from api.routes.chat import router as chat_router
 
 logger = logging.getLogger(__name__)
 
@@ -43,71 +54,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-try:
-    from api.portfolio import router as portfolio_router
-    app.include_router(portfolio_router, prefix="/api", tags=["portfolio"])
-except ImportError:
-    logger.warning("api.portfolio router not found — skipping")
-
-try:
-    from api.trades import router as trades_router
-    app.include_router(trades_router, prefix="/api", tags=["trades"])
-except ImportError:
-    logger.warning("api.trades router not found — skipping")
-
-try:
-    from api.cycles import router as cycles_router
-    app.include_router(cycles_router, prefix="/api", tags=["cycles"])
-except ImportError:
-    logger.warning("api.cycles router not found — skipping")
-
-try:
-    from api.stream import router as stream_router
-    app.include_router(stream_router, prefix="/api", tags=["stream"])
-except ImportError:
-    logger.warning("api.stream router not found — skipping")
-
-try:
-    from api.market_shock import router as market_shock_router
-    app.include_router(market_shock_router, prefix="/api", tags=["market_shock"])
-except ImportError:
-    logger.warning("api.market_shock router not found — skipping")
-
-try:
-    from api.janus_loop import router as janus_loop_router
-    app.include_router(janus_loop_router, prefix="/api", tags=["janus_loop"])
-except ImportError:
-    logger.warning("api.janus_loop router not found — skipping")
-
-try:
-    from api.agents import router as agents_router
-    app.include_router(agents_router, prefix="/api", tags=["agents"])
-except ImportError:
-    logger.warning("api.agents router not found — skipping")
-
-try:
-    from api.routes.constraints import router as constraints_router
-    app.include_router(constraints_router, prefix="/api", tags=["constraints"])
-except ImportError:
-    logger.warning("api.routes.constraints router not found — skipping")
-
-try:
-    from api.routes.market_shock_parse import router as market_shock_parse_router
-    app.include_router(market_shock_parse_router, prefix="/api", tags=["market-shock"])
-except ImportError:
-    logger.warning("api.routes.market_shock_parse router not found — skipping")
-
-try:
-    from api.routes.constraint_validate import router as constraint_validate_router
-    app.include_router(constraint_validate_router, prefix="/api", tags=["constraints"])
-except ImportError:
-    logger.warning("api.routes.constraint_validate router not found — skipping")
-
-try:
-    from api.routes.chat import router as chat_router
-    app.include_router(chat_router, prefix="/api", tags=["chat"])
-except ImportError:
-    logger.warning("api.routes.chat router not found — skipping")
+app.include_router(portfolio_router, prefix="/api", tags=["portfolio"])
+app.include_router(trades_router, prefix="/api", tags=["trades"])
+app.include_router(cycles_router, prefix="/api", tags=["cycles"])
+app.include_router(stream_router, prefix="/api", tags=["stream"])
+app.include_router(market_shock_router, prefix="/api", tags=["market_shock"])
+app.include_router(janus_loop_router, prefix="/api", tags=["janus_loop"])
+app.include_router(agents_router, prefix="/api", tags=["agents"])
+app.include_router(constraints_router, prefix="/api", tags=["constraints"])
+app.include_router(market_shock_parse_router, prefix="/api", tags=["market-shock"])
+app.include_router(constraint_validate_router, prefix="/api", tags=["constraints"])
+app.include_router(chat_router, prefix="/api", tags=["chat"])
 
 
 @app.get("/health")

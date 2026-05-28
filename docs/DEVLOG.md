@@ -1,3 +1,15 @@
+## Fix: Hard router imports — removed try/except ImportError swallowing
+**Date**: 2026-05-28
+**File**: `backend/main.py`
+**What was fixed**: Every router was imported inside a `try/except ImportError` block. A real bug at import time (missing dependency, syntax error, bad import inside the router module) would cause the server to start cleanly, return 200 on `/health`, and silently serve 404s for the affected endpoints with only a `logger.warning` as evidence. All 11 try/except blocks were removed. Each router is now imported unconditionally at the top of the file alongside the other module-level imports. If any router fails to import the server will refuse to start and print a full traceback — the correct behavior.
+
+**Routers changed** (all moved to top-level imports):
+`api.portfolio`, `api.trades`, `api.cycles`, `api.stream`, `api.market_shock`,
+`api.janus_loop`, `api.agents`, `api.routes.constraints`,
+`api.routes.market_shock_parse`, `api.routes.constraint_validate`, `api.routes.chat`
+
+---
+
 ## Rewrite: phoenix_mcp_client.py switched from MCP to Phoenix REST API
 **Date**: 2026-05-28
 **File**: `backend/services/phoenix_mcp_client.py`
