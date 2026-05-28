@@ -1,3 +1,15 @@
+## Improvement Curve Chart
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/api/cycles.py` — GET /api/cycles/scores-over-time endpoint, returns raw scores + rolling average + constraint injection points
+- `frontend/lib/api.ts` — fetchScoresOverTime function added
+- `frontend/lib/types.ts` — ScoresOverTime, ConstraintInjection, ScoresOverTimeResponse types added
+- `frontend/components/janus-loop/improvement-curve-chart.tsx` — new Recharts component, dual-line chart (raw + rolling avg), gold vertical lines at constraint injection points, dimension selector, threshold line
+- `frontend/app/janus-loop/page.tsx` — ImprovementCurveChart added at top of page
+**What changed**: Rolling improvement curve now visualizes the self-correction loop working over time. Raw scores shown as dashed blue line, rolling average as solid green/red line, constraint injections as gold vertical reference lines. This is the primary proof that Janus self-corrects.
+
+---
+
 ## Mechanical Constraint Enforcement
 **Date**: 2026-05-28
 **Files modified**:

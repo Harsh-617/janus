@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Constraint } from "@/lib/types";
+import ImprovementCurveChart from "@/components/janus-loop/improvement-curve-chart";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -257,7 +258,7 @@ export default function JanusLoopPage() {
     : [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#080A0C", color: "#E2E8F0", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#080A0C", color: "#E2E8F0" }}>
       <style>{`
         @keyframes pulseDot {
           0%   { transform: translateX(0); }
@@ -334,6 +335,11 @@ export default function JanusLoopPage() {
         </div>
       </div>
 
+      {/* ── IMPROVEMENT CURVE CHART ── */}
+      <div style={{ padding: "20px 20px 0", flexShrink: 0 }}>
+        <ImprovementCurveChart />
+      </div>
+
       {/* ── LOOP STATUS ROW ── */}
       <div style={{ padding: "16px 20px", borderBottom: "1px solid #1C2128", background: "#0D1117", display: "flex", alignItems: "center", flexShrink: 0, position: "relative" }}>
         <div style={{ position: "absolute", left: 20 }}>
@@ -376,7 +382,7 @@ export default function JanusLoopPage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
 
         {/* LEFT COLUMN — Constraints */}
         <div style={{ flex: 1, borderRight: "1px solid #1C2128", overflowY: "auto" }}>

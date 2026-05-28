@@ -10,6 +10,7 @@ import type {
   MarketShockStatus,
   StreamStatus,
   HealthStatus,
+  ScoresOverTimeResponse,
 } from "./types";
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -186,5 +187,16 @@ export async function releaseCircuitBreaker(): Promise<{ message: string }> {
 export async function checkHealth(): Promise<HealthStatus> {
   const res = await fetch(`${API_BASE}/health`);
   if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchScoresOverTime(
+  dimension: string = "safety",
+  window: number = 10
+): Promise<ScoresOverTimeResponse> {
+  const res = await fetch(
+    `${API_BASE}/api/cycles/scores-over-time?dimension=${dimension}&window=${window}`
+  );
+  if (!res.ok) throw new Error(`Scores over time fetch failed: ${res.status}`);
   return res.json();
 }

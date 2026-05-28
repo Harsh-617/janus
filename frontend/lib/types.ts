@@ -206,3 +206,26 @@ export interface HealthStatus {
   status: string;
   timestamp: string;
 }
+
+// Improvement curve
+export interface ScoresOverTime {
+  cycle_number: number;
+  cycle_id: string;
+  raw_score: number;
+  rolling_avg: number;
+  timestamp: string;
+}
+
+export interface ConstraintInjection {
+  cycle_number: number;
+  constraint_id: string;
+  rule: string;
+  target_agent: string;
+}
+
+export interface ScoresOverTimeResponse {
+  dimension: string;
+  window: number;
+  data: ScoresOverTime[];
+  constraint_injections: ConstraintInjection[];
+}
