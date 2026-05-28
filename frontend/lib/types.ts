@@ -229,3 +229,25 @@ export interface ScoresOverTimeResponse {
   data: ScoresOverTime[];
   constraint_injections: ConstraintInjection[];
 }
+
+export interface PortfolioHistory {
+  cycle: number;
+  total_value: number;
+  pnl_pct: number;
+}
+
+export interface PortfolioSide {
+  portfolio_id: string;
+  label: string;
+  initial_capital: number;
+  current_value: number;
+  pnl_pct: number;
+  cycle_count: number;
+  history: PortfolioHistory[];
+}
+
+export interface PortfolioComparison {
+  janus: PortfolioSide;
+  baseline: PortfolioSide;
+  divergence_pct: number;
+}

@@ -90,6 +90,59 @@ def build_janus_graph() -> StateGraph:
 compiled_graph = build_janus_graph().compile()
 
 
+def build_baseline_graph() -> StateGraph:
+    """Baseline graph: same agents, no constraint_enforcer, no judge."""
+    graph = StateGraph(JanusState)
+
+    graph.add_node("trading_agent", trading_agent_node)
+    graph.add_node("risk_agent", risk_agent_node)
+    graph.add_node("fraud_agent", fraud_agent_node)
+    graph.add_node("regulator_agent", regulator_agent_node)
+
+    graph.set_entry_point("trading_agent")
+    graph.add_edge("trading_agent", "risk_agent")
+    graph.add_edge("risk_agent", "fraud_agent")
+    graph.add_edge("fraud_agent", "regulator_agent")
+    graph.add_edge("regulator_agent", END)
+
+    return graph
+
+
+compiled_baseline_graph = build_baseline_graph().compile()
+
+
+async def run_baseline_decision_cycle(
+    cycle_id: str,
+    cycle_number: int,
+    portfolio: dict,
+    market_prices: dict,
+    news_headlines: list,
+) -> JanusState:
+    """Run a baseline decision cycle — no constraints, no Janus Loop, no LLM Judge."""
+    initial_state = create_initial_state(cycle_id, cycle_number, portfolio)
+    initial_state["market_prices"] = market_prices
+    initial_state["news_headlines"] = news_headlines
+    initial_state["active_constraints"] = []
+    initial_state["market_shock_active"] = False
+    initial_state["market_shock_description"] = ""
+    initial_state["phoenix_trace_id"] = cycle_id
+    initial_state["cycle_span"] = None
+
+    logging.info(f"[Baseline Graph] Starting baseline cycle {cycle_id} (#{cycle_number})")
+
+    try:
+        config = {"configurable": {"thread_id": f"baseline_cycle_{cycle_id}"}}
+        final_state = await compiled_baseline_graph.ainvoke(initial_state, config)
+        logging.info(
+            f"[Baseline Graph] Baseline cycle {cycle_id} complete — "
+            f"Decision: {final_state.get('regulator_decision', {}).get('final_decision', 'UNKNOWN')}"
+        )
+        return final_state
+    except Exception as e:
+        logging.error(f"[Baseline Graph] Baseline cycle {cycle_id} failed: {e}")
+        raise
+
+
 async def run_decision_cycle(
     cycle_id: str,
     cycle_number: int,

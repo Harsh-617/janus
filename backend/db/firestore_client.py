@@ -11,9 +11,13 @@ db = firestore.Client(project=settings.GOOGLE_CLOUD_PROJECT)
 
 COL_PORTFOLIOS = "portfolios"
 COL_TRADES = "trades"
+COL_BASELINE_TRADES = "baseline_trades"
 COL_CONSTRAINTS = "constraints"
 COL_AGENT_MEMORY = "agent_memory"
 COL_CYCLES = "cycles"
+COL_HISTORY = "history"
+
+BASELINE_PORTFOLIO_ID = "janus_baseline"
 
 
 async def get_portfolio(portfolio_id: str) -> dict | None:
@@ -123,6 +127,45 @@ async def get_cycles(limit: int = 50) -> list[dict]:
         docs = (
             db.collection(COL_CYCLES)
             .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .stream()
+        )
+        return [doc.to_dict() for doc in docs]
+
+    return await asyncio.to_thread(_get)
+
+
+async def save_baseline_trade(trade_id: str, data: dict) -> None:
+    def _set():
+        db.collection(COL_BASELINE_TRADES).document(trade_id).set(data, merge=True)
+
+    await asyncio.to_thread(_set)
+
+
+async def save_portfolio_history_snapshot(
+    portfolio_id: str, cycle_number: int, data: dict
+) -> None:
+    def _set():
+        (
+            db.collection(COL_PORTFOLIOS)
+            .document(portfolio_id)
+            .collection(COL_HISTORY)
+            .document(str(cycle_number))
+            .set(data)
+        )
+
+    await asyncio.to_thread(_set)
+
+
+async def get_portfolio_history_snapshots(
+    portfolio_id: str, limit: int = 100
+) -> list[dict]:
+    def _get():
+        docs = (
+            db.collection(COL_PORTFOLIOS)
+            .document(portfolio_id)
+            .collection(COL_HISTORY)
+            .order_by("cycle")
             .limit(limit)
             .stream()
         )

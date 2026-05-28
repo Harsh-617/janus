@@ -11,6 +11,7 @@ import type {
   StreamStatus,
   HealthStatus,
   ScoresOverTimeResponse,
+  PortfolioComparison,
 } from "./types";
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -198,5 +199,11 @@ export async function fetchScoresOverTime(
     `${API_BASE}/api/cycles/scores-over-time?dimension=${dimension}&window=${window}`
   );
   if (!res.ok) throw new Error(`Scores over time fetch failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchPortfolioComparison(): Promise<PortfolioComparison> {
+  const res = await fetch(`${API_BASE}/api/portfolio/comparison`);
+  if (!res.ok) throw new Error(`Portfolio comparison fetch failed: ${res.status}`);
   return res.json();
 }

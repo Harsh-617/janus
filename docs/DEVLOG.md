@@ -1,3 +1,20 @@
+## Parallel Benchmark Portfolio
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/scripts/seed_baseline.py` — seeds portfolios/janus_baseline to same initial state as janus_main
+- `backend/api/portfolio.py` — POST /api/portfolio/reset-baseline and GET /api/portfolio/comparison endpoints added
+- `backend/graph/janus_graph.py` — baseline cycle graph (no constraint_enforcer, no judge) + run_baseline_decision_cycle added
+- `backend/graph/execution.py` — execute_baseline_cycle_results added; writes baseline trades and history snapshots
+- `backend/services/cycle_scheduler.py` — baseline cycle runs sequentially after each Janus cycle, same market data, no constraints, no Janus Loop, trades against janus_baseline; janus_main history snapshot written each cycle
+- `backend/db/firestore_client.py` — BASELINE_PORTFOLIO_ID constant, COL_BASELINE_TRADES, save_baseline_trade, save_portfolio_history_snapshot, get_portfolio_history_snapshots added
+- `frontend/lib/types.ts` — PortfolioHistory, PortfolioSide, PortfolioComparison types added
+- `frontend/lib/api.ts` — fetchPortfolioComparison added
+- `frontend/components/arena/portfolio-comparison-chart.tsx` — new dual-line Recharts chart, stat bar showing live divergence
+- `frontend/app/page.tsx` — PortfolioComparisonChart added to Arena between sparkline bar and main panels
+**What changed**: Second portfolio (janus_baseline) now runs every cycle with same agents and market data but zero constraints and no self-correction. Portfolio divergence chart on Arena page shows Janus P&L vs Baseline P&L over time. Divergence growing positive = self-correction is working.
+
+---
+
 ## Improvement Curve Chart
 **Date**: 2026-05-28
 **Files modified**:

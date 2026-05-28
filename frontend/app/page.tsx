@@ -5,6 +5,7 @@ import { PnlSparklineBar } from "@/components/arena/pnl-sparkline-bar";
 import { PortfolioPanel } from "@/components/arena/portfolio-panel";
 import { DecisionFeed } from "@/components/arena/decision-feed";
 import { MarketShockPanel } from "@/components/arena/market-shock-panel";
+import PortfolioComparisonChart from "@/components/arena/portfolio-comparison-chart";
 import { usePortfolio } from "@/hooks/use-portfolio";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 
@@ -31,6 +32,17 @@ export default function Arena() {
 
       {/* P&L sparkline — 64px, never scrolls */}
       <PnlSparklineBar portfolio={portfolio} />
+
+      {/* Portfolio Divergence chart — full width, 280px, never scrolls */}
+      <div
+        style={{
+          flexShrink: 0,
+          padding: "0 16px",
+          borderBottom: "1px solid #1C2128",
+        }}
+      >
+        <PortfolioComparisonChart />
+      </div>
 
       {/* Middle content area — flex row, never scrolls itself */}
       <div style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "row", overflow: "hidden" }}>

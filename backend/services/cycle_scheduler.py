@@ -8,9 +8,12 @@ from google.cloud import firestore as _firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 from config import settings
-from graph.janus_graph import run_decision_cycle
-from graph.execution import execute_cycle_results
-from db.firestore_client import get_portfolio, get_active_constraints, db, COL_CONSTRAINTS, COL_PORTFOLIOS
+from graph.janus_graph import run_decision_cycle, run_baseline_decision_cycle
+from graph.execution import execute_cycle_results, execute_baseline_cycle_results
+from db.firestore_client import (
+    get_portfolio, get_active_constraints, db, COL_CONSTRAINTS, COL_PORTFOLIOS,
+    save_portfolio_history_snapshot, BASELINE_PORTFOLIO_ID,
+)
 from tools.market_data import get_live_market_data
 from tools.news import get_market_news
 
@@ -187,6 +190,39 @@ async def run_single_cycle() -> dict:
 
         # Persist results
         summary = await execute_cycle_results(final_state)
+
+        # Write janus_main history snapshot for this cycle
+        main_portfolio = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
+        if main_portfolio:
+            initial_capital = float(main_portfolio.get("initial_capital", 1_000_000))
+            total_value = float(main_portfolio.get("total_value", initial_capital))
+            pnl_pct = round(((total_value - initial_capital) / initial_capital) * 100, 4)
+            await save_portfolio_history_snapshot(
+                settings.FIRESTORE_PORTFOLIO_ID,
+                _current_cycle_number,
+                {
+                    "cycle": _current_cycle_number,
+                    "total_value": round(total_value, 2),
+                    "pnl_pct": pnl_pct,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+
+        # Run baseline cycle sequentially with same market data (no constraints, no Janus Loop, no judge)
+        baseline_portfolio = await get_portfolio(BASELINE_PORTFOLIO_ID)
+        if baseline_portfolio:
+            try:
+                baseline_cycle_id = f"baseline_{cycle_id}"
+                baseline_state = await run_baseline_decision_cycle(
+                    cycle_id=baseline_cycle_id,
+                    cycle_number=_current_cycle_number,
+                    portfolio=baseline_portfolio,
+                    market_prices=market_prices,
+                    news_headlines=news_headlines,
+                )
+                await execute_baseline_cycle_results(baseline_state, _current_cycle_number)
+            except Exception as e:
+                logging.error(f"[Scheduler] Baseline cycle failed (non-fatal): {e}")
 
         # Update safety delta running averages for active constraints.
         # summary only contains "judge_score" (overall); safety sub-score must come from final_state.
