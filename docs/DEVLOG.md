@@ -1,3 +1,16 @@
+## Demo Mode
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/config.py` — DEMO_MODE bool setting added
+- `backend/data/demo_market_data.py` — new file, pre-cached prices and news for normal demo state and oil shock scenario
+- `backend/tools/market_data.py` — DEMO_MODE check at top of get_market_prices() and get_news_headlines(), returns cached data instantly instead of hitting yfinance
+- `backend/api/market_shock.py` — oil_shock scenario sets demo shock flag in DEMO_MODE; POST /api/market-shock/reset-demo clears it
+- `backend/api/system.py` — GET /api/system/status returns demo_mode and system status
+- `frontend/components/layout/topbar.tsx` — DEMO badge shown when backend reports demo_mode=true
+**What changed**: DEMO_MODE=true in .env serves pre-cached market data instantly instead of hitting yfinance or Alpha Vantage. Oil shock scenario switches to shock prices/news. Cycles run in 5-7 seconds instead of 15+. No live API dependencies during demo. Frontend shows DEMO badge so judges know the mode.
+
+---
+
 ## Explainability Report
 **Date**: 2026-05-28
 **Files modified**:

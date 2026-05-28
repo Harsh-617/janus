@@ -19,6 +19,7 @@ from api.routes.constraints import router as constraints_router
 from api.routes.market_shock_parse import router as market_shock_parse_router
 from api.routes.constraint_validate import router as constraint_validate_router
 from api.routes.chat import router as chat_router
+from api.system import router as system_router
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,7 @@ app.include_router(constraints_router, prefix="/api", tags=["constraints"])
 app.include_router(market_shock_parse_router, prefix="/api", tags=["market-shock"])
 app.include_router(constraint_validate_router, prefix="/api", tags=["constraints"])
 app.include_router(chat_router, prefix="/api", tags=["chat"])
+app.include_router(system_router, prefix="/api", tags=["system"])
 
 
 @app.get("/health")

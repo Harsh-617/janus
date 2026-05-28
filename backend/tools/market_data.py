@@ -4,7 +4,26 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
+from config import settings
+from data.demo_market_data import (
+    DEMO_PRICES,
+    OIL_SHOCK_PRICES,
+    DEMO_VOLATILITY,
+    OIL_SHOCK_VOLATILITY,
+)
+
 logger = logging.getLogger(__name__)
+
+_demo_shock_active: bool = False
+
+
+def set_demo_shock(active: bool) -> None:
+    global _demo_shock_active
+    _demo_shock_active = active
+
+
+def is_demo_shock_active() -> bool:
+    return _demo_shock_active
 
 _DEFAULT_TICKERS = ["AAPL", "GLD", "BTC-USD", "TLT", "XOM", "KRE", "AMZN", "ETH-USD"]
 
@@ -20,12 +39,22 @@ _FALLBACK_PRICES = {
 }
 
 
+def get_market_volatility() -> str:
+    """Returns current volatility label. In DEMO_MODE, returns pre-canned value."""
+    if settings.DEMO_MODE:
+        return OIL_SHOCK_VOLATILITY if _demo_shock_active else DEMO_VOLATILITY
+    return "MODERATE"
+
+
 def get_live_market_data(tickers: list[str] = None) -> dict:
     """
     Fetches current market prices for a list of tickers using yfinance.
     Returns a dict of { ticker: price } for all tickers that returned valid data.
     Falls back to last known price if yfinance fails for a ticker.
     """
+    if settings.DEMO_MODE:
+        return OIL_SHOCK_PRICES.copy() if _demo_shock_active else DEMO_PRICES.copy()
+
     if tickers is None:
         tickers = _DEFAULT_TICKERS
 

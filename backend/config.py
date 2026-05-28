@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     JANUS_LOOP_INTERVAL_CYCLES: int = 10
     INITIAL_CAPITAL: float = 1_000_000.0
     LOG_LEVEL: str = "INFO"
+    DEMO_MODE: bool = False
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

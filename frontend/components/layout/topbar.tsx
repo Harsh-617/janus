@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { usePortfolio } from "@/hooks/use-portfolio";
 import { useCycles } from "@/hooks/use-cycles";
+import { API_BASE } from "@/lib/constants";
 
 const CYCLE_INTERVAL = 60;
 
@@ -69,6 +70,7 @@ export function Topbar() {
   const { cycles } = useCycles(10);
   const [countdown, setCountdown] = useState(CYCLE_INTERVAL);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -80,6 +82,13 @@ export function Topbar() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/system/status`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.demo_mode) setDemoMode(true); })
+      .catch(() => {});
   }, []);
 
   const isCircuitBreaker = portfolio?.circuit_breaker_active ?? false;
@@ -133,6 +142,24 @@ export function Topbar() {
       </span>
 
       {SEP}
+
+      {/* DEMO badge */}
+      {demoMode && (
+        <span
+          style={{
+            background: "rgba(201,168,76,0.2)",
+            color: "#C9A84C",
+            border: "1px solid rgba(201,168,76,0.4)",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12,
+            padding: "2px 8px",
+            borderRadius: 4,
+            flexShrink: 0,
+          }}
+        >
+          DEMO
+        </span>
+      )}
 
       {/* Status pill */}
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>

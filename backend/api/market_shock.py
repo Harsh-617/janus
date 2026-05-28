@@ -109,6 +109,9 @@ async def trigger_preset_shock(scenario_id: str):
         description=scenario["description"],
         effects=scenario["effects"],
     )
+    if settings.DEMO_MODE and scenario_id == "oil_shock":
+        from tools.market_data import set_demo_shock
+        set_demo_shock(True)
     _active_shock_meta["activated_at"] = datetime.now(timezone.utc).isoformat()
     _active_shock_meta["scenario_id"] = scenario_id
     _active_shock_meta["scenario_name"] = scenario["name"]
@@ -134,6 +137,16 @@ async def trigger_custom_shock(request: CustomShockRequest):
     _active_shock_meta["scenario_name"] = "Custom Event"
     logging.info(f"[MarketShock] Custom shock triggered: {request.description}")
     return {"status": "shock_activated", "description": request.description}
+
+@router.post("/market-shock/reset-demo")
+async def reset_demo_shock():
+    """Clear demo shock flag, reverting to normal demo prices."""
+    if settings.DEMO_MODE:
+        from tools.market_data import set_demo_shock
+        set_demo_shock(False)
+        return {"status": "demo shock cleared, reverting to normal demo prices"}
+    return {"status": "not in demo mode"}
+
 
 @router.post("/market-shock/clear")
 async def clear_shock():

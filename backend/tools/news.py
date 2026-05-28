@@ -4,6 +4,7 @@ import requests
 from datetime import datetime, timedelta
 
 from config import settings
+from data.demo_market_data import DEMO_NEWS, OIL_SHOCK_NEWS
 
 FALLBACK_HEADLINES = [
     "Federal Reserve signals cautious approach to rate adjustments amid mixed economic data",
@@ -29,6 +30,11 @@ async def get_market_news(tickers: list[str] = None, limit: int = 5) -> list[str
     Returns a list of headline strings.
     Falls back to FALLBACK_HEADLINES if the API fails or all keys are exhausted.
     """
+    if settings.DEMO_MODE:
+        from tools.market_data import is_demo_shock_active
+        news = OIL_SHOCK_NEWS if is_demo_shock_active() else DEMO_NEWS
+        return [item["title"] for item in news]
+
     global _all_keys_exhausted, _exhaustion_reset_time
 
     now = datetime.utcnow()
