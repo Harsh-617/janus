@@ -3,7 +3,7 @@
 import { AGENT_DISPLAY_NAMES, AGENT_COLORS } from "@/lib/constants";
 import { ScoreBadge } from "@/components/shared/score-badge";
 import { RadarChartComponent } from "./radar-chart";
-import type { AgentName, BehavioralConstraint, DimensionScores } from "@/lib/types";
+import type { AgentName, BehavioralConstraint, DimensionScores, AgentTrends } from "@/lib/types";
 
 interface AgentCardProps {
   agentId: AgentName;
@@ -13,6 +13,7 @@ interface AgentCardProps {
   activeConstraints: BehavioralConstraint[];
   stats: Record<string, string | number>;
   lastDecision?: string;
+  trends?: AgentTrends;
 }
 
 const AGENT_DOT_COLORS: Record<string, string> = {
@@ -46,6 +47,46 @@ function statValueColor(index: number, value: string | number): string {
   return "#E2E8F0";
 }
 
+function TrendPill({ dimension, trends }: { dimension: string; trends?: AgentTrends }) {
+  const t = trends?.[dimension];
+  if (!t || t.trend === "INSUFFICIENT_DATA" || t.confidence < 0.7) return null;
+
+  const styles: Record<string, React.CSSProperties> = {
+    IMPROVING: {
+      background: "rgba(82,224,160,0.2)",
+      color: "#52E0A0",
+      border: "1px solid rgba(82,224,160,0.4)",
+    },
+    DEGRADING: {
+      background: "rgba(224,82,82,0.2)",
+      color: "#E05252",
+      border: "1px solid rgba(224,82,82,0.4)",
+    },
+    STABLE: {
+      background: "rgba(138,135,128,0.2)",
+      color: "#8A8780",
+      border: "1px solid rgba(138,135,128,0.4)",
+    },
+  };
+  const arrows: Record<string, string> = { IMPROVING: "↑", DEGRADING: "↓", STABLE: "→" };
+
+  return (
+    <span
+      style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: "0.75rem",
+        padding: "1px 6px",
+        borderRadius: 2,
+        lineHeight: 1.4,
+        flexShrink: 0,
+        ...styles[t.trend],
+      }}
+    >
+      {arrows[t.trend]}
+    </span>
+  );
+}
+
 export function AgentCard({
   agentId,
   isThinking,
@@ -54,6 +95,7 @@ export function AgentCard({
   activeConstraints,
   stats,
   lastDecision,
+  trends,
 }: AgentCardProps) {
   const agentColor = AGENT_DOT_COLORS[agentId] ?? AGENT_COLORS[agentId];
   const agentName = AGENT_DISPLAY_NAMES[agentId];
@@ -136,16 +178,19 @@ export function AgentCard({
               >
                 {label}
               </span>
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color,
-                }}
-              >
-                {display !== null ? display.toFixed(1) : "—"}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color,
+                  }}
+                >
+                  {display !== null ? display.toFixed(1) : "—"}
+                </span>
+                <TrendPill dimension={key} trends={trends} />
+              </div>
               <div
                 style={{
                   height: 3,

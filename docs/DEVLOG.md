@@ -1,3 +1,17 @@
+## Phoenix Anomaly Trend Metric
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/services/trend_analyzer.py` — new file, TrendAnalyzer with linear regression slope computation (pure Python), IMPROVING/STABLE/DEGRADING classification, confidence scoring, batch compute_all_trends
+- `backend/observability/evaluations.py` — trend annotations pushed to Phoenix after each Judge cycle as {dimension}_trend evaluations with score 1.0/0.5/0.0 and slope explanation
+- `backend/api/agents.py` — GET /api/agents/trends endpoint added
+- `frontend/lib/types.ts` — TrendResult, AgentTrends, AgentTrendsResponse types added
+- `frontend/lib/api.ts` — fetchAgentTrends added
+- `frontend/app/agents/page.tsx` — trends fetched on mount, passed to AgentCard
+- `frontend/components/agents/agent-card.tsx` — trend pills (↑↓→) shown next to dimension scores when confidence >= 0.7
+**What changed**: Linear regression slope computed over last 10 cycles per agent per dimension. Trend direction pushed to Phoenix as named evaluations making the Phoenix dashboard immediately readable. Trend pills shown in Agent Control Room with confidence threshold to avoid noisy low-data arrows.
+
+---
+
 ## Constraint Conflict Detection
 **Date**: 2026-05-28
 **Files modified**:

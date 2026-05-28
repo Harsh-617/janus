@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import { AgentCard } from "@/components/agents/agent-card";
 import HallucinationHeatmap from "@/components/agents/hallucination-heatmap";
 import { useAgentStream } from "@/hooks/use-agent-stream";
-import { fetchCycles, fetchJanusLoopStatus } from "@/lib/api";
+import { fetchCycles, fetchJanusLoopStatus, fetchAgentTrends } from "@/lib/api";
 import { API_BASE, AGENT_COLORS, AGENT_DISPLAY_NAMES } from "@/lib/constants";
 import type {
   DecisionCycle,
   AgentName,
-  BehavioralConstraint,
   DimensionScores,
   JanusLoopStatus,
+  AgentTrends,
+  AgentTrendsResponse,
 } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 
@@ -44,6 +45,7 @@ export default function AgentsPage() {
   const [cycles, setCycles] = useState<DecisionCycle[]>([]);
   const [janusStatus, setJanusStatus] = useState<JanusLoopStatus | null>(null);
   const [agentData, setAgentData] = useState<any[]>([]);
+  const [agentTrends, setAgentTrends] = useState<AgentTrendsResponse>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
@@ -58,6 +60,15 @@ export default function AgentsPage() {
       }
     } catch (error) {
       console.error("Failed to fetch /api/agents:", error);
+    }
+  };
+
+  const fetchTrends = async () => {
+    try {
+      const data = await fetchAgentTrends(10);
+      setAgentTrends(data);
+    } catch (error) {
+      console.error("Failed to fetch agent trends:", error);
     }
   };
 
@@ -85,8 +96,13 @@ export default function AgentsPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchAgentData, 30_000);
-    return () => clearInterval(interval);
+    fetchTrends();
+    const agentInterval = setInterval(fetchAgentData, 30_000);
+    const trendsInterval = setInterval(fetchTrends, 60_000);
+    return () => {
+      clearInterval(agentInterval);
+      clearInterval(trendsInterval);
+    };
   }, []);
 
   const deriveAgentStats = (agentId: AgentName, agentDataParam: any[]) => {
@@ -335,6 +351,7 @@ export default function AgentsPage() {
               activeConstraints={activeConstraints}
               stats={stats}
               lastDecision={lastDecision}
+              trends={agentTrends[agentId] as AgentTrends | undefined}
             />
           );
         })}

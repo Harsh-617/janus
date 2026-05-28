@@ -14,6 +14,7 @@ import type {
   PortfolioComparison,
   CycleExplainResponse,
   ConstraintConflict,
+  AgentTrendsResponse,
 } from "./types";
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -220,6 +221,12 @@ export async function fetchConstraintConflicts(): Promise<ConstraintConflict[]> 
   const res = await fetch(`${API_BASE}/api/constraints/conflicts`);
   if (!res.ok) throw new Error(`Conflicts fetch failed: ${res.status}`);
   return res.json().then((d) => d.conflicts);
+}
+
+export async function fetchAgentTrends(window: number = 10): Promise<AgentTrendsResponse> {
+  const res = await fetch(`${API_BASE}/api/agents/trends?window=${window}`);
+  if (!res.ok) throw new Error(`Agent trends fetch failed: ${res.status}`);
+  return res.json();
 }
 
 export async function resolveConflict(

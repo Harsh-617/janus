@@ -277,6 +277,23 @@ export interface PortfolioComparison {
   divergence_pct: number;
 }
 
+export interface TrendResult {
+  trend: string;
+  slope: number | null;
+  confidence: number;
+  data_points: number;
+  latest_score: number;
+  earliest_score: number;
+}
+
+export interface AgentTrends {
+  [dimension: string]: TrendResult;
+}
+
+export interface AgentTrendsResponse {
+  [agentId: string]: AgentTrends;
+}
+
 export interface CycleExplainResponse {
   cycle_id: string;
   timestamp: string;

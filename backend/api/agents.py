@@ -109,6 +109,14 @@ async def get_agents():
     }
 
 
+@router.get("/agents/trends")
+async def get_agent_trends(window: int = 10):
+    from services.trend_analyzer import TrendAnalyzer
+    analyzer = TrendAnalyzer()
+    trends = await analyzer.compute_all_trends(window=window)
+    return trends
+
+
 async def _fetch_data():
     import asyncio
     cycles, constraints, portfolio = await asyncio.gather(

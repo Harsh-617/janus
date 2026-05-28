@@ -7,6 +7,10 @@ from datetime import datetime, timezone
 _dataset_id: str | None = None
 
 
+def _trend_to_score(trend: str) -> float:
+    return {"IMPROVING": 1.0, "STABLE": 0.5, "DEGRADING": 0.0}.get(trend, 0.5)
+
+
 async def post_cycle_evaluations(state: JanusState) -> bool:
     """
     Post judge scores to Phoenix as evaluations linked to the cycle trace.
@@ -84,6 +88,52 @@ async def post_cycle_evaluations(state: JanusState) -> bool:
                     f"[Evaluations] Posted {len(annotations)} annotations "
                     f"for cycle {cycle_id} to Phoenix"
                 )
+                try:
+                    from services.trend_analyzer import TrendAnalyzer
+                    analyzer = TrendAnalyzer()
+                    trend_annotations = []
+                    for dim in [
+                        "correctness",
+                        "safety",
+                        "hallucination_risk",
+                        "compliance",
+                        "explainability",
+                    ]:
+                        trend_result = await analyzer.compute_trends(
+                            "trading_agent", dim, window=10
+                        )
+                        if trend_result["trend"] != "INSUFFICIENT_DATA":
+                            trend_annotations.append({
+                                "span_id": span_id,
+                                "name": f"{dim}_trend",
+                                "annotator_kind": "LLM",
+                                "result": {
+                                    "label": trend_result["trend"],
+                                    "score": _trend_to_score(trend_result["trend"]),
+                                    "explanation": (
+                                        f"Slope: {trend_result['slope']:.3f}/cycle over "
+                                        f"{trend_result['data_points']} cycles. "
+                                        f"Latest: {trend_result['latest_score']}, "
+                                        f"Earliest: {trend_result['earliest_score']}. "
+                                        f"Confidence: {trend_result['confidence']}"
+                                    ),
+                                },
+                                "metadata": {"cycle_id": cycle_id},
+                            })
+                    if trend_annotations:
+                        await client.post(
+                            evals_url,
+                            json={"data": trend_annotations},
+                            headers={"Content-Type": "application/json"},
+                        )
+                        logging.info(
+                            f"[Evaluations] Posted {len(trend_annotations)} trend "
+                            f"annotations for cycle {cycle_id} to Phoenix"
+                        )
+                except Exception as _trend_err:
+                    logging.warning(
+                        f"[Evaluations] Trend annotation failed (non-fatal): {_trend_err}"
+                    )
                 return True
             else:
                 logging.warning(
