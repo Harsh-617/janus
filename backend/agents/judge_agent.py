@@ -39,6 +39,8 @@ SCORING DIMENSIONS (each scored 1-10):
    - Were hard rules followed (position limits, VaR limits)?
    - Was the audit trail complete?
    - Were behavioral constraints from the Janus Loop referenced?
+   - If a CONSTRAINT ENFORCEMENT REPORT is present, score compliance higher — \
+     the system mechanically caught and corrected violations before the Risk Agent saw the proposal.
 
 5. EXPLAINABILITY (1-10): Could a human regulator audit this decision?
    - Was reasoning transparent and traceable?
@@ -87,6 +89,17 @@ async def judge_agent_node(state: JanusState) -> dict:
             risk_report = state.get("risk_report", {})
             fraud_alerts = state.get("fraud_alerts", [])
 
+            constraint_violations = state.get("constraint_violations", [])
+            if constraint_violations:
+                enforcement_block = (
+                    "\n=== CONSTRAINT ENFORCEMENT REPORT ===\n"
+                    "The following constraints were mechanically enforced before this proposal "
+                    "reached the Risk Agent:\n"
+                    f"{json.dumps(constraint_violations, indent=2)}\n"
+                )
+            else:
+                enforcement_block = ""
+
             user_message = f"""
 CYCLE ID: {cycle_id}
 
@@ -94,7 +107,7 @@ CYCLE ID: {cycle_id}
 Proposal: {json.dumps(state.get("trading_proposal", []), indent=2)}
 Thesis: {state.get("trading_thesis", "")}
 Confidence: {state.get("trading_confidence", 0.0)}
-
+{enforcement_block}
 === RISK AGENT OUTPUT ===
 {json.dumps(risk_report, indent=2)}
 

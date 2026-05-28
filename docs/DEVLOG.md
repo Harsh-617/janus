@@ -1,3 +1,13 @@
+## Mechanical Constraint Enforcement
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/services/constraint_enforcer.py` — new file, ConstraintEnforcer class with 4 mechanical checks: max trades, position size limit, forbidden actions, cash floor. Rule parsing via keyword matching.
+- `backend/graph/janus_graph.py` — ConstraintEnforcer wired between Trading Agent output and Risk Agent input. Violations logged to Phoenix span attributes and stored in LangGraph state.
+- `backend/agents/judge_agent.py` — constraint_violations passed to Judge context, factored into Compliance dimension scoring.
+**What changed**: Constraints are now mechanically enforced in Python after Trading Agent output, before Risk Agent sees the proposal. LLM can no longer ignore constraints — violations are caught, trimmed or blocked, logged to Phoenix, and visible to the Judge.
+
+---
+
 ## Data-Driven Hallucination Detection
 **Date**: 2026-05-28
 **Files modified**:

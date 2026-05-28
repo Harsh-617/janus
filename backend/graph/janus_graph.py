@@ -5,8 +5,47 @@ from agents.risk_agent import risk_agent_node
 from agents.fraud_agent import fraud_agent_node
 from agents.regulator_agent import regulator_agent_node
 from agents.judge_agent import judge_agent_node
-from observability.tracing import record_cycle_start
+from observability.tracing import record_cycle_start, trace_agent_call
+from services.constraint_enforcer import ConstraintEnforcer
+from db.firestore_client import get_active_constraints
+import json
 import logging
+
+
+async def constraint_enforcer_node(state: JanusState) -> dict:
+    """LangGraph node: mechanically enforce behavioral constraints after Trading Agent, before Risk Agent."""
+    cycle_id = state["cycle_id"]
+
+    with trace_agent_call("constraint_enforcer", cycle_id) as span:
+        trades = state.get("trading_proposal") or []
+        proposal = {
+            "trades": trades,
+            "thesis": state.get("trading_thesis", ""),
+            "confidence": state.get("trading_confidence", 0.0),
+        }
+
+        active_constraints = await get_active_constraints()
+        portfolio = state["portfolio"]
+
+        enforcer = ConstraintEnforcer()
+        result = enforcer.enforce(
+            proposal=proposal,
+            constraints=active_constraints,
+            portfolio=portfolio,
+        )
+
+        if result["violations"]:
+            span.set_attribute(
+                "constraint_violations", json.dumps(result["violations"])
+            )
+            logging.warning(
+                f"[ConstraintEnforcer] Cycle {cycle_id}: {len(result['violations'])} violation(s) enforced"
+            )
+
+        return {
+            "trading_proposal": result["proposal"]["trades"],
+            "constraint_violations": result["violations"],
+        }
 
 
 def should_continue_after_regulator(state: JanusState) -> str:
@@ -21,6 +60,7 @@ def build_janus_graph() -> StateGraph:
     graph = StateGraph(JanusState)
 
     graph.add_node("trading_agent", trading_agent_node)
+    graph.add_node("constraint_enforcer", constraint_enforcer_node)
     graph.add_node("risk_agent", risk_agent_node)
     graph.add_node("fraud_agent", fraud_agent_node)
     graph.add_node("regulator_agent", regulator_agent_node)
@@ -28,7 +68,8 @@ def build_janus_graph() -> StateGraph:
 
     graph.set_entry_point("trading_agent")
 
-    graph.add_edge("trading_agent", "risk_agent")
+    graph.add_edge("trading_agent", "constraint_enforcer")
+    graph.add_edge("constraint_enforcer", "risk_agent")
     graph.add_edge("risk_agent", "fraud_agent")
     graph.add_edge("fraud_agent", "regulator_agent")
 

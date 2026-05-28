@@ -92,6 +92,9 @@ class JanusState(TypedDict):
 
     judge_scores: dict | None
 
+    # Constraint enforcement results (set by constraint_enforcer node)
+    constraint_violations: list[dict]
+
     # Execution result
     trades_executed: list[dict]
     execution_errors: list[str]
@@ -129,6 +132,7 @@ def create_initial_state(
         fraud_investigation_open=False,
         regulator_decision=None,
         judge_scores=None,
+        constraint_violations=[],
         trades_executed=[],
         execution_errors=[],
         phoenix_trace_id="",
