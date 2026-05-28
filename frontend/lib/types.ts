@@ -251,3 +251,18 @@ export interface PortfolioComparison {
   baseline: PortfolioSide;
   divergence_pct: number;
 }
+
+export interface CycleExplainResponse {
+  cycle_id: string;
+  timestamp: string;
+  brief: string;
+  proposal_summary: string;
+  risk_summary: string;
+  fraud_summary: string;
+  regulator_summary: string;
+  constraint_summary: string;
+  judge_summary: string;
+  outcome: string;
+  phoenix_trace_id: string | null;
+  phoenix_trace_url: string | null;
+}

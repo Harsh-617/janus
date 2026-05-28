@@ -1,8 +1,8 @@
 "use client";
 
 import { Fragment, useState, useEffect, useRef, useMemo } from "react";
-import { fetchCycles } from "@/lib/api";
-import type { DecisionCycle } from "@/lib/types";
+import { fetchCycles, fetchCycleExplain } from "@/lib/api";
+import type { DecisionCycle, CycleExplainResponse } from "@/lib/types";
 import { StatusIndicator } from "@/components/shared/status-indicator";
 import { ScoreBadge } from "@/components/shared/score-badge";
 import { formatDistanceToNow } from "date-fns";
@@ -529,6 +529,96 @@ function ReasoningChain({ cycle }: { cycle: CycleWithExtra }) {
   );
 }
 
+// ─── Explain panel ────────────────────────────────────────────────────────────
+
+function ExplainPanel({ data }: { data: CycleExplainResponse }) {
+  const sections: { label: string; content: string }[] = [
+    { label: "PROPOSAL", content: data.proposal_summary },
+    { label: "RISK", content: data.risk_summary },
+    { label: "FRAUD", content: data.fraud_summary },
+    { label: "REGULATOR", content: data.regulator_summary },
+    { label: "CONSTRAINTS", content: data.constraint_summary },
+    { label: "JUDGE", content: data.judge_summary },
+    { label: "OUTCOME", content: data.outcome },
+  ];
+
+  return (
+    <div
+      style={{
+        background: "#0A0B0D",
+        border: "1px solid #2A2D35",
+        borderRadius: 4,
+        padding: 16,
+        marginTop: 12,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          textTransform: "uppercase",
+          letterSpacing: "0.12em",
+          color: "#C9A84C",
+          marginBottom: 14,
+        }}
+      >
+        {data.brief}
+      </div>
+
+      {sections.map(({ label, content }) => (
+        <div key={label} style={{ marginBottom: 12 }}>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "#C9A84C",
+              marginBottom: 4,
+            }}
+          >
+            {label}
+          </div>
+          <div
+            style={{
+              fontFamily: "'DM Sans', 'Inter', sans-serif",
+              fontSize: 12,
+              color: "#E8E6E0",
+              lineHeight: 1.6,
+            }}
+          >
+            {content || "N/A"}
+          </div>
+        </div>
+      ))}
+
+      {data.phoenix_trace_url && (
+        <div
+          style={{
+            marginTop: 12,
+            borderTop: "1px solid #2A2D35",
+            paddingTop: 10,
+          }}
+        >
+          <a
+            href={data.phoenix_trace_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              color: "#4CADCE",
+              textDecoration: "none",
+            }}
+          >
+            VIEW IN PHOENIX →
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Table headers ─────────────────────────────────────────────────────────────
 
 const TABLE_COLS = [
@@ -569,6 +659,45 @@ export default function AuditPage() {
     "timestamp"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  // Explain state per cycle
+  const [explainState, setExplainState] = useState<
+    Record<string, { loading: boolean; data: CycleExplainResponse | null; open: boolean }>
+  >({});
+
+  const handleExplain = async (cycleId: string) => {
+    const current = explainState[cycleId];
+    if (current?.open) {
+      setExplainState((prev) => ({
+        ...prev,
+        [cycleId]: { ...prev[cycleId], open: false },
+      }));
+      return;
+    }
+    if (current?.data) {
+      setExplainState((prev) => ({
+        ...prev,
+        [cycleId]: { ...prev[cycleId], open: true },
+      }));
+      return;
+    }
+    setExplainState((prev) => ({
+      ...prev,
+      [cycleId]: { loading: true, data: null, open: true },
+    }));
+    try {
+      const data = await fetchCycleExplain(cycleId);
+      setExplainState((prev) => ({
+        ...prev,
+        [cycleId]: { loading: false, data, open: true },
+      }));
+    } catch {
+      setExplainState((prev) => ({
+        ...prev,
+        [cycleId]: { loading: false, data: null, open: false },
+      }));
+    }
+  };
 
   const fetchData = async (newLimit?: number) => {
     try {
@@ -1124,6 +1253,54 @@ export default function AuditPage() {
                       <tr style={{ borderBottom: "1px solid #1C2128" }}>
                         <td colSpan={10} style={{ padding: 0 }}>
                           <ReasoningChain cycle={cycle as CycleWithExtra} />
+                          <div
+                            style={{
+                              background: "#0D1117",
+                              borderLeft: "3px solid #C9A84C",
+                              padding: "8px 20px 16px",
+                            }}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExplain(cycle.cycle_id);
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background =
+                                  "rgba(201,168,76,0.1)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background = "transparent")
+                              }
+                              style={{
+                                border: "1px solid #C9A84C",
+                                color: "#C9A84C",
+                                background: "transparent",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: 10,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em",
+                                padding: "4px 12px",
+                                borderRadius: 3,
+                                cursor: explainState[cycle.cycle_id]?.loading
+                                  ? "default"
+                                  : "pointer",
+                              }}
+                            >
+                              {explainState[cycle.cycle_id]?.loading
+                                ? "GENERATING..."
+                                : explainState[cycle.cycle_id]?.open &&
+                                  explainState[cycle.cycle_id]?.data
+                                ? "CLOSE EXPLAIN"
+                                : "EXPLAIN THIS CYCLE"}
+                            </button>
+                            {explainState[cycle.cycle_id]?.open &&
+                              explainState[cycle.cycle_id]?.data && (
+                                <ExplainPanel
+                                  data={explainState[cycle.cycle_id].data!}
+                                />
+                              )}
+                          </div>
                         </td>
                       </tr>
                     )}

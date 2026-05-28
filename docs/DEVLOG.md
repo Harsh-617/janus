@@ -1,3 +1,14 @@
+## Explainability Report
+**Date**: 2026-05-28
+**Files modified**:
+- `backend/api/cycles.py` — GET /api/cycles/{cycle_id}/explain endpoint, builds plain-English audit brief from Firestore data, no LLM call, graceful N/A fallback on missing fields
+- `frontend/lib/types.ts` — CycleExplainResponse type added
+- `frontend/lib/api.ts` — fetchCycleExplain function added
+- `frontend/app/audit/page.tsx` — EXPLAIN THIS CYCLE button in expanded row, explain panel with labeled sections and Phoenix trace link
+**What changed**: Any decision cycle can now be explained in plain English from the Audit Log page. One click generates a structured audit brief covering proposal, risk, fraud, regulator, constraints, judge score, and outcome — with a direct link to the Phoenix trace. No LLM call — pure Firestore data formatted into readable text.
+
+---
+
 ## Parallel Benchmark Portfolio
 **Date**: 2026-05-28
 **Files modified**:

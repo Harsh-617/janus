@@ -12,6 +12,7 @@ import type {
   HealthStatus,
   ScoresOverTimeResponse,
   PortfolioComparison,
+  CycleExplainResponse,
 } from "./types";
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -205,5 +206,11 @@ export async function fetchScoresOverTime(
 export async function fetchPortfolioComparison(): Promise<PortfolioComparison> {
   const res = await fetch(`${API_BASE}/api/portfolio/comparison`);
   if (!res.ok) throw new Error(`Portfolio comparison fetch failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchCycleExplain(cycleId: string): Promise<CycleExplainResponse> {
+  const res = await fetch(`${API_BASE}/api/cycles/${cycleId}/explain`);
+  if (!res.ok) throw new Error(`Cycle explain fetch failed: ${res.status}`);
   return res.json();
 }
