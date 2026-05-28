@@ -1,3 +1,16 @@
+## Rewrite: phoenix_mcp_client.py switched from MCP to Phoenix REST API
+**Date**: 2026-05-28
+**File**: `backend/services/phoenix_mcp_client.py`
+**What changed**: Phoenix 15.10.1 does not ship an MCP server — the `/mcp` endpoint does not exist in this release. The previous implementation used the `mcp` Python library with an SSE transport (`ClientSession` + `sse_client`) pointed at `{PHOENIX_BASE_URL}/mcp`, which failed on every call. The file has been rewritten to use the Phoenix REST API directly via `httpx`:
+
+- `get_recent_traces` → `GET /v1/spans` with `filter` and `sort` query params
+- `get_evaluations_for_traces` → `GET /v1/span_annotations` with `span_ids` query param
+- `list_available_tools` / `verify_mcp_connection` → `GET /v1/projects` as a connectivity probe, returning a static compatibility list
+
+All function names and return shapes are identical to the previous version; no other files were changed. The Janus Loop queries, learning event uploads, and experiment creation all go through the Phoenix REST API at `PHOENIX_BASE_URL`.
+
+---
+
 ## Fix: Fraud Agent switched to judge model to resolve 413 TPM limit errors
 **Date**: 2026-05-28
 **File**: `backend/agents/fraud_agent.py`
