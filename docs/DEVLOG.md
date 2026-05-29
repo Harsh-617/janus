@@ -1,3 +1,10 @@
+## Firestore as Source of Truth for Counters
+**Date**: 2026-05-30
+**Files modified**:
+- `backend/api/portfolio.py` — cycle_count and avg_judge_score now read from Firestore, persist across backend restarts
+
+---
+
 ## Fix Improvement Curve X-Axis
 **Date**: 2026-05-30
 **Files modified**:

@@ -18,6 +18,37 @@ async def get_portfolio_state():
     portfolio = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    # Override cycle_count and avg_judge_score with Firestore-sourced values
+    # so they survive backend restarts (in-memory _current_cycle_number resets to 0).
+    try:
+        def _fetch_cycle_stats():
+            count_result = db.collection("cycles").count().get()
+            cycle_count = count_result[0][0].value
+
+            recent = (
+                db.collection("cycles")
+                .order_by("timestamp", direction=firestore.Query.DESCENDING)
+                .limit(50)
+                .stream()
+            )
+            scores = [
+                d.to_dict().get("judge_overall_score", 0)
+                for d in recent
+                if d.to_dict().get("judge_overall_score") is not None
+            ]
+            avg_score = round(sum(scores) / len(scores), 1) if scores else 0
+            return cycle_count, avg_score
+
+        cycle_count, avg_score = await asyncio.to_thread(_fetch_cycle_stats)
+        portfolio["cycle_count"] = cycle_count
+        portfolio["avg_judge_score"] = avg_score
+    except Exception as exc:
+        logging.warning(f"[API] Firestore cycle stats query failed, using stored values: {exc}")
+        # Fall back to whatever is already in the portfolio document
+        if "avg_judge_score" not in portfolio:
+            portfolio["avg_judge_score"] = 0
+
     return portfolio
 
 @router.get("/portfolio/history")
