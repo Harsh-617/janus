@@ -405,7 +405,8 @@ source venv/bin/activate
 
 # Configure environment variables
 cp .env.example .env
-# Edit .env — set GROQ_API_KEY, ALPHA_VANTAGE_API_KEY, GOOGLE_CLOUD_PROJECT
+# Edit .env — set GROQ_API_KEY_1, ALPHA_VANTAGE_API_KEY_1, GOOGLE_CLOUD_PROJECT
+# At minimum GROQ_API_KEY_1 is required. Keys 2-6 are optional and used for automatic rate limit rotation.
 
 python main.py
 ```

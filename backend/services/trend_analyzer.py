@@ -93,9 +93,16 @@ class TrendAnalyzer:
     async def compute_trends(
         self, agent_id: str, dimension: str, window: int = 10
     ) -> dict:
+        # NOTE: Trend scores are computed from cycle-level judge evaluations.
+        # All agents share the same trend data since the Judge scores the
+        # entire decision cycle, not individual agents. The agent_id parameter
+        # is kept for API compatibility but does not filter scores.
         cycles = await get_cycles(limit=window)
         scores = _extract_scores(cycles, dimension)
-        return _compute_from_scores(scores, dimension, window)
+        result = _compute_from_scores(scores, dimension, window)
+        result["agent_id"] = agent_id
+        result["note"] = "cycle-level scores shared across agents"
+        return result
 
     async def compute_all_trends(self, window: int = 10) -> dict:
         cycles = await get_cycles(limit=window)

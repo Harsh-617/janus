@@ -1,3 +1,23 @@
+## Medium Priority Bug Fixes — Pre-Demo Audit
+**Date**: 2026-05-29
+**Files modified**:
+- `backend/api/portfolio.py` — M1: /portfolio/history now reads from
+  portfolios/{id}/history subcollection written by cycle_scheduler
+- `backend/data/demo_market_data.py` — M2: AMZN, MSFT, JPM, ETH-USD
+  added to both DEMO_PRICES and OIL_SHOCK_PRICES
+- `frontend/lib/types.ts` — M3: BehavioralConstraint.performance_delta
+  field names fixed to match backend (safety_before/safety_after)
+- `backend/services/trend_analyzer.py` — M4: agent_id note added,
+  return dict includes agent_id and architectural note
+- `backend/api/janus_loop.py` — M5: /janus-loop/history response
+  includes type and description fields for API clarity
+- `README.md` + `.env.example` — M6: GROQ_API_KEY → GROQ_API_KEY_1
+  through GROQ_API_KEY_3 with rotation note
+- `backend/services/constraint_service.py` — M7: empty file given
+  re-export stubs or descriptive comment
+
+---
+
 ## High Priority Bug Fixes — Pre-Demo Audit
 **Date**: 2026-05-29
 **Files modified**:

@@ -64,8 +64,8 @@ export interface BehavioralConstraint {
   rationale: string;
   status: "ACTIVE" | "EXPIRED" | "OVERRIDDEN";
   performance_delta: {
-    before: Record<string, number>;
-    after: Record<string, number> | null;
+    safety_before: number | null;
+    safety_after: number | null;
     cycles_active: number;
   };
   expires_after_cycles: number;

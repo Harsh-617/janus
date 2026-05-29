@@ -1,8 +1,11 @@
+import asyncio
+
 from fastapi import APIRouter, HTTPException
+from google.cloud import firestore
 from db.firestore_client import (
     get_portfolio, save_portfolio, get_cycles,
     save_portfolio_history_snapshot, get_portfolio_history_snapshots,
-    BASELINE_PORTFOLIO_ID,
+    BASELINE_PORTFOLIO_ID, db,
 )
 from config import settings
 import logging
@@ -20,18 +23,15 @@ async def get_portfolio_state():
 @router.get("/portfolio/history")
 async def get_portfolio_history():
     """Get portfolio value history across recent cycles for charting."""
-    cycles = await get_cycles(limit=50)
-    history = []
-    for cycle in cycles:
-        if "total_portfolio_value" not in cycle:
-            continue
-        history.append({
-            "cycle": cycle.get("cycle_number", cycle.get("cycle_id")),
-            "total_value": cycle["total_portfolio_value"],
-            "pnl_pct": cycle.get("pnl_pct"),
-            "timestamp": cycle.get("timestamp"),
-        })
-    history.sort(key=lambda x: x["timestamp"] if x["timestamp"] else "")
+    # Fetch from portfolios/{portfolio_id}/history subcollection
+    # (written by cycle_scheduler after each cycle)
+    history_ref = db.collection("portfolios")\
+                    .document(settings.FIRESTORE_PORTFOLIO_ID)\
+                    .collection("history")\
+                    .order_by("cycle", direction=firestore.Query.DESCENDING)\
+                    .limit(100)
+    docs = await asyncio.to_thread(lambda: list(history_ref.stream()))
+    history = [doc.to_dict() for doc in docs]
     return {"history": history}
 
 

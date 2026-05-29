@@ -6,6 +6,9 @@ DEMO_PRICES = {
     "XOM": 118.32,
     "KRE": 44.87,
     "ETH-USD": 3842.10,
+    "AMZN": 198.45,
+    "MSFT": 415.23,
+    "JPM": 198.67,
 }
 
 DEMO_NEWS = [
@@ -57,6 +60,9 @@ OIL_SHOCK_PRICES = {
     "XOM": 139.45,
     "KRE": 41.20,
     "ETH-USD": 3210.50,
+    "AMZN": 178.90,
+    "MSFT": 389.45,
+    "JPM": 185.20,
 }
 
 OIL_SHOCK_NEWS = [
@@ -94,6 +100,13 @@ OIL_SHOCK_NEWS = [
         "sentiment": "negative",
         "tickers": ["KRE"],
         "timestamp": "2026-06-01T10:20:00Z",
+    },
+    {
+        "title": "Tech giants face margin pressure as energy costs spike",
+        "summary": "AMZN and MSFT cloud infrastructure costs rise with energy prices",
+        "sentiment": "negative",
+        "tickers": ["AMZN", "MSFT"],
+        "timestamp": "2026-06-01T10:25:00Z",
     },
 ]
 
