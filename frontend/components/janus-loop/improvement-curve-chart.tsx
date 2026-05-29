@@ -170,7 +170,13 @@ export default function ImprovementCurveChart({ window: rollingWindow = 10 }: { 
             <CartesianGrid strokeDasharray="3 3" stroke="#1C2128" />
             <XAxis
               dataKey="cycle_number"
-              tick={{ fontFamily: MONO, fontSize: 9, fill: "#4B5563" }}
+              label={{
+                value: "cycle",
+                position: "insideBottomRight",
+                offset: -5,
+                style: { fontSize: "10px", fill: "#8A8780" },
+              }}
+              tick={{ fontSize: 10, fill: "#8A8780" }}
               interval={tickInterval}
             />
             <YAxis

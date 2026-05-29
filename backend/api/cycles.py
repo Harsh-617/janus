@@ -63,12 +63,11 @@ async def get_scores_over_time(
     data = []
     scores: list[float] = []
     for i, cycle in enumerate(cycles):
-        cn = cycle.get("cycle_number") or (i + 1)
         raw_score = float(cycle.get(score_field) or 0)
         scores.append(raw_score)
         rolling = sum(scores[-window:]) / min(len(scores), window)
         data.append({
-            "cycle_number": cn,
+            "cycle_number": i + 1,
             "cycle_id": cycle.get("cycle_id", ""),
             "raw_score": round(raw_score, 2),
             "rolling_avg": round(rolling, 2),
@@ -83,7 +82,7 @@ async def get_scores_over_time(
             return 0.0
 
     cycle_times = [
-        (_ts(c.get("timestamp", "")), c.get("cycle_number") or (i + 1))
+        (_ts(c.get("timestamp", "")), i + 1)
         for i, c in enumerate(cycles)
     ]
 

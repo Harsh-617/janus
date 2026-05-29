@@ -1,3 +1,11 @@
+## Fix Improvement Curve X-Axis
+**Date**: 2026-05-30
+**Files modified**:
+- `backend/api/cycles.py` — cycle_number now uses sequential enumerate index (1, 2, 3...) instead of raw Firestore field
+- `frontend/components/janus-loop/improvement-curve-chart.tsx` — XAxis confirmed using cycle_number dataKey
+
+---
+
 ## Inline Constraint Row Expansion
 **Date**: 2026-05-30
 **Files modified**:
