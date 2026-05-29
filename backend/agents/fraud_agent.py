@@ -180,7 +180,7 @@ re-analyze them, just include them in your output as-is.
             # Data-driven hallucination checks (beta, correlation, concentration)
             hallucination_flags = await _hallucination_detector.check(
                 reasoning=state["trading_thesis"],
-                proposed_trades=state.get("trading_proposal", {}).get("trades", []),
+                proposed_trades=state.get("trading_proposal", []),
                 portfolio=state.get("portfolio", {}),
             )
             for flag in hallucination_flags:

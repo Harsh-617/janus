@@ -134,8 +134,8 @@ async def execute_cycle_results(state: JanusState) -> dict:
                 "verdict": risk_decision.get("verdict", ""),
             },
             "fraud_agent": {
-                "status": get_state_value(state, "fraud_report", {}).get("status", ""),
-                "alerts": get_state_value(state, "fraud_report", {}).get("alerts", []),
+                "status": "ALERT" if state.get("fraud_alerts") else "CLEAR",
+                "alerts": state.get("fraud_alerts", []),
             },
             "regulator_agent": {
                 "final_decision": regulator_decision.get("final_decision", ""),

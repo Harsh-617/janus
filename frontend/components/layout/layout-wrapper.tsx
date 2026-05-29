@@ -30,14 +30,14 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
           if (parsed.type === "circuit_breaker_activated") {
             if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-            setAlertBanner({ type: "CIRCUIT_BREAKER", message: parsed.reason ?? "Circuit breaker activated" });
+            setAlertBanner({ type: "CIRCUIT_BREAKER", message: parsed.data?.reason ?? "Circuit breaker activated" });
             setBannerVisible(true);
             dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
           }
 
-          if (parsed.type === "cycle_complete" && parsed.critical_finding) {
+          if (parsed.type === "cycle_complete" && parsed.data?.critical_finding) {
             if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-            setAlertBanner({ type: "FRAUD", message: parsed.critical_finding });
+            setAlertBanner({ type: "FRAUD", message: parsed.data?.critical_finding });
             setBannerVisible(true);
             dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
           }

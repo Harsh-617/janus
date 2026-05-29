@@ -1,3 +1,22 @@
+## Critical Bug Fixes — Pre-Demo Audit
+**Date**: 2026-05-29
+**Files modified**:
+- `backend/agents/fraud_agent.py` — C1: fixed trading_proposal access 
+  from .get("trading_proposal",{}).get("trades",[]) to 
+  .get("trading_proposal",[])
+- `backend/graph/execution.py` — C2: replaced hard state["fraud_report"] 
+  key with correct state.get("fraud_alerts",[]) and 
+  state.get("fraud_investigation_open", False)
+- `frontend/components/layout/layout-wrapper.tsx` — C3: fixed alert 
+  banner reading parsed.critical_finding → parsed.data?.critical_finding 
+  and parsed.reason → parsed.data?.reason
+- `frontend/app/janus-loop/page.tsx` — C4: fixed constraint builder 
+  judge option value from "llm_judge" to "judge_agent"
+- `frontend/components/arena/market-shock-panel.tsx` — C5: fixed NL 
+  shock inject payload field from market_effects to shocks
+
+---
+
 ## Phoenix Anomaly Trend Metric
 **Date**: 2026-05-28
 **Files modified**:

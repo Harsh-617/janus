@@ -136,7 +136,7 @@ export function MarketShockPanel() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          market_effects: parsedPreview.effects,
+          shocks: parsedPreview.effects,
           description: parsedPreview.interpreted_as,
         }),
       });

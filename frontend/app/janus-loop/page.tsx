@@ -648,7 +648,7 @@ export default function JanusLoopPage() {
                     <option value="risk_agent">Risk Agent</option>
                     <option value="fraud_agent">Fraud Intelligence Agent</option>
                     <option value="regulator_agent">Regulator Agent</option>
-                    <option value="llm_judge">LLM Judge</option>
+                    <option value="judge_agent">LLM Judge</option>
                   </select>
                 </div>
 
