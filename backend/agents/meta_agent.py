@@ -280,12 +280,19 @@ the underperforming dimensions. Do not duplicate existing constraints.
             loop_run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             scores_before = await get_scores_from_cycles(recent_cycles)
             scores_after = await get_post_constraint_scores(constraint_ids)
-            experiment_id = await create_constraint_experiment(
-                constraint_ids=constraint_ids,
-                scores_before=scores_before,
-                scores_after=scores_after,
-                loop_run_id=loop_run_id,
-            )
+            try:
+                experiment_id = await create_constraint_experiment(
+                    constraint_ids=constraint_ids,
+                    scores_before=scores_before,
+                    scores_after=scores_after,
+                    loop_run_id=loop_run_id,
+                )
+            except Exception as e:
+                if "405" in str(e) or "Method Not Allowed" in str(e):
+                    logging.info("[Janus Loop] Phoenix experiments not supported on self-hosted — skipping experiment creation")
+                else:
+                    logging.warning(f"[Janus Loop] Experiment creation failed: {e}")
+                experiment_id = None
             if experiment_id:
                 exp_doc = {
                     "experiment_id": experiment_id,
@@ -303,7 +310,7 @@ the underperforming dimensions. Do not duplicate existing constraints.
                     await update_constraint(cid, {"phoenix_experiment_id": experiment_id})
                 logging.info(f"[Janus Loop] Phoenix experiment {experiment_id} linked to {len(constraint_ids)} constraints")
             else:
-                logging.warning("[Janus Loop] Phoenix experiment creation returned None — phoenix_experiment_id not written")
+                logging.info("[Janus Loop] Phoenix experiment creation returned None — phoenix_experiment_id not written")
 
             span.set_attribute("janus_loop.constraints_generated", len(constraints_generated))
             span.set_attribute("janus_loop.learning_events_analyzed", len(learning_events))

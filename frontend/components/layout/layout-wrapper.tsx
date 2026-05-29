@@ -18,9 +18,13 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [bannerVisible, setBannerVisible] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     function connect() {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
       const eventSource = new EventSource(`${API_BASE}/api/stream`);
       eventSourceRef.current = eventSource;
 
@@ -50,9 +54,8 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
       eventSource.onerror = () => {
         eventSource.close();
-        setTimeout(() => {
-          connect();
-        }, 3000);
+        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = setTimeout(connect, 2000);
       };
     }
 
@@ -60,6 +63,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
     return () => {
       eventSourceRef.current?.close();
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     };
   }, []);

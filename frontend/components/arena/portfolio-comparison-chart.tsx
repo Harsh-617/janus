@@ -358,8 +358,8 @@ export default function PortfolioComparisonChart() {
           />
 
           {/* Chart */}
-          <div style={{ flex: 1, minHeight: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: "100%", height: "180px", minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart
                 data={chartData}
                 margin={{ top: 5, right: 16, left: 40, bottom: 5 }}

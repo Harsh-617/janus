@@ -1,3 +1,13 @@
+## Runtime Fixes — Chart, Constraints, SSE
+**Date**: 2026-05-29
+**Files modified**:
+- `frontend/components/arena/portfolio-comparison-chart.tsx` — wrapped ResponsiveContainer in explicit height div, added minWidth=0, fixes width(-1) height(-1) error and missing chart
+- `frontend/app/janus-loop/page.tsx` — fixed constraints fetch data extraction, added 2s refresh after loop trigger
+- `frontend/components/layout/layout-wrapper.tsx` — SSE reconnection improved, 2s retry, old connection closed before new one opens
+- `backend/agents/meta_agent.py` — Phoenix 405 experiment error downgraded to INFO log, not WARNING
+
+---
+
 ## UI Fixes — Post Run Review
 **Date**: 2026-05-29
 **Files modified**:

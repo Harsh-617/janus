@@ -253,7 +253,7 @@ export default function JanusLoopPage() {
     } catch {
       // continue regardless — refetch will reveal any changes
     }
-    await new Promise((r) => setTimeout(r, 5_000));
+    await new Promise((r) => setTimeout(r, 2_000));
     try {
       await fetchAll();
     } catch {
@@ -534,12 +534,12 @@ export default function JanusLoopPage() {
             ACTIVE CONSTRAINTS
           </div>
 
-          {constraints.length === 0 ? (
+          {constraints.filter((c) => c.status === "ACTIVE").length === 0 ? (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 14px", fontFamily: MONO, fontSize: 11, color: "#4B5563", textAlign: "center" }}>
               No active constraints. Run the Janus Loop to generate behavioral rules.
             </div>
           ) : (
-            constraints.map((c) => {
+            constraints.filter((c) => c.status === "ACTIVE").map((c) => {
               const isExpanded = expandedRow === c.constraint_id;
               const { safety_before, safety_after, cycles_active } = c.performance_delta ?? {};
               const hasDelta = typeof safety_before === "number" && typeof safety_after === "number";
