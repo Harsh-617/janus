@@ -1,3 +1,17 @@
+## Inline Constraint Row Expansion
+**Date**: 2026-05-30
+**Files modified**:
+- `frontend/app/agents/page.tsx` — constraint rows now expand inline (same row grows), no separate detail row inserted
+
+---
+
+## Expandable Constraint Rows
+**Date**: 2026-05-30
+**Files modified**:
+- `frontend/app/agents/page.tsx` — rows now expand on click showing full CONDITION, RULE, and RATIONALE text
+
+---
+
 ## Fix fetchConstraints Double-Unwrap
 **Date**: 2026-05-30
 **Files modified**:

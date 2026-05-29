@@ -49,6 +49,7 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [expandedConstraint, setExpandedConstraint] = useState<string | null>(null);
   const { activeAgents } = useAgentStream();
 
   const fetchAgentData = async () => {
@@ -416,9 +417,12 @@ export default function AgentsPage() {
                   return (
                     <tr
                       key={constraint.constraint_id}
-                      style={{ borderBottom: "1px solid #1C2128" }}
+                      style={{ borderBottom: "1px solid #1C2128", cursor: "pointer" }}
+                      onClick={() => setExpandedConstraint(
+                        expandedConstraint === constraint.constraint_id ? null : constraint.constraint_id
+                      )}
                     >
-                      <td style={{ padding: "8px 14px" }}>
+                      <td style={{ padding: "8px 14px", verticalAlign: "top" }}>
                         <span
                           style={{
                             fontFamily: "'JetBrains Mono', monospace",
@@ -433,34 +437,41 @@ export default function AgentsPage() {
                           {name}
                         </span>
                       </td>
-                      <td
-                        style={{
-                          padding: "8px 14px",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 11,
-                          color: "#8B949E",
-                          maxWidth: 200,
-                        }}
-                      >
-                        <span title={constraint.condition}>
-                          {constraint.condition.length > 40
-                            ? constraint.condition.substring(0, 40) + "…"
-                            : constraint.condition}
+                      <td style={{ maxWidth: "300px", padding: "10px 12px", verticalAlign: "top" }}>
+                        <span style={{
+                          fontSize: "11px",
+                          color: "#E8E6E0",
+                          whiteSpace: expandedConstraint === constraint.constraint_id ? "normal" : "nowrap",
+                          overflow: expandedConstraint === constraint.constraint_id ? "visible" : "hidden",
+                          textOverflow: expandedConstraint === constraint.constraint_id ? "unset" : "ellipsis",
+                          display: "block",
+                          lineHeight: "1.5",
+                        }}>
+                          {constraint.condition}
                         </span>
+                        {expandedConstraint === constraint.constraint_id && constraint.rationale && (
+                          <span style={{
+                            display: "block",
+                            fontSize: "10px",
+                            color: "#8A8780",
+                            marginTop: "6px",
+                            lineHeight: "1.4",
+                          }}>
+                            {constraint.rationale}
+                          </span>
+                        )}
                       </td>
-                      <td
-                        style={{
-                          padding: "8px 14px",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 11,
-                          color: "#8B949E",
-                          maxWidth: 260,
-                        }}
-                      >
-                        <span title={constraint.rule}>
-                          {constraint.rule.length > 50
-                            ? constraint.rule.substring(0, 50) + "…"
-                            : constraint.rule}
+                      <td style={{ maxWidth: "300px", padding: "10px 12px", verticalAlign: "top" }}>
+                        <span style={{
+                          fontSize: "11px",
+                          color: "#E8E6E0",
+                          whiteSpace: expandedConstraint === constraint.constraint_id ? "normal" : "nowrap",
+                          overflow: expandedConstraint === constraint.constraint_id ? "visible" : "hidden",
+                          textOverflow: expandedConstraint === constraint.constraint_id ? "unset" : "ellipsis",
+                          display: "block",
+                          lineHeight: "1.5",
+                        }}>
+                          {constraint.rule}
                         </span>
                       </td>
                       <td
@@ -470,12 +481,13 @@ export default function AgentsPage() {
                           fontSize: 11,
                           color: "#8B949E",
                           whiteSpace: "nowrap",
+                          verticalAlign: "top",
                         }}
                       >
                         {constraint.performance_delta.cycles_active} /{" "}
                         {constraint.expires_after_cycles}
                       </td>
-                      <td style={{ padding: "8px 14px" }}>
+                      <td style={{ padding: "8px 14px", verticalAlign: "top" }}>
                         <span
                           style={{
                             fontFamily: "'JetBrains Mono', monospace",
@@ -492,6 +504,9 @@ export default function AgentsPage() {
                         >
                           {constraint.status}
                         </span>
+                      </td>
+                      <td style={{ color: "#8A8780", fontSize: "10px", padding: "8px 14px", verticalAlign: "top" }}>
+                        {expandedConstraint === constraint.constraint_id ? "▼" : "▶"}
                       </td>
                     </tr>
                   );
