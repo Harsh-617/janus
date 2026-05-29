@@ -592,29 +592,27 @@ function ExplainPanel({ data }: { data: CycleExplainResponse }) {
         </div>
       ))}
 
-      {data.phoenix_trace_url && (
-        <div
+      <div
+        style={{
+          marginTop: 12,
+          borderTop: "1px solid #2A2D35",
+          paddingTop: 10,
+        }}
+      >
+        <a
+          href={data.phoenix_trace_url || PHOENIX_BASE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
-            marginTop: 12,
-            borderTop: "1px solid #2A2D35",
-            paddingTop: 10,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            color: "#4CADCE",
+            textDecoration: "none",
           }}
         >
-          <a
-            href={data.phoenix_trace_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 11,
-              color: "#4CADCE",
-              textDecoration: "none",
-            }}
-          >
-            VIEW IN PHOENIX →
-          </a>
-        </div>
-      )}
+          {data.phoenix_trace_url ? "VIEW TRACE IN PHOENIX →" : "OPEN PHOENIX →"}
+        </a>
+      </div>
     </div>
   );
 }

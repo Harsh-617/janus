@@ -166,14 +166,15 @@ async def update_conflict_resolution(conflict_id: str, resolution: dict) -> None
 
 async def get_unresolved_conflicts(limit: int = 20) -> list[dict]:
     def _get():
-        docs = (
+        query = (
             db.collection(COL_CONSTRAINT_CONFLICTS)
             .where(filter=FieldFilter("resolved", "==", False))
-            .order_by("detected_at", direction=firestore.Query.DESCENDING)
-            .limit(limit)
-            .stream()
+            .limit(50)
         )
-        return [doc.to_dict() for doc in docs]
+        docs = query.stream()
+        results = [doc.to_dict() for doc in docs]
+        results.sort(key=lambda x: x.get("detected_at", ""), reverse=True)
+        return results[:20]
 
     return await asyncio.to_thread(_get)
 

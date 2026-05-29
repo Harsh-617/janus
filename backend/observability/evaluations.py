@@ -92,34 +92,40 @@ async def post_cycle_evaluations(state: JanusState) -> bool:
                     from services.trend_analyzer import TrendAnalyzer
                     analyzer = TrendAnalyzer()
                     trend_annotations = []
-                    for dim in [
-                        "correctness",
-                        "safety",
-                        "hallucination_risk",
-                        "compliance",
-                        "explainability",
-                    ]:
-                        trend_result = await analyzer.compute_trends(
-                            "trading_agent", dim, window=10
-                        )
-                        if trend_result["trend"] != "INSUFFICIENT_DATA":
-                            trend_annotations.append({
-                                "span_id": span_id,
-                                "name": f"{dim}_trend",
-                                "annotator_kind": "LLM",
-                                "result": {
-                                    "label": trend_result["trend"],
-                                    "score": _trend_to_score(trend_result["trend"]),
-                                    "explanation": (
-                                        f"Slope: {trend_result['slope']:.3f}/cycle over "
-                                        f"{trend_result['data_points']} cycles. "
-                                        f"Latest: {trend_result['latest_score']}, "
-                                        f"Earliest: {trend_result['earliest_score']}. "
-                                        f"Confidence: {trend_result['confidence']}"
-                                    ),
-                                },
-                                "metadata": {"cycle_id": cycle_id},
-                            })
+                    for agent_id in ["trading_agent", "risk_agent", "fraud_agent",
+                                     "regulator_agent", "judge_agent"]:
+                        for dimension in ["correctness", "safety", "hallucination_risk",
+                                          "compliance", "explainability"]:
+                            try:
+                                trend_result = await analyzer.compute_trends(
+                                    agent_id=agent_id,
+                                    dimension=dimension,
+                                    window=10
+                                )
+                                if trend_result["trend"] != "INSUFFICIENT_DATA":
+                                    trend_annotations.append({
+                                        "span_id": span_id,
+                                        "name": f"{agent_id}_{dimension}_trend",
+                                        "annotator_kind": "LLM",
+                                        "result": {
+                                            "label": trend_result["trend"],
+                                            "score": _trend_to_score(trend_result["trend"]),
+                                            "explanation": (
+                                                f"Agent: {agent_id} | "
+                                                f"Slope: {trend_result['slope']:.3f}/cycle "
+                                                f"over {trend_result['data_points']} cycles. "
+                                                f"Latest: {trend_result['latest_score']}, "
+                                                f"Earliest: {trend_result['earliest_score']}. "
+                                                f"Confidence: {trend_result['confidence']}"
+                                            ),
+                                        },
+                                        "metadata": {"cycle_id": cycle_id},
+                                    })
+                            except Exception as e:
+                                logging.warning(
+                                    f"[Evaluations] Trend annotation failed for "
+                                    f"{agent_id}/{dimension}: {e}"
+                                )
                     if trend_annotations:
                         await client.post(
                             evals_url,

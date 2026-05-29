@@ -1,3 +1,17 @@
+## High Priority Bug Fixes — Pre-Demo Audit
+**Date**: 2026-05-29
+**Files modified**:
+- `backend/main.py` — H1: CORS wildcard replaced with allow_origin_regex for Vercel deployment compatibility
+- `backend/services/hallucination_detector.py` — H2: yfinance calls wrapped in asyncio.to_thread to stop blocking event loop
+- `backend/api/cycles.py` — H3: explain endpoint reads correct decisions.trading_agent field for trades; phoenix_trace_url now links to specific trace not root
+- `backend/services/memory_service.py` — H4: "llm_judge" → "judge_agent" throughout, fixes judge memory Firestore path
+- `backend/observability/evaluations.py` — H5: trend annotations now loop over all 5 agents × 5 dimensions instead of only trading_agent
+- `backend/services/gemini_client.py` — H6: time.sleep() → asyncio.sleep() to prevent event loop freeze on Groq 429
+- `backend/db/firestore_client.py` — H7: composite index requirement removed from get_unresolved_conflicts — now fetches unordered and sorts in Python
+- `frontend/app/audit/page.tsx` — H8: Phoenix trace link now uses specific per-trace URL from explain response when available
+
+---
+
 ## Critical Bug Fixes — Pre-Demo Audit
 **Date**: 2026-05-29
 **Files modified**:

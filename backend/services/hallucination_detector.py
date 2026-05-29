@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 
@@ -57,7 +58,7 @@ class HallucinationDetector:
 
         for ticker in tickers:
             try:
-                info = yf.Ticker(ticker).info
+                info = await asyncio.to_thread(lambda: yf.Ticker(ticker).info)
                 beta = info.get("beta")
                 if beta is None:
                     continue
@@ -97,12 +98,14 @@ class HallucinationDetector:
 
         # Check every pair
         try:
-            raw = yf.download(
-                tickers,
-                period="90d",
-                interval="1d",
-                auto_adjust=True,
-                progress=False,
+            raw = await asyncio.to_thread(
+                lambda: yf.download(
+                    tickers,
+                    period="90d",
+                    interval="1d",
+                    auto_adjust=True,
+                    progress=False,
+                )
             )
             if raw.empty:
                 return []

@@ -8,7 +8,7 @@ AGENT_IDS = [
     "risk_agent",
     "fraud_agent",
     "regulator_agent",
-    "llm_judge",
+    "judge_agent",
 ]
 
 
