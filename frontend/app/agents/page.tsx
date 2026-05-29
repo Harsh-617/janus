@@ -80,8 +80,8 @@ export default function AgentsPage() {
       const [cyclesData, statusData] = await Promise.all([
         fetchCycles(50),
         fetchJanusLoopStatus(),
-        fetchAgentData(),
       ]);
+      await fetchAgentData();
 
       setCycles(Array.isArray(cyclesData) ? cyclesData : (cyclesData as any).cycles || []);
       setJanusStatus(statusData);

@@ -510,7 +510,7 @@ function ReasoningChain({ cycle }: { cycle: CycleWithExtra }) {
       {cycle.phoenix_trace_id && (
         <div style={{ borderTop: "1px solid #1C2128", paddingTop: 10 }}>
           <a
-            href={PHOENIX_BASE_URL}
+            href={`${PHOENIX_BASE_URL}/traces/${cycle.phoenix_trace_id}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}

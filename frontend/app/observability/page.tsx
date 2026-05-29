@@ -104,8 +104,9 @@ export default function ObservabilityPage() {
   useEffect(() => {
     const checkPhoenix = async () => {
       try {
-        await fetch(PHOENIX_URL, { mode: "no-cors" });
-        setPhoenixReachable(true);
+        const res = await fetch("/api/system/status");
+        const data = await res.json();
+        setPhoenixReachable(data.phoenix_reachable ?? false);
       } catch {
         setPhoenixReachable(false);
       }

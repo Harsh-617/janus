@@ -27,7 +27,7 @@ export function useAgentStream() {
           return;
         }
 
-        if (eventType === "ping" || eventType === "connected") return;
+        if (eventType === "ping") return;
 
         const event: SSEEvent = {
           type: eventType,

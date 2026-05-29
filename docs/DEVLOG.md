@@ -1,3 +1,13 @@
+## Low Priority Bug Fixes — Pre-Demo Audit
+**Date**: 2026-05-29
+**Files modified**:
+- `frontend/hooks/use-agent-stream.ts` — L1: removed duplicate "connected" check, keeping only "ping" early return
+- `frontend/app/audit/page.tsx` — L2: Phoenix trace links in audit table rows now link to specific trace URL using phoenix_trace_id
+- `frontend/app/observability/page.tsx` + `backend/api/system.py` — L3: Phoenix reachability check replaced with real health endpoint instead of no-cors fetch that always returns true
+- `frontend/app/agents/page.tsx` — L4: Promise.all destructuring made explicit
+
+---
+
 ## Medium Priority Bug Fixes — Pre-Demo Audit
 **Date**: 2026-05-29
 **Files modified**:
