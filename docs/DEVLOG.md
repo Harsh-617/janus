@@ -1,3 +1,24 @@
+## Fix fetchConstraints Double-Unwrap
+**Date**: 2026-05-30
+**Files modified**:
+- `frontend/app/janus-loop/page.tsx` — removed .constraints extraction since fetchConstraints() already returns the array directly. Fixed duplicate polling interval.
+
+---
+
+## Fix Constraints Polling Loop
+**Date**: 2026-05-30
+**Files modified**:
+- `frontend/app/janus-loop/page.tsx` — fixed useEffect dependency array causing infinite re-fetch loop, fixed data.constraints extraction
+
+---
+
+## Fix Constraints Display
+**Date**: 2026-05-30
+**Files modified**:
+- `frontend/app/janus-loop/page.tsx` — constraints fetch now reads data.constraints array instead of treating response as direct array
+
+---
+
 ## Topbar Font Size Increase
 **Date**: 2026-05-29
 **Files modified**:

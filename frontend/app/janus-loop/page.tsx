@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Constraint, ConstraintConflict } from "@/lib/types";
+import { fetchConstraints } from "@/lib/api";
+import type { BehavioralConstraint, ConstraintConflict } from "@/lib/types";
 import ImprovementCurveChart from "@/components/janus-loop/improvement-curve-chart";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -98,7 +99,7 @@ function StepNode({ label, index, isActive }: { label: string; index: number; is
 
 export default function JanusLoopPage() {
   const [status, setStatus] = useState<LoopStatus | null>(null);
-  const [constraints, setConstraints] = useState<Constraint[]>([]);
+  const [constraints, setConstraints] = useState<BehavioralConstraint[]>([]);
   const [isTriggering, setIsTriggering] = useState(false);
   const [triggerMessage, setTriggerMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,13 +123,6 @@ export default function JanusLoopPage() {
     return res.json();
   }
 
-  async function fetchHistory(): Promise<Constraint[]> {
-    const res = await fetch(`${BASE_URL}/api/janus-loop/history`);
-    if (!res.ok) throw new Error(`History fetch failed: ${res.status}`);
-    const data = await res.json();
-    return data.constraints ?? [];
-  }
-
   async function fetchConflicts(): Promise<ConstraintConflict[]> {
     const res = await fetch(`${BASE_URL}/api/constraints/conflicts`);
     if (!res.ok) return [];
@@ -137,9 +131,9 @@ export default function JanusLoopPage() {
   }
 
   async function fetchAll() {
-    const [s, c, cf] = await Promise.all([fetchStatus(), fetchHistory(), fetchConflicts()]);
+    const [s, items, cf] = await Promise.all([fetchStatus(), fetchConstraints(), fetchConflicts()]);
     setStatus(s);
-    setConstraints(c);
+    setConstraints(items.filter((c) => c.status?.toUpperCase() === "ACTIVE"));
     setConflicts(cf);
   }
 
@@ -179,6 +173,14 @@ export default function JanusLoopPage() {
         // silent — don't disrupt the UI on poll failure
       }
     }, 10_000);
+    const constraintsPoll = setInterval(async () => {
+      try {
+        const items = await fetchConstraints();
+        if (!cancelled) setConstraints(items.filter((c) => c.status?.toUpperCase() === "ACTIVE"));
+      } catch {
+        // silent
+      }
+    }, 30_000);
     const conflictPoll = setInterval(async () => {
       try {
         const cf = await fetchConflicts();
@@ -190,6 +192,7 @@ export default function JanusLoopPage() {
     return () => {
       cancelled = true;
       clearInterval(poll);
+      clearInterval(constraintsPoll);
       clearInterval(conflictPoll);
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
     };
