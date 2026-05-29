@@ -1,3 +1,13 @@
+## UI Fixes — Post Run Review
+**Date**: 2026-05-29
+**Files modified**:
+- `frontend/next.config.ts` — API proxy rewrites added, all /api/* now correctly forwarded to FastAPI:8000. Fixes Phoenix disconnect and all API 404s in browser.
+- `frontend/components/layout/layout-wrapper.tsx` — alert banner text truncation fixed, flex layout with min-w-0 prevents overflow
+- `frontend/components/arena/portfolio-comparison-chart.tsx` — height reduced to 180px, border normalized to #2A2D35, stat bar text smaller, chart margins tightened
+- `frontend/app/page.tsx` — comparison chart wrapper padding reduced, portfolio/decision feed grid gap tightened
+
+---
+
 ## Low Priority Bug Fixes — Pre-Demo Audit
 **Date**: 2026-05-29
 **Files modified**:

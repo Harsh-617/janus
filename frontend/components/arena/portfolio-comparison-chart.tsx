@@ -129,7 +129,7 @@ function StatBar({
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: 700,
             color: janus_pnl >= 0 ? COLOR_JANUS : "#E05252",
           }}
@@ -162,7 +162,7 @@ function StatBar({
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: 700,
             color: divergence_pct >= 0 ? COLOR_GOLD : "#E05252",
           }}
@@ -188,7 +188,7 @@ function StatBar({
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: 700,
             color: COLOR_BASELINE,
           }}
@@ -266,10 +266,10 @@ export default function PortfolioComparisonChart() {
       style={{
         background: "#13151A",
         border: `1px solid ${COLOR_BORDER}`,
-        borderRadius: 6,
+        borderRadius: 8,
         padding: 24,
         width: "100%",
-        height: 280,
+        height: 180,
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
@@ -362,7 +362,7 @@ export default function PortfolioComparisonChart() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
-                margin={{ top: 4, right: 12, bottom: 0, left: 0 }}
+                margin={{ top: 5, right: 16, left: 40, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#1C2128" />
                 <XAxis

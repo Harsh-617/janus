@@ -86,41 +86,46 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
               padding: "0 20px",
               background: "#1F0A0A",
               borderBottom: "1px solid #EF4444",
-              justifyContent: "space-between",
+              gap: "10px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  background: "#EF4444",
-                  borderRadius: "50%",
-                  animation: "pulse-dot 1.5s infinite",
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "11px",
-                  color: "#EF4444",
-                  fontWeight: 600,
-                  letterSpacing: "0.1em",
-                }}
-              >
-                {alertBanner?.type}
-              </span>
-              <span style={{ color: "#4B1818" }}>—</span>
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "12px",
-                  color: "#FCA5A5",
-                }}
-              >
-                {alertBanner?.message?.slice(0, 80)}
-              </span>
-            </div>
+            <div
+              style={{
+                width: "6px",
+                height: "6px",
+                background: "#EF4444",
+                borderRadius: "50%",
+                animation: "pulse-dot 1.5s infinite",
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "11px",
+                color: "#EF4444",
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                flexShrink: 0,
+              }}
+            >
+              {alertBanner?.type}
+            </span>
+            <span style={{ color: "#4B1818", flexShrink: 0 }}>—</span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "12px",
+                color: "#FCA5A5",
+                flex: 1,
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {alertBanner?.message}
+            </span>
             <button
               onClick={() => setBannerVisible(false)}
               style={{
@@ -130,6 +135,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
                 fontSize: "14px",
                 cursor: "pointer",
                 padding: "4px 8px",
+                flexShrink: 0,
               }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#E6EDF3"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#8B949E"; }}

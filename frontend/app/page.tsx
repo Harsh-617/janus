@@ -33,14 +33,8 @@ export default function Arena() {
       {/* P&L sparkline — 64px, never scrolls */}
       <PnlSparklineBar portfolio={portfolio} />
 
-      {/* Portfolio Divergence chart — full width, 280px, never scrolls */}
-      <div
-        style={{
-          flexShrink: 0,
-          padding: "0 16px",
-          borderBottom: "1px solid #1C2128",
-        }}
-      >
+      {/* Portfolio Divergence chart — full width, never scrolls */}
+      <div className="px-4 pb-0">
         <PortfolioComparisonChart />
       </div>
 
