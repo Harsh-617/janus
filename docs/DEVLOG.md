@@ -1,3 +1,34 @@
+## Topbar Font Size Increase
+**Date**: 2026-05-29
+**Files modified**:
+- `frontend/components/layout/topbar.tsx` — font sizes increased, stats spread across full width with flex-1
+- `frontend/components/arena/agent-status-bar.tsx` — font sizes increased, agents spread with gap-6
+
+---
+
+## Compact Topbar + Agent Bar
+**Date**: 2026-05-29
+**Files modified**:
+- `frontend/components/layout/topbar.tsx` — height reduced to 40px, font sizes and padding reduced throughout
+- `frontend/components/arena/agent-status-bar.tsx` — height reduced to 28px, fonts and dots smaller
+
+---
+
+## Compact Portfolio Divergence Panel
+**Date**: 2026-05-29
+**Files modified**:
+- `frontend/components/arena/portfolio-comparison-chart.tsx` — stat bar moved inline with title row, removing a full row of height. Panel now fits in ~230px total instead of ~380px.
+
+---
+
+## Fix Chart Lines + Alert Banner Height
+**Date**: 2026-05-29
+**Files modified**:
+- `frontend/components/arena/portfolio-comparison-chart.tsx` — separated stat bar, chart, and legend into independent sections. Chart now has dedicated 160px height container. ResponsiveContainer no longer shares space with stat bar or legend.
+- `frontend/components/layout/layout-wrapper.tsx` — alert banner increased to 52px height, message text changed to 2-line clamp instead of single-line truncation.
+
+---
+
 ## Runtime Fixes — Chart, Constraints, SSE
 **Date**: 2026-05-29
 **Files modified**:

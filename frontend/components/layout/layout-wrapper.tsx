@@ -81,10 +81,10 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
         <Topbar />
 
         {/* Alert banner */}
-        <div style={{ overflow: "hidden", transition: "height 0.3s ease", height: bannerVisible ? "48px" : "0px" }}>
+        <div style={{ overflow: "hidden", transition: "height 0.3s ease", height: bannerVisible ? "52px" : "0px" }}>
           <div
             style={{
-              height: "48px",
+              height: "52px",
               display: "flex",
               alignItems: "center",
               padding: "0 20px",
@@ -118,14 +118,16 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
             <span style={{ color: "#4B1818", flexShrink: 0 }}>—</span>
             <span
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "12px",
-                color: "#FCA5A5",
                 flex: 1,
                 minWidth: 0,
                 overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                fontSize: "11px",
+                lineHeight: "1.4",
+                fontFamily: "monospace",
+                color: "#FCA5A5",
               }}
             >
               {alertBanner?.message}
@@ -140,6 +142,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
                 cursor: "pointer",
                 padding: "4px 8px",
                 flexShrink: 0,
+                alignSelf: "center",
               }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#E6EDF3"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#8B949E"; }}

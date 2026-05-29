@@ -39,11 +39,11 @@ export function AgentStatusBar({
       style={{
         background: "#0D1117",
         borderBottom: "1px solid #1C2128",
-        height: 48,
-        padding: "0 16px",
+        height: 28,
+        padding: "0 12px",
         display: "flex",
         alignItems: "center",
-        gap: 16,
+        gap: 10,
         flexShrink: 0,
       }}
     >
@@ -51,7 +51,7 @@ export function AgentStatusBar({
       <span
         style={{
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           letterSpacing: "0.1em",
           textTransform: "uppercase",
@@ -62,22 +62,23 @@ export function AgentStatusBar({
       </span>
 
       {/* Vertical separator */}
-      <div style={{ width: 1, height: 20, background: "#1C2128", flexShrink: 0 }} />
+      <div style={{ width: 1, height: 14, background: "#1C2128", flexShrink: 0 }} />
 
       {/* Agent items */}
+      <div style={{ display: "flex", alignItems: "center", gap: 24, flex: 1, margin: "0 8px" }}>
       {AGENT_ORDER.map((agent, idx) => {
         const isActive = !!activeAgents[agent];
         const dotColor = getDotColor(isActive);
 
         return (
-          <div key={agent} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div key={agent} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {/* Status dot */}
-              <div style={{ position: "relative", width: 6, height: 6, flexShrink: 0 }}>
+              <div style={{ position: "relative", width: 5, height: 5, flexShrink: 0 }}>
                 <div
                   style={{
-                    width: 6,
-                    height: 6,
+                    width: 5,
+                    height: 5,
                     borderRadius: "50%",
                     background: dotColor,
                     position: "absolute",
@@ -88,8 +89,8 @@ export function AgentStatusBar({
                 {isActive && (
                   <div
                     style={{
-                      width: 6,
-                      height: 6,
+                      width: 5,
+                      height: 5,
                       borderRadius: "50%",
                       background: "#22C55E",
                       position: "absolute",
@@ -106,7 +107,7 @@ export function AgentStatusBar({
               <span
                 style={{
                   fontFamily: "'Inter', sans-serif",
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: 500,
                   color: "#E2E8F0",
                 }}
@@ -118,7 +119,7 @@ export function AgentStatusBar({
               <span
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 12,
+                  fontSize: 11,
                   color: isActive ? "#4CADCE" : "#4B5563",
                 }}
               >
@@ -128,18 +129,19 @@ export function AgentStatusBar({
 
             {/* Separator between items (not after last) */}
             {idx < AGENT_ORDER.length - 1 && (
-              <div style={{ width: 1, height: 20, background: "#1C2128", flexShrink: 0 }} />
+              <div style={{ width: 1, height: 14, background: "#1C2128", flexShrink: 0 }} />
             )}
           </div>
         );
       })}
+      </div>
 
       {/* Right side: connection status */}
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
         <div
           style={{
-            width: 6,
-            height: 6,
+            width: 5,
+            height: 5,
             borderRadius: "50%",
             background: connected ? "#22C55E" : "#EF4444",
             flexShrink: 0,
@@ -148,7 +150,7 @@ export function AgentStatusBar({
         <span
           style={{
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 600,
             letterSpacing: "0.08em",
             color: connected ? "#22C55E" : "#EF4444",

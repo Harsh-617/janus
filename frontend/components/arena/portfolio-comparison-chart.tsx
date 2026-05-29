@@ -89,116 +89,6 @@ function ComparisonTooltip({ active, payload, label }: TooltipProps) {
   );
 }
 
-function StatBar({
-  janus_pnl,
-  baseline_pnl,
-  divergence_pct,
-}: {
-  janus_pnl: number;
-  baseline_pnl: number;
-  divergence_pct: number;
-}) {
-  const fmt = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 16,
-        padding: "10px 16px",
-        background: "#0E1015",
-        border: `1px solid ${COLOR_BORDER}`,
-        borderRadius: 4,
-      }}
-    >
-      {/* JANUS P&L */}
-      <div style={{ textAlign: "center", flex: 1 }}>
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 9,
-            color: "#4B5563",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            marginBottom: 3,
-          }}
-        >
-          JANUS P&amp;L
-        </div>
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 14,
-            fontWeight: 700,
-            color: janus_pnl >= 0 ? COLOR_JANUS : "#E05252",
-          }}
-        >
-          {fmt(janus_pnl)}
-        </div>
-      </div>
-
-      {/* DIVERGENCE */}
-      <div
-        style={{
-          textAlign: "center",
-          flex: 1,
-          borderLeft: `1px solid ${COLOR_BORDER}`,
-          borderRight: `1px solid ${COLOR_BORDER}`,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 9,
-            color: "#4B5563",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            marginBottom: 3,
-          }}
-        >
-          DIVERGENCE
-        </div>
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 14,
-            fontWeight: 700,
-            color: divergence_pct >= 0 ? COLOR_GOLD : "#E05252",
-          }}
-        >
-          {fmt(divergence_pct)}
-        </div>
-      </div>
-
-      {/* BASELINE P&L */}
-      <div style={{ textAlign: "center", flex: 1 }}>
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 9,
-            color: "#4B5563",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            marginBottom: 3,
-          }}
-        >
-          BASELINE P&amp;L
-        </div>
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 14,
-            fontWeight: 700,
-            color: COLOR_BASELINE,
-          }}
-        >
-          {fmt(baseline_pnl)}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function CustomLegend() {
   return (
@@ -259,6 +149,7 @@ export default function PortfolioComparisonChart() {
   const chartData = data
     ? buildChartData(data.janus.history, data.baseline.history)
     : [];
+  console.log("chartData:", chartData?.slice(0, 3));
   const hasEnoughData = chartData.length >= 3;
 
   return (
@@ -269,50 +160,41 @@ export default function PortfolioComparisonChart() {
         borderRadius: 8,
         padding: 24,
         width: "100%",
-        height: 180,
         boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-        flexShrink: 0,
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 12,
-        }}
-      >
+      {/* Header with inline stats */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div>
-          <div
-            style={{
-              fontFamily: "'Cinzel', serif",
-              fontSize: 12,
-              color: COLOR_GOLD,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-            }}
-          >
+          <div style={{ fontFamily: "'Cinzel', serif", fontSize: 11, color: COLOR_GOLD, letterSpacing: "0.1em" }}>
             PORTFOLIO DIVERGENCE
           </div>
-          <div style={{ fontFamily: MONO, fontSize: 10, color: "#4B5563", marginTop: 2 }}>
+          <div style={{ fontSize: 10, color: "#8A8780", marginTop: 2 }}>
             Janus self-correction vs unconstrained baseline
           </div>
         </div>
-        {data && (
-          <div
-            style={{
-              fontFamily: MONO,
-              fontSize: 9,
-              color: "#4B5563",
-              textAlign: "right",
-            }}
-          >
-            {data.janus.cycle_count} cycles
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 9, color: "#8A8780", fontFamily: "monospace" }}>JANUS P&amp;L</div>
+            <div style={{ fontSize: 13, color: COLOR_JANUS, fontFamily: MONO, fontWeight: 600 }}>
+              {data ? `${data.janus.pnl_pct >= 0 ? "+" : ""}${data.janus.pnl_pct.toFixed(2)}%` : "--"}
+            </div>
           </div>
-        )}
+          <div style={{ width: 1, height: 28, background: COLOR_BORDER }} />
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 9, color: "#8A8780", fontFamily: "monospace" }}>DIVERGENCE</div>
+            <div style={{ fontSize: 13, color: (data?.divergence_pct ?? 0) >= 0 ? COLOR_GOLD : "#E05252", fontFamily: MONO, fontWeight: 600 }}>
+              {data ? `${data.divergence_pct >= 0 ? "+" : ""}${data.divergence_pct.toFixed(2)}%` : "--"}
+            </div>
+          </div>
+          <div style={{ width: 1, height: 28, background: COLOR_BORDER }} />
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 9, color: "#8A8780", fontFamily: "monospace" }}>BASELINE P&amp;L</div>
+            <div style={{ fontSize: 13, color: COLOR_BASELINE, fontFamily: MONO, fontWeight: 600 }}>
+              {data ? `${data.baseline.pnl_pct >= 0 ? "+" : ""}${data.baseline.pnl_pct.toFixed(2)}%` : "--"}
+            </div>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -350,15 +232,8 @@ export default function PortfolioComparisonChart() {
         </div>
       ) : (
         <>
-          {/* Stat bar */}
-          <StatBar
-            janus_pnl={data!.janus.pnl_pct}
-            baseline_pnl={data!.baseline.pnl_pct}
-            divergence_pct={data!.divergence_pct}
-          />
-
           {/* Chart */}
-          <div style={{ width: "100%", height: "180px", minWidth: 0 }}>
+          <div style={{ width: "100%", height: "160px", minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart
                 data={chartData}

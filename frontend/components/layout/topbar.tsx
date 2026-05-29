@@ -31,7 +31,7 @@ const SEP = (
   <div
     style={{
       width: 1,
-      height: 24,
+      height: 16,
       background: "#1C2128",
       flexShrink: 0,
     }}
@@ -49,7 +49,7 @@ function Metric({ label, value }: MetricProps) {
       <span
         style={{
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
           color: "#4B5563",
@@ -58,7 +58,7 @@ function Metric({ label, value }: MetricProps) {
       >
         {label}
       </span>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 15, fontWeight: 600, lineHeight: 1 }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
         {value}
       </span>
     </div>
@@ -117,13 +117,13 @@ export function Topbar() {
   return (
     <header
       style={{
-        height: 52,
+        height: 40,
         background: "#0D1117",
         borderBottom: "1px solid #1C2128",
         display: "flex",
         alignItems: "center",
-        padding: "0 16px",
-        gap: 20,
+        padding: "0 12px",
+        gap: 16,
         flexShrink: 0,
       }}
     >
@@ -131,7 +131,7 @@ export function Topbar() {
       <span
         className="cinzel"
         style={{
-          fontSize: 16,
+          fontSize: 18,
           fontWeight: 600,
           letterSpacing: "0.18em",
           color: "#C9A84C",
@@ -162,11 +162,11 @@ export function Topbar() {
       )}
 
       {/* Status pill */}
-      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <span
           style={{
-            width: 7,
-            height: 7,
+            width: 6,
+            height: 6,
             borderRadius: "50%",
             background: statusColor,
             flexShrink: 0,
@@ -189,7 +189,7 @@ export function Topbar() {
       {SEP}
 
       {/* Metrics */}
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 24, flex: 1, margin: "0 8px" }}>
         <Metric
           label="PORTFOLIO"
           value={
@@ -227,18 +227,15 @@ export function Topbar() {
         />
       </div>
 
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
       {/* Countdown */}
       <div
         style={{
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 11,
+          fontSize: 12,
           color: "#4B5563",
           border: "1px solid #1C2128",
           borderRadius: 4,
-          padding: "4px 10px",
+          padding: "2px 8px",
           userSelect: "none",
         }}
       >
