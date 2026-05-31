@@ -165,6 +165,7 @@ async def execute_cycle_results(state: JanusState) -> dict:
 
     summary = {
         "cycle_id": cycle_id,
+        "cycle_number": state.get("cycle_number"),
         "final_decision": final_decision,
         "trades_executed": len(trades_executed),
         "judge_score": judge_scores.get("overall_score", 0.0),

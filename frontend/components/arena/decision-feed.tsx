@@ -225,13 +225,11 @@ function renderContent(event: SSEEvent) {
 
   if (type === "cycle_complete") {
     const d = event.data as any;
-    const cycleNum = d?.cycle_number
-      || (event as any).cycle_number
-      || d?.cycle_id?.split("_")[3]?.slice(0, 4)
-      || "";
+    const cycleNum = d.cycle_number || null;
+    const tradesCount = `${d.trades_executed} trade${d.trades_executed !== 1 ? "s" : ""}`;
     const cycleTitle = cycleNum
-      ? `Cycle #${cycleNum} complete — ${d.trades_executed} trade${d.trades_executed !== 1 ? "s" : ""}`
-      : `Cycle complete — ${d.trades_executed} trade${d.trades_executed !== 1 ? "s" : ""}`;
+      ? `Cycle #${cycleNum} complete — ${tradesCount}`
+      : `Cycle complete — ${tradesCount}`;
     return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
         <AgentBadge agent="judge_agent" />

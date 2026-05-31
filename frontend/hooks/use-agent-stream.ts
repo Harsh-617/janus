@@ -40,6 +40,9 @@ export function useAgentStream() {
 
         if (eventType === "ping") return;
 
+        // Skip baseline cycle events — they run in background
+        if (parsed.is_baseline === true) return;
+
         const event: SSEEvent = {
           type: eventType,
           timestamp: parsed.timestamp || new Date().toISOString(),

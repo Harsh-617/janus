@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
 
 from google.cloud import firestore as _firestore
@@ -24,6 +24,7 @@ _subscribers: list[asyncio.Queue] = []
 _scheduler_running: bool = False
 _current_cycle_number: int = 0
 _market_shock: dict = {"active": False, "description": "", "effects": {}}
+_next_cycle_time = None
 
 
 def subscribe() -> asyncio.Queue:
@@ -220,7 +221,8 @@ async def run_single_cycle() -> dict:
                     market_prices=market_prices,
                     news_headlines=news_headlines,
                 )
-                await execute_baseline_cycle_results(baseline_state, _current_cycle_number)
+                baseline_summary = await execute_baseline_cycle_results(baseline_state, _current_cycle_number)
+                await broadcast_event("cycle_complete", {**baseline_summary, "is_baseline": True})
             except Exception as e:
                 logging.error(f"[Scheduler] Baseline cycle failed (non-fatal): {e}")
 
@@ -294,6 +296,8 @@ async def start_scheduler() -> None:
         except Exception as e:
             logging.error(f"[Scheduler] Unhandled error: {e}")
 
+        global _next_cycle_time
+        _next_cycle_time = datetime.now(timezone.utc) + timedelta(seconds=settings.AGENT_CYCLE_INTERVAL_SECONDS)
         await asyncio.sleep(settings.AGENT_CYCLE_INTERVAL_SECONDS)
 
 def stop_scheduler() -> None:
@@ -306,10 +310,18 @@ def set_market_shock(active: bool, description: str = "", effects: dict = {}) ->
     _market_shock = {"active": active, "description": description, "effects": effects}
     logging.info(f"[Scheduler] Market shock set: active={active}, description={description}")
 
+def seconds_until_next_cycle() -> int:
+    if not _next_cycle_time:
+        return 60
+    remaining = (_next_cycle_time - datetime.now(timezone.utc)).total_seconds()
+    return max(0, int(remaining))
+
+
 def get_scheduler_status() -> dict:
     return {
         "running": _scheduler_running,
         "current_cycle_number": _current_cycle_number,
         "market_shock_active": _market_shock["active"],
         "market_shock_description": _market_shock.get("description", ""),
+        "next_cycle_in_seconds": seconds_until_next_cycle(),
     }

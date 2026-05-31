@@ -73,11 +73,23 @@ export function Topbar() {
   const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/stream/status`);
+        const data = await res.json();
+        if (data.next_cycle_in_seconds !== undefined) {
+          setCountdown(data.next_cycle_in_seconds);
+        }
+      } catch {}
+    };
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     timerRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) return CYCLE_INTERVAL;
-        return prev - 1;
-      });
+      setCountdown((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);

@@ -1,3 +1,28 @@
+## Filter Baseline Cycles + Sync Timer
+**Date**: 2026-06-01
+**Files modified**:
+- `backend/services/cycle_scheduler.py` — baseline cycle_complete payload includes is_baseline: True, scheduler exposes seconds_until_next_cycle()
+- `frontend/hooks/use-agent-stream.ts` — baseline SSE events skipped from decision feed
+- `frontend/components/layout/topbar.tsx` — next cycle timer synced with backend every 5 seconds
+
+---
+
+## Add cycle_number to SSE Payload
+**Date**: 2026-06-01
+**Files modified**:
+- `backend/graph/execution.py` — cycle_number added to cycle_complete summary dict
+- `backend/services/cycle_scheduler.py` — cycle_number passed through to execution if needed
+- `frontend/components/arena/decision-feed.tsx` — reads cycle_number directly from event data
+
+---
+
+## Fix Cycle Number Display in Decision Feed
+**Date**: 2026-06-01
+**Files modified**:
+- `frontend/components/arena/decision-feed.tsx` — cycle identifier extracted from actual event data fields
+
+---
+
 ## Decision Feed Cycle Number Display
 **Date**: 2026-05-31
 **Files modified**:
