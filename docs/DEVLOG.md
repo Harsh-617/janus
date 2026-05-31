@@ -1,3 +1,38 @@
+## Fix Decision Feed Persistence + Analysis Window Label
+**Date**: 2026-05-31
+**Files modified**:
+- `frontend/hooks/use-agent-stream.ts` — events persisted in sessionStorage, survive page navigation
+- `frontend/app/janus-loop/page.tsx` — analysis window label clarified to show "cycles analyzed per loop run"
+
+---
+
+## SSE Module Singleton — Fix Navigation Disconnect
+**Date**: 2026-05-31
+**Files modified**:
+- `frontend/lib/sse-manager.ts` — new file, module-level EventSource singleton that never unmounts with React
+- `frontend/components/layout/layout-wrapper.tsx` — removed EventSource lifecycle, now subscribes to sseManager
+- `frontend/hooks/use-agent-stream.ts` — removed EventSource lifecycle, now subscribes to sseManager
+
+---
+
+## Fix Chart Clutter + SSE Keepalive
+**Date**: 2026-05-31
+**Files modified**:
+- `backend/api/cycles.py` — scores-over-time now returns last 100 cycles (most recent) instead of first 500
+- `frontend/components/janus-loop/improvement-curve-chart.tsx` — constraint label text removed, only gold vertical lines shown
+- `backend/api/stream.py` — SSE ping every 15 seconds prevents connection timeout on page navigation
+
+---
+
+## Fix SSE Disconnect, Chart Limit, Sparkline Persistence
+**Date**: 2026-05-30
+**Files modified**:
+- `frontend/app/layout.tsx` — verified LayoutWrapper at root level, SSE useEffect dependency array fixed to []
+- `backend/api/cycles.py` — scores-over-time limit increased from 100 to 500
+- `frontend/app/page.tsx` — sparkline data persisted in sessionStorage, survives page navigation within same session
+
+---
+
 ## Firestore as Source of Truth for Counters
 **Date**: 2026-05-30
 **Files modified**:

@@ -202,30 +202,14 @@ export default function ImprovementCurveChart({ window: rollingWindow = 10 }: { 
             />
 
             {/* Constraint injection verticals */}
-            {injections.map((inj, idx) => (
+            {injections.map((inj) => (
               <ReferenceLine
                 key={inj.constraint_id}
                 x={inj.cycle_number}
                 stroke="#C9A84C"
                 strokeDasharray="4 4"
-                label={(props: any) => {
-                  const vb = props?.viewBox ?? {};
-                  const x = vb.x ?? 0;
-                  const y = vb.y ?? 0;
-                  const offset = (idx % 4) * 11;
-                  return (
-                    <text
-                      x={x}
-                      y={y + 10 + offset}
-                      fill="#C9A84C"
-                      fontFamily={MONO}
-                      fontSize={9}
-                      textAnchor="middle"
-                    >
-                      C{idx + 1}
-                    </text>
-                  );
-                }}
+                strokeOpacity={0.6}
+                strokeWidth={1}
               />
             ))}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 interface DataPoint {
@@ -22,15 +22,23 @@ function formatValue(value: number): string {
 }
 
 export function PnlSparklineBar({ portfolio }: PnlSparklineBarProps) {
-  const pointsRef = useRef<DataPoint[]>([]);
-  const [renderedPoints, setRenderedPoints] = useState<DataPoint[]>([]);
+  const [renderedPoints, setRenderedPoints] = useState<DataPoint[]>(() => {
+    try {
+      const saved = sessionStorage.getItem("janus_sparkline");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
 
   useEffect(() => {
     if (portfolio?.total_value == null) return;
-    const next = [...pointsRef.current, { time: Date.now(), value: portfolio.total_value }];
-    if (next.length > 60) next.shift();
-    pointsRef.current = next;
-    setRenderedPoints([...next]);
+    setRenderedPoints(prev => {
+      const next = [...prev, { time: Date.now(), value: portfolio.total_value }];
+      if (next.length > 60) next.shift();
+      try {
+        sessionStorage.setItem("janus_sparkline", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   }, [portfolio?.total_value]);
 
   if (!portfolio) {

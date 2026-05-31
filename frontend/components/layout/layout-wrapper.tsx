@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import AgentChatDrawer from "./agent-chat-drawer";
-import { API_BASE } from "@/lib/constants";
+import { sseManager } from "@/lib/sse-manager";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -17,53 +17,36 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   } | null>(null);
   const [bannerVisible, setBannerVisible] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    function connect() {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-      const eventSource = new EventSource(`${API_BASE}/api/stream`);
-      eventSourceRef.current = eventSource;
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(e.data);
 
-      eventSource.onmessage = (e) => {
-        try {
-          const parsed = JSON.parse(e.data);
-
-          if (parsed.type === "circuit_breaker_activated") {
-            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-            setAlertBanner({ type: "CIRCUIT_BREAKER", message: parsed.data?.reason ?? "Circuit breaker activated" });
-            setBannerVisible(true);
-            dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
-          }
-
-          if (parsed.type === "cycle_complete" && parsed.data?.critical_finding) {
-            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-            setAlertBanner({ type: "FRAUD", message: parsed.data?.critical_finding });
-            setBannerVisible(true);
-            dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
-          }
-
-          window.dispatchEvent(new CustomEvent('janus-sse', { detail: parsed }));
-        } catch {
-          // ignore parse errors
+        if (parsed.type === "circuit_breaker_activated") {
+          if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+          setAlertBanner({ type: "CIRCUIT_BREAKER", message: parsed.data?.reason ?? "Circuit breaker activated" });
+          setBannerVisible(true);
+          dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
         }
-      };
 
-      eventSource.onerror = () => {
-        eventSource.close();
-        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = setTimeout(connect, 2000);
-      };
-    }
+        if (parsed.type === "cycle_complete" && parsed.data?.critical_finding) {
+          if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+          setAlertBanner({ type: "FRAUD", message: parsed.data?.critical_finding });
+          setBannerVisible(true);
+          dismissTimerRef.current = setTimeout(() => setBannerVisible(false), 10000);
+        }
 
-    connect();
+        window.dispatchEvent(new CustomEvent('janus-sse', { detail: parsed }));
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    sseManager.addListener(handleMessage);
 
     return () => {
-      eventSourceRef.current?.close();
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      sseManager.removeListener(handleMessage);
       if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     };
   }, []);

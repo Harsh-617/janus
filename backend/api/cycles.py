@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
+from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 from config import settings
@@ -49,8 +50,17 @@ async def get_scores_over_time(
     }
     score_field = field_map[dimension]
 
-    raw = await get_cycles(limit=100)
-    cycles = list(reversed(raw))  # oldest → newest
+    def _get_recent_cycles():
+        cycles_ref = (
+            db.collection(COL_CYCLES)
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .limit(100)
+        )
+        docs = [d.to_dict() for d in cycles_ref.stream() if d.to_dict()]
+        docs.reverse()  # oldest → newest
+        return docs
+
+    cycles = await asyncio.to_thread(_get_recent_cycles)
 
     def _get_constraints():
         docs = [d.to_dict() for d in db.collection(COL_CONSTRAINTS).stream() if d.to_dict()]

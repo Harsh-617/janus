@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from "react";
 import type { SSEEvent, AgentName, CycleCompleteEvent } from "@/lib/types";
+import { sseManager } from "@/lib/sse-manager";
 
 const MAX_EVENTS = 50;
 
 export function useAgentStream() {
-  const [events, setEvents] = useState<SSEEvent[]>([]);
+  const [events, setEvents] = useState<SSEEvent[]>(() => {
+    try {
+      const saved = sessionStorage.getItem("janus_decision_feed")
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  });
   const [connected, setConnected] = useState(false);
   const [activeAgents, setActiveAgents] = useState<Record<AgentName, boolean>>(
     {} as Record<AgentName, boolean>
@@ -17,9 +23,14 @@ export function useAgentStream() {
   const [cycleCount, setCycleCount] = useState(0);
 
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      const parsed = e.detail;
+    const handleConnection = (isConnected: boolean) => {
+      setConnected(isConnected);
+    };
+    sseManager.addConnectionListener(handleConnection);
+
+    const handleMessage = (e: MessageEvent) => {
       try {
+        const parsed = JSON.parse(e.data);
         const eventType = parsed.type;
 
         if (eventType === "connected") {
@@ -36,7 +47,13 @@ export function useAgentStream() {
           ...parsed,
         };
 
-        setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
+        setEvents((prev) => {
+          const updated = [event, ...prev].slice(0, MAX_EVENTS)
+          try {
+            sessionStorage.setItem("janus_decision_feed", JSON.stringify(updated))
+          } catch {}
+          return updated
+        });
 
         if (eventType === "cycle_start") {
           setActiveAgents({} as Record<AgentName, boolean>);
@@ -64,8 +81,11 @@ export function useAgentStream() {
       }
     };
 
-    window.addEventListener('janus-sse', handler as EventListener);
-    return () => window.removeEventListener('janus-sse', handler as EventListener);
+    sseManager.addListener(handleMessage);
+    return () => {
+      sseManager.removeConnectionListener(handleConnection);
+      sseManager.removeListener(handleMessage);
+    };
   }, []);
 
   return { events, connected, activeAgents, lastCycle, cycleCount };

@@ -347,9 +347,12 @@ export default function JanusLoopPage() {
       {/* ── STATS BAR ── */}
       <div style={{ display: "flex", height: 56, borderBottom: "1px solid #1C2128", flexShrink: 0 }}>
         <div style={{ flex: 1, borderRight: "1px solid #1C2128", padding: "0 20px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div style={{ fontFamily: MONO, fontSize: 9, color: "#4B5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>ANALYSIS WINDOW</div>
+          <div style={{ fontFamily: MONO, fontSize: 9, color: "#4B5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>LOOP ANALYSIS WINDOW</div>
           <div style={{ fontFamily: "Inter, sans-serif", fontSize: 15, fontWeight: 600, color: "#E2E8F0", marginTop: 2 }}>
-            Last {status?.recent_cycles_analyzed ?? 20}
+            Last {status?.recent_cycles_analyzed ?? 20} cycles
+          </div>
+          <div style={{ fontSize: "10px", color: "#8A8780", marginTop: "4px" }}>
+            cycles analyzed per loop run
           </div>
         </div>
         <div style={{ flex: 1, borderRight: "1px solid #1C2128", padding: "0 20px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
