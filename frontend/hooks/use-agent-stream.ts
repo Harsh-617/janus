@@ -41,7 +41,10 @@ export function useAgentStream() {
         if (eventType === "ping") return;
 
         // Skip baseline cycle events — they run in background
-        if (parsed.is_baseline === true) return;
+        if (parsed.is_baseline === true ||
+            parsed.is_baseline === "true" ||
+            parsed.is_baseline === "True" ||
+            parsed.data?.is_baseline === true) return;
 
         const event: SSEEvent = {
           type: eventType,
