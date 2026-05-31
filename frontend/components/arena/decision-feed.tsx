@@ -118,7 +118,7 @@ function renderContent(event: SSEEvent) {
   const type = event.type as string;
 
   if (type === "agent_thinking") {
-    const d = (event as any).data;
+    const d = (event as any).data ?? event;
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
         <AgentBadge agent={d?.agent ?? ""} />
@@ -138,7 +138,7 @@ function renderContent(event: SSEEvent) {
   }
 
   if (type === "trade_executed") {
-    const d = (event as any).data;
+    const d = (event as any).data ?? event;
     return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
         <AgentBadge agent="trading_agent" />
@@ -177,7 +177,7 @@ function renderContent(event: SSEEvent) {
   }
 
   if (type === "cycle_start") {
-    const d = event.data as any;
+    const d = (event as any).data ?? event;
     return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
         <span
@@ -224,7 +224,7 @@ function renderContent(event: SSEEvent) {
   }
 
   if (type === "cycle_complete") {
-    const d = event.data as any;
+    const d = (event as any).data ?? event;
     const cycleNum = d.cycle_number || null;
     const tradesCount = `${d.trades_executed} trade${d.trades_executed !== 1 ? "s" : ""}`;
     const cycleTitle = cycleNum
@@ -309,7 +309,7 @@ function renderContent(event: SSEEvent) {
   }
 
   if (type === "cycle_error") {
-    const d = event.data as any;
+    const d = (event as any).data ?? event;
     return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
         <span
@@ -344,7 +344,7 @@ function renderContent(event: SSEEvent) {
   }
 
   if (type === "circuit_breaker_activated") {
-    const d = event.data as any;
+    const d = (event as any).data ?? event;
     return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
         <span

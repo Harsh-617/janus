@@ -121,6 +121,47 @@ async def get_scores_over_time(
     }
 
 
+@router.get("/cycles/recent-feed")
+async def get_recent_feed(
+    limit: int = Query(default=20, ge=1, le=100),
+    started_at: str = Query(default=None),
+):
+    """Return last N cycles formatted as decision feed events."""
+
+    def _fetch():
+        docs = (
+            db.collection(COL_CYCLES)
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .stream()
+        )
+        return [d.to_dict() for d in docs if d.to_dict()]
+
+    cycles = await asyncio.to_thread(_fetch)
+
+    if started_at:
+        from datetime import datetime, timezone
+        start_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+        cycles = [c for c in cycles if c.get("timestamp", "") >= start_dt.isoformat()]
+
+    events = []
+    for cycle in cycles:
+        events.append({
+            "type": "cycle_complete",
+            "cycle_id": cycle.get("cycle_id", ""),
+            "cycle_number": cycle.get("cycle_number"),
+            "final_decision": cycle.get("final_decision"),
+            "trades_executed": cycle.get("trades_executed_count", 0),
+            "judge_score": cycle.get("judge_overall_score"),
+            "learning_event": bool(cycle.get("learning_event", False)),
+            "critical_finding": cycle.get("critical_finding"),
+            "timestamp": cycle.get("timestamp", ""),
+            "is_historical": True,
+        })
+
+    return events
+
+
 @router.get("/cycles/{cycle_id}/explain")
 async def explain_cycle(cycle_id: str):
     """Generate a plain-English audit brief for a decision cycle."""

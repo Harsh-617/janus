@@ -15,6 +15,7 @@ import type {
   CycleExplainResponse,
   ConstraintConflict,
   AgentTrendsResponse,
+  SSEEvent,
 } from "./types";
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -227,6 +228,19 @@ export async function fetchAgentTrends(window: number = 10): Promise<AgentTrends
   const res = await fetch(`${API_BASE}/api/agents/trends?window=${window}`);
   if (!res.ok) throw new Error(`Agent trends fetch failed: ${res.status}`);
   return res.json();
+}
+
+export async function fetchRecentFeed(
+  limit = 20,
+  startedAt?: string
+): Promise<SSEEvent[]> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    ...(startedAt ? { started_at: startedAt } : {}),
+  })
+  const res = await fetch(`${API_BASE}/api/cycles/recent-feed?${params}`)
+  if (!res.ok) throw new Error("Failed to fetch recent feed")
+  return res.json()
 }
 
 export async function resolveConflict(

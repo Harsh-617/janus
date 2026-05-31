@@ -25,6 +25,7 @@ _scheduler_running: bool = False
 _current_cycle_number: int = 0
 _market_shock: dict = {"active": False, "description": "", "effects": {}}
 _next_cycle_time = None
+_backend_started_at = datetime.now(timezone.utc)
 
 
 def subscribe() -> asyncio.Queue:
@@ -324,4 +325,5 @@ def get_scheduler_status() -> dict:
         "market_shock_active": _market_shock["active"],
         "market_shock_description": _market_shock.get("description", ""),
         "next_cycle_in_seconds": seconds_until_next_cycle(),
+        "started_at": _backend_started_at.isoformat(),
     }

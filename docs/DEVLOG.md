@@ -1,3 +1,30 @@
+## Fix Decision Feed Error Cycle Filter
+**Date**: 2026-06-01
+**Files modified**:
+- `frontend/hooks/use-agent-stream.ts` — error cycle filter no longer blocks other events, consolidated cycle_complete handling into single block
+
+---
+
+## Session-Aware Decision Feed Pre-population
+**Date**: 2026-06-01
+**Files modified**:
+- `backend/services/cycle_scheduler.py` — tracks _backend_started_at timestamp
+- `backend/api/system.py` — exposes started_at in status
+- `backend/api/cycles.py` — recent-feed filters by started_at parameter
+- `frontend/lib/api.ts` — fetchRecentFeed accepts started_at param
+- `frontend/hooks/use-agent-stream.ts` — pre-populates feed from current backend session only
+
+---
+
+## Pre-populate Decision Feed from Firestore
+**Date**: 2026-06-01
+**Files modified**:
+- `backend/api/cycles.py` — GET /api/cycles/recent-feed endpoint returns last 20 cycles as feed events
+- `frontend/lib/api.ts` — fetchRecentFeed added
+- `frontend/hooks/use-agent-stream.ts` — feed pre-populated from Firestore on mount, merged with live SSE events
+
+---
+
 ## Filter Baseline Cycles + Sync Timer
 **Date**: 2026-06-01
 **Files modified**:

@@ -23,4 +23,5 @@ async def system_status():
         "demo_mode": settings.DEMO_MODE,
         "status": "running" if scheduler["running"] else "paused",
         "phoenix_reachable": phoenix_reachable,
+        "started_at": scheduler.get("started_at"),
     }
