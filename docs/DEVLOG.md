@@ -1,3 +1,38 @@
+## Decision Feed Cycle Number Display
+**Date**: 2026-05-31
+**Files modified**:
+- `frontend/components/arena/decision-feed.tsx` — cycle number shown in JUDGE completion card title, visual separator between cycles
+
+---
+
+## Fix Decision Feed — Remove All agent_thinking on Complete
+**Date**: 2026-05-31
+**Files modified**:
+- `frontend/hooks/use-agent-stream.ts` — cycle_complete now removes ALL agent_thinking events unconditionally, eliminating the fragile cycle_id matching
+
+---
+
+## Fix Decision Feed Stale Analyzing States (Final)
+**Date**: 2026-05-31
+**Files modified**:
+- `frontend/hooks/use-agent-stream.ts` — agent_thinking events cleared on cycle_start instead of cycle_complete, eliminating the cycle_id matching problem entirely
+
+---
+
+## Fix Decision Feed Analyzing Filter
+**Date**: 2026-05-31
+**Files modified**:
+- `frontend/hooks/use-agent-stream.ts` — fixed cycle_id path in agent_thinking filter, now checks both top-level and nested data field
+
+---
+
+## Fix Decision Feed Stale Analyzing States
+**Date**: 2026-05-31
+**Files modified**:
+- `frontend/hooks/use-agent-stream.ts` — analyzing events removed from feed when cycle completes, only final result shown per cycle
+
+---
+
 ## Fix Decision Feed Persistence + Analysis Window Label
 **Date**: 2026-05-31
 **Files modified**:

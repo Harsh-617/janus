@@ -47,16 +47,39 @@ export function useAgentStream() {
           ...parsed,
         };
 
-        setEvents((prev) => {
-          const updated = [event, ...prev].slice(0, MAX_EVENTS)
-          try {
-            sessionStorage.setItem("janus_decision_feed", JSON.stringify(updated))
-          } catch {}
-          return updated
-        });
+        if (eventType === "cycle_complete") {
+          setEvents((prev) => {
+            // Remove ALL agent_thinking events — they are all stale
+            // when a cycle completes
+            const filtered = prev.filter(e => e.type !== "agent_thinking");
+            const updated = [event, ...filtered].slice(0, MAX_EVENTS);
+            try {
+              sessionStorage.setItem("janus_decision_feed",
+                                     JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        } else {
+          setEvents((prev) => {
+            const updated = [event, ...prev].slice(0, MAX_EVENTS)
+            try {
+              sessionStorage.setItem("janus_decision_feed", JSON.stringify(updated))
+            } catch {}
+            return updated
+          });
+        }
 
         if (eventType === "cycle_start") {
           setActiveAgents({} as Record<AgentName, boolean>);
+          // Remove all agent_thinking events from previous cycle
+          setEvents((prev) => {
+            const filtered = prev.filter(e => e.type !== "agent_thinking");
+            try {
+              sessionStorage.setItem("janus_decision_feed",
+                                     JSON.stringify(filtered));
+            } catch {}
+            return filtered;
+          });
         }
 
         if (eventType === "agent_thinking") {

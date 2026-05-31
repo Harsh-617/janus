@@ -225,6 +225,13 @@ function renderContent(event: SSEEvent) {
 
   if (type === "cycle_complete") {
     const d = event.data as any;
+    const cycleNum = d?.cycle_number
+      || (event as any).cycle_number
+      || d?.cycle_id?.split("_")[3]?.slice(0, 4)
+      || "";
+    const cycleTitle = cycleNum
+      ? `Cycle #${cycleNum} complete — ${d.trades_executed} trade${d.trades_executed !== 1 ? "s" : ""}`
+      : `Cycle complete — ${d.trades_executed} trade${d.trades_executed !== 1 ? "s" : ""}`;
     return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flex: 1, minWidth: 0 }}>
         <AgentBadge agent="judge_agent" />
@@ -245,7 +252,7 @@ function renderContent(event: SSEEvent) {
                 color: "#E2E8F0",
               }}
             >
-              Cycle complete — {d.trades_executed} trade{d.trades_executed !== 1 ? "s" : ""}
+              {cycleTitle}
             </span>
             {d.judge_score != null && <ScoreBadge score={d.judge_score} size="sm" />}
             {d.learning_event && (
@@ -496,6 +503,7 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
             const content = renderContent(event);
             if (!content) return null;
 
+            const isCycleStart = event.type === "cycle_start";
             return (
               <div
                 key={`${event.type}-${event.timestamp}-${index}`}
@@ -506,6 +514,11 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
                   alignItems: "flex-start",
                   gap: 10,
                   minWidth: 0,
+                  ...(isCycleStart && {
+                    borderTop: "1px solid #2A2D35",
+                    marginTop: "8px",
+                    paddingTop: "8px",
+                  }),
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
