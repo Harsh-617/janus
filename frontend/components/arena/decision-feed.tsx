@@ -3,7 +3,7 @@
 import type { SSEEvent, AgentName } from "@/lib/types";
 import { ScoreBadge } from "@/components/shared/score-badge";
 import { formatDistanceToNow } from "date-fns";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 interface DecisionFeedProps {
   events: SSEEvent[];
@@ -114,7 +114,7 @@ function truncate(text: string, max: number): string {
   return text.length <= max ? text : text.slice(0, max) + "…";
 }
 
-function renderContent(event: SSEEvent) {
+function renderContent(event: SSEEvent, expandedEvent: string | null) {
   const type = event.type as string;
 
   if (type === "agent_thinking") {
@@ -225,6 +225,7 @@ function renderContent(event: SSEEvent) {
 
   if (type === "cycle_complete") {
     const d = (event as any).data ?? event;
+    const eventKey = (event as any).cycle_id || event.timestamp;
     const cycleNum = d.cycle_number || null;
     const tradesCount = `${d.trades_executed} trade${d.trades_executed !== 1 ? "s" : ""}`;
     const cycleTitle = cycleNum
@@ -289,21 +290,37 @@ function renderContent(event: SSEEvent) {
             )}
           </div>
           {d.critical_finding && (
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 13,
-                color: "#4B5563",
-                marginTop: 3,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {truncate(d.critical_finding, 100)}
-            </div>
+            <p style={{
+              fontSize: "11px",
+              color: "#8A8780",
+              marginTop: "4px",
+              lineHeight: "1.5",
+              ...(expandedEvent === eventKey
+                ? {
+                    overflow: "visible",
+                    display: "block",
+                    WebkitLineClamp: "unset",
+                  }
+                : {
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                  }
+              )
+            }}>
+              {d.critical_finding}
+            </p>
           )}
         </div>
+        <span style={{
+          fontSize: "9px",
+          color: "#8A8780",
+          marginLeft: "auto",
+          flexShrink: 0,
+        }}>
+          {expandedEvent === eventKey ? "▼" : "▶"}
+        </span>
       </div>
     );
   }
@@ -407,6 +424,7 @@ function renderContent(event: SSEEvent) {
 
 export function DecisionFeed({ events, connected }: DecisionFeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
 
   const displayEvents = events.filter((e) => e.type !== "ping").slice(0, 40);
 
@@ -498,13 +516,16 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
           </div>
         ) : (
           displayEvents.map((event, index) => {
-            const content = renderContent(event);
+            const content = renderContent(event, expandedEvent);
             if (!content) return null;
 
             const isCycleStart = event.type === "cycle_start";
+            const isCycleComplete = event.type === "cycle_complete";
+            const eventKey = (event as any).cycle_id || event.timestamp;
             return (
               <div
                 key={`${event.type}-${event.timestamp}-${index}`}
+                onClick={isCycleComplete ? () => setExpandedEvent(expandedEvent === eventKey ? null : eventKey) : undefined}
                 style={{
                   borderBottom: "1px solid #111820",
                   padding: "14px 16px",
@@ -512,6 +533,7 @@ export function DecisionFeed({ events, connected }: DecisionFeedProps) {
                   alignItems: "flex-start",
                   gap: 10,
                   minWidth: 0,
+                  ...(isCycleComplete && { cursor: "pointer" }),
                   ...(isCycleStart && {
                     borderTop: "1px solid #2A2D35",
                     marginTop: "8px",

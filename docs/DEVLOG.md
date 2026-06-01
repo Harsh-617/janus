@@ -1,3 +1,10 @@
+## Expandable Decision Feed Cards
+**Date**: 2026-06-01
+**Files modified**:
+- `frontend/components/arena/decision-feed.tsx` — cycle_complete cards expand on click showing full critical finding text
+
+---
+
 ## Fix Decision Feed Error Cycle Filter
 **Date**: 2026-06-01
 **Files modified**:
