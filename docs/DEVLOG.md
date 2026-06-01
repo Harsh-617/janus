@@ -1,3 +1,10 @@
+## Fix Portfolio History Snapshot Overwrite
+**Date**: 2026-06-01
+**Files modified**:
+- `backend/db/firestore_client.py` — history snapshots use timestamp+cycle document ID, preventing overwrite on backend restart
+
+---
+
 ## Expandable Decision Feed Cards
 **Date**: 2026-06-01
 **Files modified**:

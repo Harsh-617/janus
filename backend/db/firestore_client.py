@@ -183,11 +183,12 @@ async def save_portfolio_history_snapshot(
     portfolio_id: str, cycle_number: int, data: dict
 ) -> None:
     def _set():
+        doc_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_") + str(cycle_number)
         (
             db.collection(COL_PORTFOLIOS)
             .document(portfolio_id)
             .collection(COL_HISTORY)
-            .document(str(cycle_number))
+            .document(doc_id)
             .set(data)
         )
 
