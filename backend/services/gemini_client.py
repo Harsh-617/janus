@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from google import genai
 from google.genai import types
@@ -45,7 +46,7 @@ async def generate(
                 config=types.GenerateContentConfig(
                     system_instruction=system_prompt,
                     temperature=temperature,
-                    max_output_tokens=2048,
+                    max_output_tokens=8192,
                 ),
             )
             return response.text
@@ -57,6 +58,10 @@ async def generate(
             if "quota" in err_str or "429" in err_str or "rate" in err_str or "exhausted" in err_str:
                 logging.warning(f"[LLMClient] Key rate-limited, trying next: {e}")
                 _exhausted_keys.add(key)
+                continue
+            elif "503" in err_str or "unavailable" in err_str:
+                logging.warning(f"[LLMClient] Gemini 503 — retrying in 5s: {e}")
+                await asyncio.sleep(5)
                 continue
             else:
                 logging.error(f"[LLMClient] Gemini error: {e}")

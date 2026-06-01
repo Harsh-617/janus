@@ -5,7 +5,7 @@ import { usePortfolio } from "@/hooks/use-portfolio";
 import { useCycles } from "@/hooks/use-cycles";
 import { API_BASE } from "@/lib/constants";
 
-const CYCLE_INTERVAL = 60;
+const CYCLE_INTERVAL = 120;
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
@@ -25,6 +26,7 @@ _scheduler_running: bool = False
 _current_cycle_number: int = 0
 _market_shock: dict = {"active": False, "description": "", "effects": {}}
 _next_cycle_time = None
+_last_cycle_start: float = 0.0
 _backend_started_at = datetime.now(timezone.utc)
 
 
@@ -144,7 +146,8 @@ async def _increment_and_expire_constraints() -> None:
 
 async def run_single_cycle() -> dict:
     """Run one complete decision cycle and return the summary."""
-    global _current_cycle_number
+    global _current_cycle_number, _last_cycle_start
+    _last_cycle_start = time.time()
     _current_cycle_number += 1
 
     cycle_id = f"cycle_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{str(uuid.uuid4())[:8]}"
@@ -318,12 +321,18 @@ def seconds_until_next_cycle() -> int:
     return max(0, int(remaining))
 
 
+def get_seconds_until_next_cycle() -> int:
+    elapsed = time.time() - _last_cycle_start
+    remaining = max(0, int(settings.AGENT_CYCLE_INTERVAL_SECONDS - elapsed))
+    return remaining
+
+
 def get_scheduler_status() -> dict:
     return {
         "running": _scheduler_running,
         "current_cycle_number": _current_cycle_number,
         "market_shock_active": _market_shock["active"],
         "market_shock_description": _market_shock.get("description", ""),
-        "next_cycle_in_seconds": seconds_until_next_cycle(),
+        "next_cycle_in_seconds": get_seconds_until_next_cycle(),
         "started_at": _backend_started_at.isoformat(),
     }
