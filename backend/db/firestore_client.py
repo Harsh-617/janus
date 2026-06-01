@@ -203,11 +203,14 @@ async def get_portfolio_history_snapshots(
             db.collection(COL_PORTFOLIOS)
             .document(portfolio_id)
             .collection(COL_HISTORY)
-            .order_by("cycle")
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
             .limit(limit)
             .stream()
         )
-        return [doc.to_dict() for doc in docs]
+        results = list(reversed([doc.to_dict() for doc in docs]))
+        for i, r in enumerate(results):
+            r["cycle"] = i + 1
+        return results
 
     return await asyncio.to_thread(_get)
 
