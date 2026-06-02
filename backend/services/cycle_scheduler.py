@@ -275,6 +275,26 @@ async def start_scheduler() -> None:
     _next_cycle_scheduled_at = time.time() + settings.AGENT_CYCLE_INTERVAL_SECONDS
     logging.info(f"[Scheduler] Starting — interval: {settings.AGENT_CYCLE_INTERVAL_SECONDS}s")
 
+    # Startup: release any circuit breaker that is stale (missing activated_at or older than 300s)
+    startup_portfolio = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
+    if startup_portfolio and startup_portfolio.get("circuit_breaker_active"):
+        startup_activated_at_str = startup_portfolio.get("circuit_breaker_activated_at")
+        startup_now = datetime.now(timezone.utc)
+        startup_seconds = 999  # force release if field is absent
+        if startup_activated_at_str:
+            try:
+                startup_activated_at = datetime.fromisoformat(startup_activated_at_str)
+                startup_seconds = (startup_now - startup_activated_at).total_seconds()
+            except (ValueError, TypeError):
+                pass  # malformed — keep 999s so release fires
+        if startup_seconds > 300:
+            def _startup_clear():
+                db.collection(COL_PORTFOLIOS).document(
+                    settings.FIRESTORE_PORTFOLIO_ID
+                ).update({"circuit_breaker_active": False})
+            await asyncio.to_thread(_startup_clear)
+            logging.info("[CircuitBreaker] Stale circuit breaker detected on startup — auto-releasing")
+
     while _scheduler_running:
         try:
             portfolio_doc = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
@@ -282,16 +302,21 @@ async def start_scheduler() -> None:
                 activated_at_str = portfolio_doc.get("circuit_breaker_activated_at")
                 now_utc = datetime.now(timezone.utc)
                 released = False
+                seconds_elapsed = 999  # treat missing field as stale — force auto-release
                 if activated_at_str:
-                    activated_at = datetime.fromisoformat(activated_at_str)
-                    if (now_utc - activated_at).total_seconds() > 300:
-                        def _clear():
-                            db.collection(COL_PORTFOLIOS).document(
-                                settings.FIRESTORE_PORTFOLIO_ID
-                            ).update({"circuit_breaker_active": False})
-                        await asyncio.to_thread(_clear)
-                        logging.info("[CircuitBreaker] Auto-released after 5 minute cooldown")
-                        released = True
+                    try:
+                        activated_at = datetime.fromisoformat(activated_at_str)
+                        seconds_elapsed = (now_utc - activated_at).total_seconds()
+                    except (ValueError, TypeError):
+                        pass  # malformed value — keep 999s default so auto-release fires
+                if seconds_elapsed > 300:
+                    def _clear():
+                        db.collection(COL_PORTFOLIOS).document(
+                            settings.FIRESTORE_PORTFOLIO_ID
+                        ).update({"circuit_breaker_active": False})
+                    await asyncio.to_thread(_clear)
+                    logging.info("[CircuitBreaker] Auto-released after 5 minute cooldown")
+                    released = True
                 if not released:
                     logging.info("[Scheduler] Circuit breaker active — cycle skipped")
                     await asyncio.sleep(30)
