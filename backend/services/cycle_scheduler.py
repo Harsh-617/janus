@@ -26,7 +26,7 @@ _scheduler_running: bool = False
 _current_cycle_number: int = 0
 _market_shock: dict = {"active": False, "description": "", "effects": {}}
 _next_cycle_time = None
-_last_cycle_start: float = 0.0
+_next_cycle_scheduled_at: float = 0.0
 _backend_started_at = datetime.now(timezone.utc)
 
 
@@ -146,8 +146,7 @@ async def _increment_and_expire_constraints() -> None:
 
 async def run_single_cycle() -> dict:
     """Run one complete decision cycle and return the summary."""
-    global _current_cycle_number, _last_cycle_start
-    _last_cycle_start = time.time()
+    global _current_cycle_number
     _current_cycle_number += 1
 
     cycle_id = f"cycle_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{str(uuid.uuid4())[:8]}"
@@ -272,6 +271,8 @@ async def start_scheduler() -> None:
         return
 
     _scheduler_running = True
+    global _next_cycle_scheduled_at
+    _next_cycle_scheduled_at = time.time() + settings.AGENT_CYCLE_INTERVAL_SECONDS
     logging.info(f"[Scheduler] Starting — interval: {settings.AGENT_CYCLE_INTERVAL_SECONDS}s")
 
     while _scheduler_running:
@@ -302,6 +303,7 @@ async def start_scheduler() -> None:
 
         global _next_cycle_time
         _next_cycle_time = datetime.now(timezone.utc) + timedelta(seconds=settings.AGENT_CYCLE_INTERVAL_SECONDS)
+        _next_cycle_scheduled_at = time.time() + settings.AGENT_CYCLE_INTERVAL_SECONDS
         await asyncio.sleep(settings.AGENT_CYCLE_INTERVAL_SECONDS)
 
 def stop_scheduler() -> None:
@@ -322,9 +324,7 @@ def seconds_until_next_cycle() -> int:
 
 
 def get_seconds_until_next_cycle() -> int:
-    elapsed = time.time() - _last_cycle_start
-    remaining = max(0, int(settings.AGENT_CYCLE_INTERVAL_SECONDS - elapsed))
-    return remaining
+    return max(0, int(_next_cycle_scheduled_at - time.time()))
 
 
 def get_scheduler_status() -> dict:

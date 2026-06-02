@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { usePortfolio } from "@/hooks/use-portfolio";
 import { useCycles } from "@/hooks/use-cycles";
 import { API_BASE } from "@/lib/constants";
@@ -69,7 +69,6 @@ export function Topbar() {
   const { portfolio } = usePortfolio();
   const { cycles } = useCycles(10);
   const [countdown, setCountdown] = useState(CYCLE_INTERVAL);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
@@ -83,17 +82,8 @@ export function Topbar() {
       } catch {}
     };
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
+    const interval = setInterval(fetchStatus, 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setCountdown((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
   }, []);
 
   useEffect(() => {
