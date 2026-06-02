@@ -1949,3 +1949,15 @@ safety the most?" and get answers grounded in real Firestore data.
 - market_shock.py: Removed debug print() statement
 - memory_service.py: Silent except pass → logger.warning with error message
 - execution.py: Hardcoded "janus_main" → settings.FIRESTORE_PORTFOLIO_ID
+
+---
+
+## Feature — Multi-model multi-key Gemini rotation
+**Date**: 2026-06-02
+**Files modified**: backend/services/gemini_client.py, backend/config.py,
+  backend/.env.example
+**What changed**:
+Built a multi-model rotation system. For each API key, tries models in
+priority order: gemini-3.1-flash-lite (500 RPD) first, then 4 other
+models (20 RPD each). With 10 keys this gives ~5,800 RPD and 400 RPM
+total. Exhausted (model, key) pairs are tracked per session and skipped.

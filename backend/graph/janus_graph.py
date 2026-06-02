@@ -56,6 +56,29 @@ def should_continue_after_regulator(state: JanusState) -> str:
     return "continue"
 
 
+async def circuit_breaker_finalizer_node(state: JanusState) -> dict:
+    """Set safe default judge_scores when circuit breaker halts the pipeline.
+
+    Without this node, judge_scores stays None in state. Downstream code
+    (post_learning_event_to_dataset, execute_cycle_results) calls .get() on
+    it directly and crashes with 'NoneType' has no attribute 'get'.
+    """
+    return {
+        "judge_scores": {
+            "overall_score": 5.0,
+            "correctness": 5,
+            "safety": 5,
+            "hallucination_risk": 5,
+            "compliance": 5,
+            "explainability": 5,
+            "learning_event": False,
+            "learning_event_reason": "",
+            "critical_finding": "",
+            "recommended_constraint": "",
+        },
+    }
+
+
 def build_janus_graph() -> StateGraph:
     graph = StateGraph(JanusState)
 
@@ -65,6 +88,7 @@ def build_janus_graph() -> StateGraph:
     graph.add_node("fraud_agent", fraud_agent_node)
     graph.add_node("regulator_agent", regulator_agent_node)
     graph.add_node("judge_agent", judge_agent_node)
+    graph.add_node("circuit_breaker_finalizer", circuit_breaker_finalizer_node)
 
     graph.set_entry_point("trading_agent")
 
@@ -78,10 +102,11 @@ def build_janus_graph() -> StateGraph:
         should_continue_after_regulator,
         {
             "continue": "judge_agent",
-            "halted": END,
+            "halted": "circuit_breaker_finalizer",
         },
     )
 
+    graph.add_edge("circuit_breaker_finalizer", END)
     graph.add_edge("judge_agent", END)
 
     return graph

@@ -8,12 +8,17 @@ class Settings(BaseSettings):
     PHOENIX_COLLECTOR_ENDPOINT: str = "http://localhost:6006/v1/traces"
     PHOENIX_BASE_URL: str = "http://localhost:6006"
     GOOGLE_API_KEY: str = ""
-    # Gemini keys — read all 5, filter out empty ones
+    # Gemini keys — read all 10, filter out empty ones
     GEMINI_API_KEY_1: str = ""
     GEMINI_API_KEY_2: str = ""
     GEMINI_API_KEY_3: str = ""
     GEMINI_API_KEY_4: str = ""
     GEMINI_API_KEY_5: str = ""
+    GEMINI_API_KEY_6: str = ""
+    GEMINI_API_KEY_7: str = ""
+    GEMINI_API_KEY_8: str = ""
+    GEMINI_API_KEY_9: str = ""
+    GEMINI_API_KEY_10: str = ""
     # Alpha Vantage keys — read all 4, filter out empty ones
     ALPHA_VANTAGE_API_KEY_1: str = ""
     ALPHA_VANTAGE_API_KEY_2: str = ""
