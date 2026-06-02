@@ -176,6 +176,7 @@ async def activate_circuit_breaker():
     portfolio = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
     if portfolio:
         portfolio["circuit_breaker_active"] = True
+        portfolio["circuit_breaker_activated_at"] = datetime.now(timezone.utc).isoformat()
         portfolio["risk_mode"] = "HALTED"
         await save_portfolio(settings.FIRESTORE_PORTFOLIO_ID, portfolio)
     from services.cycle_scheduler import stop_scheduler

@@ -157,7 +157,9 @@ async def execute_cycle_results(state: JanusState) -> dict:
         portfolio["circuit_breaker_active"] = cb_activated
         if cb_activated:
             cooldown_minutes = regulator_decision.get("cooldown_minutes", 15)
-            resume_at = datetime.now(timezone.utc) + timedelta(minutes=cooldown_minutes)
+            now_activated = datetime.now(timezone.utc)
+            resume_at = now_activated + timedelta(minutes=cooldown_minutes)
+            portfolio["circuit_breaker_activated_at"] = now_activated.isoformat()
             portfolio["circuit_breaker_resume_at"] = resume_at.isoformat()
         if final_decision == "EXECUTE" and trades_executed:
             portfolio["trade_count"] = portfolio.get("trade_count", 0) + len(trades_executed)

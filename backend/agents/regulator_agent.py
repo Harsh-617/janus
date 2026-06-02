@@ -50,7 +50,7 @@ Respond with JSON only, no markdown:
 {
   "final_decision": "EXECUTE" | "HOLD" | "HALT",
   "circuit_breaker_activated": <true | false>,
-  "cooldown_minutes": <0 if not halting, else 15-60>,
+  "cooldown_minutes": <0 if not halting, else 5>,
   "reason": "<clear explanation of decision for audit trail>",
   "trades_to_execute": [...],
   "resume_conditions": ["<condition 1>", "<condition 2>"],

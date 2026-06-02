@@ -279,18 +279,18 @@ async def start_scheduler() -> None:
         try:
             portfolio_doc = await get_portfolio(settings.FIRESTORE_PORTFOLIO_ID)
             if portfolio_doc and portfolio_doc.get("circuit_breaker_active"):
-                resume_at_str = portfolio_doc.get("circuit_breaker_resume_at")
+                activated_at_str = portfolio_doc.get("circuit_breaker_activated_at")
                 now_utc = datetime.now(timezone.utc)
                 released = False
-                if resume_at_str:
-                    resume_at = datetime.fromisoformat(resume_at_str)
-                    if now_utc >= resume_at:
+                if activated_at_str:
+                    activated_at = datetime.fromisoformat(activated_at_str)
+                    if (now_utc - activated_at).total_seconds() > 300:
                         def _clear():
                             db.collection(COL_PORTFOLIOS).document(
                                 settings.FIRESTORE_PORTFOLIO_ID
                             ).update({"circuit_breaker_active": False})
                         await asyncio.to_thread(_clear)
-                        logging.info("[Scheduler] Circuit breaker auto-released — resuming cycles")
+                        logging.info("[CircuitBreaker] Auto-released after 5 minute cooldown")
                         released = True
                 if not released:
                     logging.info("[Scheduler] Circuit breaker active — cycle skipped")
