@@ -8,6 +8,7 @@ import re
 from datetime import datetime, timezone
 
 from services.gemini_client import generate
+from tools.market_data import get_beta
 
 TRADING_AGENT_PROMPT = """You are the Trading Agent for Janus, an autonomous financial intelligence
 system. You act as a quant-driven hedge fund manager.
@@ -64,12 +65,27 @@ async def trading_agent_node(state: JanusState) -> dict:
             news = state["news_headlines"]
             constraints = state["active_constraints"]
 
+            positions = portfolio.get("positions", {})
+            if isinstance(positions, dict):
+                held_tickers = list(positions.keys())
+            elif isinstance(positions, list):
+                held_tickers = [p["ticker"] for p in positions if "ticker" in p]
+            else:
+                held_tickers = []
+
+            beta_line = ""
+            if held_tickers:
+                beta_parts = [f"{t}: {get_beta(t):.2f}" for t in held_tickers]
+                beta_line = f"Current position betas: {', '.join(beta_parts)}"
+
             user_message = f"""
 CURRENT PORTFOLIO:
 {json.dumps(portfolio, indent=2)}
 
 CURRENT MARKET PRICES:
 {json.dumps(prices, indent=2)}
+
+{beta_line}
 
 RECENT NEWS HEADLINES:
 {chr(10).join(f"- {h}" for h in news[:10])}

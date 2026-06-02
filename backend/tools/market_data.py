@@ -27,6 +27,22 @@ def is_demo_shock_active() -> bool:
 
 _DEFAULT_TICKERS = ["AAPL", "GLD", "BTC-USD", "TLT", "XOM", "KRE", "AMZN", "ETH-USD"]
 
+_beta_cache: dict[str, float] = {}
+
+
+def get_beta(ticker: str) -> float:
+    """Fetch beta for a ticker via yfinance. Result is cached for the session."""
+    if ticker in _beta_cache:
+        return _beta_cache[ticker]
+    try:
+        info = yf.Ticker(ticker).info
+        raw = info.get("beta", 1.0)
+        _beta_cache[ticker] = float(raw) if raw is not None else 1.0
+    except Exception as e:
+        logger.warning(f"[MarketData] Failed to fetch beta for {ticker}: {e}")
+        _beta_cache[ticker] = 1.0
+    return _beta_cache[ticker]
+
 _FALLBACK_PRICES = {
     "AAPL": 195.20,
     "GLD": 235.10,
