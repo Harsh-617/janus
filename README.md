@@ -22,6 +22,16 @@ Janus is an autonomous, self-correcting multi-agent financial intelligence syste
 
 ---
 
+## 🚀 Live Demo
+
+| Service | URL |
+|---------|-----|
+| **Frontend** | https://janus-rouge.vercel.app |
+| **Backend API** | https://janus-backend-696629280223.us-central1.run.app |
+| **Phoenix Observability** | https://janus-phoenix-696629280223.us-central1.run.app |
+
+---
+
 ## The Two-Face Architecture
 
 Named after the Roman god of duality and transitions, Janus has two inseparable faces. The **Forward Face** executes — it acts in the market every cycle using real prices from yfinance, live news from Alpha Vantage, and calculated risk limits enforced in Python before any LLM reasoning happens. The **Backward Face** reflects — it reads Arize Phoenix for failure patterns, scores every decision the forward face makes, and rewrites the behavioral rules the forward face must follow. The two faces share one nervous system: Arize Phoenix, where every agent call is traced end-to-end, every judge score becomes a span evaluation, every failure becomes a dataset example, and every constraint improvement is measured in a controlled experiment.
@@ -237,6 +247,8 @@ decision_cycle_012
 ---
 
 ## How to Run Locally
+
+> **The system is fully deployed and accessible at the live URLs above** — no local setup required to explore it. The instructions below are for running your own instance.
 
 ### Prerequisites
 
