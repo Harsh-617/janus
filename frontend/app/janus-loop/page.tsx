@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { fetchConstraints } from "@/lib/api";
-import type { BehavioralConstraint, ConstraintConflict } from "@/lib/types";
+import type { BehavioralConstraint, Constraint, ConstraintConflict } from "@/lib/types";
 import ImprovementCurveChart from "@/components/janus-loop/improvement-curve-chart";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
