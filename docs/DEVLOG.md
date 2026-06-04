@@ -1,3 +1,20 @@
+## Deployment — Full Production Deploy
+**Date**: 2026-06-04
+**What was deployed**:
+- Backend: Cloud Run (us-central1) via Google Cloud Build
+- Frontend: Vercel (janus-rouge.vercel.app)
+- Phoenix: Cloud Run (us-central1) using official Arize image
+**LLM**: Google Gemini via AI Studio API
+- Primary model: gemini-3.1-flash-lite (500 RPD free tier)
+- Fallback models: gemini-2.5-flash-lite, gemini-3.5-flash, gemini-3-flash, gemini-2.5-flash
+- Up to 10 API keys supported for rotation (5 deployed)
+**Live URLs**:
+- Frontend: https://janus-rouge.vercel.app
+- Backend: https://janus-backend-696629280223.us-central1.run.app
+- Phoenix: https://janus-phoenix-696629280223.us-central1.run.app
+
+---
+
 ## Fix Portfolio History Snapshot Overwrite
 **Date**: 2026-06-01
 **Files modified**:

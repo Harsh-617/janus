@@ -16,12 +16,6 @@
 
 ---
 
-## What is Janus?
-
-Janus is an autonomous, self-correcting multi-agent financial intelligence system. Every N seconds, five specialized LLM agents powered by Google Gemini collaborate inside a LangGraph state machine to propose trades, stress-test them for risk, investigate them for fraud, issue a regulatory verdict, and then score the entire decision pipeline across five dimensions. When failure patterns accumulate, the Janus Loop — a Meta-Agent backed by live Arize Phoenix telemetry — reads the history of bad decisions, generates plain-language behavioral constraints, and injects them directly into the agents' prompts for every future cycle. The improvement is not a claim: it is a Phoenix Experiment with before-and-after scores that can be inspected live. Alongside the governed Janus portfolio, an ungoverned baseline portfolio runs the same agents without constraints or a judge, so the performance delta between a self-correcting system and a raw agent pipeline is visible in real time.
-
----
-
 ## 🚀 Live Demo
 
 | Service | URL |
@@ -29,6 +23,12 @@ Janus is an autonomous, self-correcting multi-agent financial intelligence syste
 | **Frontend** | https://janus-rouge.vercel.app |
 | **Backend API** | https://janus-backend-696629280223.us-central1.run.app |
 | **Phoenix Observability** | https://janus-phoenix-696629280223.us-central1.run.app |
+
+---
+
+## What is Janus?
+
+Janus is an autonomous, self-correcting multi-agent financial intelligence system. Every N seconds, five specialized LLM agents powered by Google Gemini collaborate inside a LangGraph state machine to propose trades, stress-test them for risk, investigate them for fraud, issue a regulatory verdict, and then score the entire decision pipeline across five dimensions. When failure patterns accumulate, the Janus Loop — a Meta-Agent backed by live Arize Phoenix telemetry — reads the history of bad decisions, generates plain-language behavioral constraints, and injects them directly into the agents' prompts for every future cycle. The improvement is not a claim: it is a Phoenix Experiment with before-and-after scores that can be inspected live. Alongside the governed Janus portfolio, an ungoverned baseline portfolio runs the same agents without constraints or a judge, so the performance delta between a self-correcting system and a raw agent pipeline is visible in real time.
 
 ---
 
@@ -229,8 +229,8 @@ decision_cycle_012
 | Layer | Technology | Version |
 |-------|-----------|---------|
 | Agent Orchestration | LangGraph StateGraph | 1.2 |
-| LLM | Google Gemini Flash (AI Studio) | 2.0 |
-| LLM Rotation | 10 API keys × 5 model fallbacks, runtime exhaustion tracking | — |
+| LLM | Google Gemini via AI Studio (free tier) | gemini-3.1-flash-lite primary |
+| LLM Rotation | Up to 10 API keys × 5 model fallbacks, runtime exhaustion tracking | — |
 | Backend Framework | FastAPI + Uvicorn | 0.136 / 0.47 |
 | Real-time Stream | Server-Sent Events (sse-starlette) | 3.4 |
 | Observability | Arize Phoenix (self-hosted) | 15.10 |
@@ -243,6 +243,36 @@ decision_cycle_012
 | Charts | Recharts | — |
 | Container | Docker (python:3.11-slim) | — |
 | Cloud | Google Cloud Run | — |
+
+---
+
+## Deployment
+
+The system is deployed across three services:
+
+| Component | Platform | URL |
+|-----------|----------|-----|
+| Frontend | Vercel | https://janus-rouge.vercel.app |
+| Backend API | Google Cloud Run (us-central1) | https://janus-backend-696629280223.us-central1.run.app |
+| Phoenix Observability | Google Cloud Run (us-central1) | https://janus-phoenix-696629280223.us-central1.run.app |
+
+**LLM — Google Gemini via AI Studio (free tier):**
+
+The system rotates across up to 10 API keys and 5 model variants to sustain continuous operation within free-tier quota limits. Model priority order (highest RPD first):
+
+1. `gemini-3.1-flash-lite` — primary (500 RPD)
+2. `gemini-2.5-flash-lite`
+3. `gemini-3.5-flash`
+4. `gemini-3-flash`
+5. `gemini-2.5-flash`
+
+When any `(model, key)` pair hits its daily quota, the system automatically advances to the next combination. With 5 keys this gives up to 25 independent quota pools.
+
+**Backend** is containerized (Docker, `python:3.11-slim`) and deployed via Google Cloud Build to Cloud Run. The `Dockerfile` lives at `backend/Dockerfile`. Cloud Run provides HTTPS, auto-scaling, and zero idle cost.
+
+**Frontend** is deployed to Vercel from the `frontend/` directory. The `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_PHOENIX_URL` environment variables are set in the Vercel project dashboard.
+
+**Phoenix** runs on Cloud Run using the official `arizephoenix/phoenix` Docker image, backed by persistent Cloud Storage for trace data.
 
 ---
 
@@ -349,15 +379,15 @@ curl -X POST http://localhost:8000/api/janus-loop/trigger
 |----------|----------|-------------|
 | `GOOGLE_CLOUD_PROJECT` | Yes | GCP project ID |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Yes | Path to service account JSON (e.g. `./service-account.json`) |
-| `VERTEX_AI_LOCATION` | Yes | GCP region (e.g. `us-central1`) |
-| `GEMINI_API_KEY_1` | Yes | Primary Gemini API key (Google AI Studio — free tier) |
-| `GEMINI_API_KEY_2` – `GEMINI_API_KEY_10` | No | Additional keys for multi-key rotation; system skips exhausted (quota) keys automatically |
-| `GEMINI_MODEL_FAST` | No | Model override for agent calls (default: `gemini-2.0-flash`) |
-| `GEMINI_MODEL_JUDGE` | No | Model override for LLM Judge (default: `gemini-2.0-flash`) |
+| `GEMINI_API_KEY_1` | Yes | Primary Gemini API key ([Google AI Studio](https://aistudio.google.com) — free tier) |
+| `GEMINI_API_KEY_2` – `GEMINI_API_KEY_5` | Recommended | Additional keys; 5 keys × 5 models = 25 quota pools |
+| `GEMINI_API_KEY_6` – `GEMINI_API_KEY_10` | No | Further keys for extended rotation |
+| `GEMINI_MODEL_FAST` | No | Model override for agent calls (default: `gemini-3.1-flash-lite`) |
+| `GEMINI_MODEL_JUDGE` | No | Model override for LLM Judge (default: `gemini-3.1-flash-lite`) |
 | `ALPHA_VANTAGE_API_KEY_1` | Yes | Primary Alpha Vantage key for news headlines |
 | `ALPHA_VANTAGE_API_KEY_2` – `ALPHA_VANTAGE_API_KEY_4` | No | Additional keys for rotation when daily limit is hit |
-| `PHOENIX_COLLECTOR_ENDPOINT` | Yes | OTLP trace ingest endpoint (e.g. `http://localhost:6006/v1/traces`) |
-| `PHOENIX_BASE_URL` | Yes | Phoenix REST API base (e.g. `http://localhost:6006`) |
+| `PHOENIX_COLLECTOR_ENDPOINT` | Yes | OTLP trace ingest endpoint — Cloud Run: `https://janus-phoenix-696629280223.us-central1.run.app/v1/traces`; local: `http://localhost:6006/v1/traces` |
+| `PHOENIX_BASE_URL` | Yes | Phoenix REST API base — Cloud Run: `https://janus-phoenix-696629280223.us-central1.run.app`; local: `http://localhost:6006` |
 | `FIRESTORE_PORTFOLIO_ID` | No | Main portfolio document ID (default: `janus_main`) |
 | `AGENT_CYCLE_INTERVAL_SECONDS` | No | Seconds between decision cycles (default: `120`; use `30` for demo) |
 | `JANUS_LOOP_INTERVAL_CYCLES` | No | How often the self-correction loop runs, in cycles (default: `10`) |

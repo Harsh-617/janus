@@ -199,8 +199,8 @@ ALPHA_VANTAGE_API_KEY_2=your_key
 ALPHA_VANTAGE_API_KEY_3=your_key
 ALPHA_VANTAGE_API_KEY_4=your_key
 
-PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006/v1/traces
-PHOENIX_BASE_URL=http://localhost:6006
+PHOENIX_COLLECTOR_ENDPOINT=https://janus-phoenix-696629280223.us-central1.run.app/v1/traces
+PHOENIX_BASE_URL=https://janus-phoenix-696629280223.us-central1.run.app
 
 FIRESTORE_PORTFOLIO_ID=janus_main
 AGENT_CYCLE_INTERVAL_SECONDS=120
@@ -210,16 +210,38 @@ INITIAL_CAPITAL=1000000.0
 
 ---
 
+## Deployment Architecture
+
+All three services are in production. See the live URLs in the README.
+
+**Backend — Google Cloud Run (us-central1)**
+- Containerized with `python:3.11-slim` (`backend/Dockerfile`)
+- Built and pushed via Google Cloud Build
+- Serves FastAPI over HTTPS; Cloud Run handles TLS, auto-scaling, and zero idle cost
+- Service account JSON mounted as a Cloud Run secret for Firestore access
+
+**Frontend — Vercel**
+- Deployed from `frontend/` on every push to `main`
+- `NEXT_PUBLIC_API_URL` points to the Cloud Run backend
+- `NEXT_PUBLIC_PHOENIX_URL` points to the Cloud Run Phoenix instance
+
+**Phoenix Observability — Google Cloud Run (us-central1)**
+- Runs the official `arizephoenix/phoenix` Docker image
+- OTLP traces sent from the backend via `PHOENIX_COLLECTOR_ENDPOINT`
+- Backend queries Phoenix REST API via `PHOENIX_BASE_URL` for the Janus Loop
+
+---
+
 ## Multi-Model Gemini Rotation
 
-The system supports up to 10 Gemini API keys (`GEMINI_API_KEY_1` through `GEMINI_API_KEY_10`) and rotates across five model variants to survive free-tier quota limits.
+The system supports up to 10 Gemini API keys (`GEMINI_API_KEY_1` through `GEMINI_API_KEY_10`) and rotates across five model variants to survive free-tier quota limits. The deployed instance uses 5 keys.
 
 **Model priority order** (highest requests-per-day first):
-1. `gemini-2.0-flash-lite` — highest RPD, tried first
+1. `gemini-3.1-flash-lite` — primary, highest RPD (500 RPD free tier), tried first
 2. `gemini-2.5-flash-lite`
-3. `gemini-2.0-flash`
-4. `gemini-2.5-flash`
-5. `gemini-2.0-flash-exp`
+3. `gemini-3.5-flash`
+4. `gemini-3-flash`
+5. `gemini-2.5-flash`
 
 **Algorithm** (`services/gemini_client.py`):
 - For each key, for each model (in priority order): if `(model, key)` is in the `_exhausted` set, skip.
