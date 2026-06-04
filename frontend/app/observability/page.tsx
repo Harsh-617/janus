@@ -16,6 +16,7 @@ import {
 
 const PHOENIX_URL =
   process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006";
+const PHOENIX_URL_CONFIGURED = !!process.env.NEXT_PUBLIC_PHOENIX_URL;
 
 const PHOENIX_CATEGORIES = [
   { label: "Traces", key: "traces" },
@@ -424,7 +425,7 @@ export default function ObservabilityPage() {
 
         {/* Right: iframe */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          {phoenixReachable === false ? (
+          {phoenixReachable === false && !PHOENIX_URL_CONFIGURED ? (
             <div
               style={{
                 flex: 1,
