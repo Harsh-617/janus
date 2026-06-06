@@ -18,61 +18,6 @@ const PHOENIX_URL =
   process.env.NEXT_PUBLIC_PHOENIX_URL || "http://localhost:6006";
 const PHOENIX_URL_CONFIGURED = !!process.env.NEXT_PUBLIC_PHOENIX_URL;
 
-const PHOENIX_CATEGORIES = [
-  { label: "Traces", key: "traces" },
-  { label: "Evaluations", key: "evals" },
-  { label: "Datasets", key: "datasets" },
-  { label: "Experiments", key: "experiments" },
-  { label: "Playground", key: "playground" },
-];
-
-function PhoenixNavItem({
-  label,
-  count,
-  isActive,
-  onClick,
-}: {
-  label: string;
-  count?: number;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        padding: isActive ? "8px 14px 8px 12px" : "8px 14px",
-        borderBottom: "1px solid #111820",
-        borderLeft: isActive ? "2px solid #4CADCE" : "2px solid transparent",
-        fontFamily: "Inter, sans-serif",
-        fontSize: 12,
-        color: isActive ? "#E2E8F0" : hovered ? "#E2E8F0" : "#8B949E",
-        cursor: "pointer",
-        background: hovered && !isActive ? "#0D1117" : "transparent",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        transition: "background 0.1s, color 0.1s",
-      }}
-    >
-      <span>{label}</span>
-      {count != null && (
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            color: "#4B5563",
-          }}
-        >
-          {count}
-        </span>
-      )}
-    </div>
-  );
-}
 
 export default function ObservabilityPage() {
   const [cycles, setCycles] = useState<DecisionCycle[]>([]);
@@ -80,7 +25,6 @@ export default function ObservabilityPage() {
     null
   );
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("traces");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -384,96 +328,55 @@ export default function ObservabilityPage() {
       </div>
 
       {/* Section 2: Phoenix Traces */}
-      <div style={{ display: "flex", minHeight: 500 }}>
-        {/* Left nav */}
-        <div
-          style={{
-            width: 200,
-            flexShrink: 0,
-            borderRight: "1px solid #1C2128",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+      <div style={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
+        {phoenixReachable === false && !PHOENIX_URL_CONFIGURED ? (
           <div
             style={{
-              padding: "8px 14px",
-              borderBottom: "1px solid #1C2128",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 9,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: "#4B5563",
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              padding: 32,
             }}
           >
-            Arize Phoenix Traces
-          </div>
-          {PHOENIX_CATEGORIES.map((cat) => (
-            <PhoenixNavItem
-              key={cat.key}
-              label={cat.label}
-              count={
-                cat.key === "traces" && cycles.length > 0
-                  ? cycles.length
-                  : undefined
-              }
-              isActive={activeCategory === cat.key}
-              onClick={() => setActiveCategory(cat.key)}
-            />
-          ))}
-        </div>
-
-        {/* Right: iframe */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          {phoenixReachable === false && !PHOENIX_URL_CONFIGURED ? (
-            <div
+            <span
               style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 12,
-                padding: 32,
+                fontFamily: "Inter, sans-serif",
+                fontSize: 13,
+                color: "#8B949E",
               }}
             >
-              <span
-                style={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: 13,
-                  color: "#8B949E",
-                }}
-              >
-                Phoenix must be running locally.
-              </span>
-              <code
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 11,
-                  color: "#4CADCE",
-                  background: "#0D1117",
-                  border: "1px solid #1C2128",
-                  borderRadius: 3,
-                  padding: "2px 8px",
-                }}
-              >
-                python backend/scripts/start_phoenix.py
-              </code>
-            </div>
-          ) : (
-            <iframe
-              src={PHOENIX_URL}
+              Phoenix must be running locally.
+            </span>
+            <code
               style={{
-                width: "100%",
-                flex: 1,
-                minHeight: 500,
-                border: "none",
-                background: "#080A0C",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                color: "#4CADCE",
+                background: "#0D1117",
+                border: "1px solid #1C2128",
+                borderRadius: 3,
+                padding: "2px 8px",
               }}
-              title="Arize Phoenix"
-            />
-          )}
-        </div>
+            >
+              python backend/scripts/start_phoenix.py
+            </code>
+          </div>
+        ) : (
+          <iframe
+            src={PHOENIX_URL}
+            style={{
+              width: "100%",
+              flex: 1,
+              minHeight: 500,
+              border: "none",
+              background: "#080A0C",
+            }}
+            title="Arize Phoenix"
+          />
+        )}
       </div>
     </div>
   );
